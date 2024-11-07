@@ -9,7 +9,7 @@ from evaluator.evaluator import add_arguments as eval_add_arguments
 from evaluator.evaluator import main_wrapper as eval_main_wrapper
 
 
-__version_info__ = ("1", "0", "0")
+__version_info__ = ("1", "0", "1")
 __version__ = ".".join(__version_info__)
 
 
