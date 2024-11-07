@@ -25,7 +25,7 @@ def main():
 
 
 def parse_arguments():
-    parent_parser = argparse.ArgumentParser(description="PipeEval provides tools to run and assess differences between runs in pipelines.")
+    parent_parser = argparse.ArgumentParser(description="PipeEval provides tools to run and assess differences between runs in pipelines")
     parent_parser.add_argument(
         "--version", action="version", version=f"%(prog)s ({__version__})"
     )
@@ -33,7 +33,7 @@ def parse_arguments():
 
     run_parser = subparsers.add_parser("run", description="Runs a pipeline.")
     runner_add_arguments(run_parser)
-    eval_parser = subparsers.add_parser("eval", description="Takes two sets of results and generates a comparison.")
+    eval_parser = subparsers.add_parser("eval", description="Takes two sets of results and generates a comparison")
     eval_add_arguments(eval_parser)
 
     args = parent_parser.parse_args()
