@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import argparse
+import sys
 
 from runner.runner import add_arguments as runner_add_arguments
 from runner.runner import main_wrapper as runner_main_wrapper
@@ -20,22 +21,27 @@ def main():
     elif args.subcommand == "eval":
         eval_main_wrapper(args)
     else:
-        raise ValueError(f"Unknown args.subcommand: {args.subcommand}")
+        raise ValueError(f"Unknown sub command: {args.subcommand}. Check valid commands by running main.py --help")
 
 
 def parse_arguments():
-    parent_parser = argparse.ArgumentParser(description="Parent parser")
+    parent_parser = argparse.ArgumentParser(description="PipeEval provides tools to run and assess differences between runs in pipelines.")
     parent_parser.add_argument(
         "--version", action="version", version=f"%(prog)s ({__version__})"
     )
     subparsers = parent_parser.add_subparsers(dest="subcommand")
 
-    run_parser = subparsers.add_parser("run", description="Run parser")
+    run_parser = subparsers.add_parser("run", description="Runs a pipeline.")
     runner_add_arguments(run_parser)
-    eval_parser = subparsers.add_parser("eval", description="Eval parser")
+    eval_parser = subparsers.add_parser("eval", description="Takes two sets of results and generates a comparison.")
     eval_add_arguments(eval_parser)
 
     args = parent_parser.parse_args()
+
+    if args.subcommand is None:
+        parent_parser.print_help()
+        sys.exit(1)
+
     return args
 
 
