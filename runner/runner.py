@@ -22,6 +22,7 @@ from configparser import ConfigParser
 from datetime import datetime
 from typing import List, Dict, Optional, Tuple
 
+from runner.gittools import check_valid_checkout, check_valid_repo, checkout_repo, get_git_commit_hash
 from util.shared_utils import load_config
 
 from .help_classes import Case, CsvEntry
@@ -51,7 +52,9 @@ def main(
     check_valid_config_arguments(config, run_type, start_data)
     check_valid_repo(wgs_repo)
     check_valid_checkout(wgs_repo, checkout)
+    LOG.info(f"Checking out: {checkout} in {str(wgs_repo)}")
     checkout_repo(wgs_repo, checkout)
+    commit_hash = get_git_commit_hash(wgs_repo)
 
     run_label = build_run_label(run_type, checkout, label, stub_run, start_data)
 
@@ -68,7 +71,7 @@ def main(
     results_dir.mkdir(exist_ok=True, parents=True)
 
     run_log_path = results_dir / "run.log"
-    write_run_log(run_log_path, run_type, label or "no label", checkout, config)
+    write_run_log(run_log_path, run_type, label or "no label", checkout, config, commit_hash)
 
     if not config.getboolean(run_type, "trio"):
         csv = get_single_csv(config, run_label, run_type, start_data, queue)
@@ -122,78 +125,21 @@ def build_run_label(
     return run_label
 
 
-def checkout_repo(repo: Path, checkout_string: str) -> Tuple[int, str]:
-
-    LOG.info(f"Checking out: {checkout_string} in {str(repo)}")
-    results = subprocess.run(
-        ["git", "checkout", checkout_string],
-        cwd=str(repo),
-        # text=True is supported from Python 3.7
-        universal_newlines=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        check=True,
-    )
-    return (results.returncode, results.stderr)
-
-
-def get_git_id(repo: Path) -> str:
-    result = subprocess.run(
-        ["git", "log", "--oneline"],
-        cwd=str(repo),
-        check=True,
-        text=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-    )
-    first_line = result.stdout.splitlines()[0]
-    commit_hash = first_line.split(" ")[0]
-    return commit_hash
-
-
-def check_valid_repo(repo: Path) -> Tuple[int, str]:
-    if not repo.exists():
-        return (1, f'The folder "{repo}" does not exist')
-
-    if not repo.is_dir():
-        return (1, f'"{repo}" is not a folder')
-
-    if not (repo / ".git").is_dir():
-        return (1, f'"{repo}" has no .git subdir. It should be a Git repository')
-
-    return (0, "")
-
-
-def check_valid_checkout(repo: Path, checkout_obj: str) -> Tuple[int, str]:
-    results = subprocess.run(
-        ["git", "rev-parse", "--verify", checkout_obj],
-        cwd=str(repo),
-        universal_newlines=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-    )
-
-    if results.returncode != 0:
-        return (
-            results.returncode,
-            f"The string {checkout_obj} was not found in the repository",
-        )
-    return (0, "")
-
-
 def write_run_log(
-    run_log_path: Path, run_type: str, tag: str, commit: str, config: ConfigParser
+    run_log_path: Path, run_type: str, tag: str, checkout_str: str, config: ConfigParser, commit_hash: str
 ):
     with run_log_path.open("w") as out_fh:
-        print(f"Run type: {run_type}", file=out_fh)
+        print("# Settings", file=out_fh)
+        print(f"run type: {run_type}", file=out_fh)
         print(f"tag: {tag}", file=out_fh)
-        print(f"Commit: {commit}", file=out_fh)
-
-        print("Config file - settings", file=out_fh)
+        print(f"checkout: {checkout_str}", file=out_fh)
+        print(f"commit hash: {commit_hash}", file=out_fh)
+        print("", file=out_fh)
+        print("# Config file - settings", file=out_fh)
         for key, val in config["settings"].items():
             print(f"{key}: {val}", file=out_fh)
 
-        print(f"Config file - {run_type}", file=out_fh)
+        print(f"# Config file - {run_type}", file=out_fh)
         for key, val in config[run_type].items():
             print(f"{key}: {val}", file=out_fh)
 
