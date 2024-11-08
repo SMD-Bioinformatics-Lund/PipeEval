@@ -14,7 +14,7 @@ from collections import defaultdict
 import difflib
 import logging
 
-from util.shared_utils import load_config
+from util.shared_utils import load_config, prettify_rows
 
 from .score_utils import get_table
 from .classes import DiffScoredVariant
@@ -404,8 +404,6 @@ def compare_variant_score(
         f"Number differently scored above {score_threshold}: {len(diff_variants_above_thres)}",
     )
 
-    if len(diff_variants_above_thres) > max_count:
-        logger.info(f"Only printing the {max_count} first")
 
     full_comparison_table = get_table(
         diff_scored_variants,
@@ -414,11 +412,17 @@ def compare_variant_score(
         variants_r2,
     )
     with open(str(out_path_all), "w") as out_fh:
-        for row in full_comparison_table:
+        for pretty_row in full_comparison_table:
             # Skip subscores for log printing
-            simple_row = row[0:5]
-            print("\t".join(row), file=out_fh)
-            logger.info("\t".join(simple_row))
+            print("\t".join(pretty_row), file=out_fh)
+
+        
+        if len(diff_variants_above_thres) > max_count:
+            logger.info(f"Only printing the {max_count} first")
+        first_rows_and_cols = [full_row[0:5] for full_row in full_comparison_table[0:max_count]]
+        pretty_rows = prettify_rows(first_rows_and_cols)
+        for pretty_row in pretty_rows:
+            logger.info(pretty_row)
 
     above_thres_comparison_table = get_table(
         diff_variants_above_thres,
@@ -427,8 +431,8 @@ def compare_variant_score(
         variants_r2,
     )
     with open(str(out_path_above_thres), "w") as out_fh:
-        for row in above_thres_comparison_table:
-            print("\t".join(row), file=out_fh)
+        for pretty_row in above_thres_comparison_table:
+            print("\t".join(pretty_row), file=out_fh)
 
 
 def compare_yaml(yaml_r1: PathObj, yaml_r2: PathObj, out_path: Optional[Path]):
