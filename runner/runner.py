@@ -17,9 +17,12 @@ from pathlib import Path
 import subprocess
 import logging
 import sys
+import os
 from configparser import ConfigParser
 from datetime import datetime
 from typing import List, Dict, Optional, Tuple
+
+from util.shared_utils import load_config
 
 from .help_classes import Case, CsvEntry
 
@@ -29,7 +32,7 @@ LOG = logging.getLogger(__name__)
 
 
 def main(
-    config_path: str,
+    config_path: Optional[str],
     label: Optional[str],
     checkout: str,
     base_dir: Path,
@@ -42,9 +45,8 @@ def main(
     queue: Optional[str],
     no_start: bool,
 ):
-
-    config = ConfigParser()
-    config.read(config_path)
+    curr_dir = os.path.dirname(os.path.abspath(__file__))
+    config = load_config(curr_dir, config_path)
 
     check_valid_config_arguments(config, run_type, start_data)
     check_valid_repo(wgs_repo)
@@ -432,7 +434,6 @@ def add_arguments(parser: argparse.ArgumentParser):
     )
     parser.add_argument(
         "--config",
-        required=True,
         help="Config file in INI format containing information about run types and cases",
     )
     parser.add_argument(

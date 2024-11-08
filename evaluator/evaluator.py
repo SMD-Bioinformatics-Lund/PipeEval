@@ -3,7 +3,7 @@
 import argparse
 from io import TextIOWrapper
 from pathlib import Path
-from configparser import ConfigParser
+import os
 from typing import (
     List,
     Optional,
@@ -13,6 +13,8 @@ from typing import (
 from collections import defaultdict
 import difflib
 import logging
+
+from util.shared_utils import load_config
 
 from .score_utils import get_table
 from .classes import DiffScoredVariant
@@ -66,8 +68,8 @@ def main(
     outdir: Optional[Path],
 ):
 
-    config = ConfigParser()
-    config.read(config_path)
+    curr_dir = os.path.dirname(os.path.abspath(__file__))
+    config = load_config(curr_dir, config_path)
 
     valid_comparisons = set(["default", "file", "vcf", "score", "score_sv", "yaml"])
     if comparisons is not None and len(comparisons & valid_comparisons) == 0:
