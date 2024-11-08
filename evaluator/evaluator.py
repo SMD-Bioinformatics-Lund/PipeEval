@@ -397,12 +397,15 @@ def compare_variant_score(
         var for var in diff_scored_variants if var.any_above_thres(score_threshold)
     ]
 
-    logger.info(
-        f"Number differently scored total: {len(diff_scored_variants)}",
-    )
-    logger.info(
-        f"Number differently scored above {score_threshold}: {len(diff_variants_above_thres)}",
-    )
+    if len(diff_scored_variants) > 0:
+        logger.info(
+            f"Number differently scored total: {len(diff_scored_variants)}",
+        )
+        logger.info(
+            f"Number differently scored above {score_threshold}: {len(diff_variants_above_thres)}",
+        )
+    else:
+        logger.info("No differently scored variant found")
 
 
     full_comparison_table = get_table(
