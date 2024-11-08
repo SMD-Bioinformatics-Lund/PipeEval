@@ -29,7 +29,6 @@ from .util import (
     get_pair_match,
     parse_vcf,
     get_files_ending_with,
-    get_single_file_ending_with,
     verify_pair_exists,
 )
 
@@ -399,6 +398,7 @@ def compare_variant_score(
         shared_variants,
         variants_r1,
         variants_r2,
+        with_subscore_summary=True,
     )
     with open(str(out_path_all), "w") as out_fh:
         for pretty_row in full_comparison_table:
@@ -419,6 +419,7 @@ def compare_variant_score(
         shared_variants,
         variants_r1,
         variants_r2,
+        with_subscore_summary=True,
     )
     with open(str(out_path_above_thres), "w") as out_fh:
         for pretty_row in above_thres_comparison_table:
