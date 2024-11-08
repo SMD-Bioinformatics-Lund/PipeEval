@@ -28,3 +28,4 @@ def prettify_rows(rows: List[List[str]]) -> List[str]:
         pretty_rows.append(adjusted_row)
     return pretty_rows
 
+

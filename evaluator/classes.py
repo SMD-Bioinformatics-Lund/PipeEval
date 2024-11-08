@@ -95,6 +95,9 @@ class PathObj:
 
         self.is_gzipped = path.suffix.endswith(".gz")
 
+    def exists(self) -> bool:
+        return self.real_path.exists()
+
     def check_valid_file(self) -> bool:
         try:
             if self.is_gzipped:

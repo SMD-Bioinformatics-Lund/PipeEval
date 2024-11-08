@@ -1,6 +1,6 @@
 from pathlib import Path
 import re
-from typing import Dict, Generic, List, Set, TypeVar, Union
+from typing import Dict, Generic, List, Optional, Set, Tuple, TypeVar, Union
 
 from .classes import PathObj, ScoredVariant
 
@@ -141,3 +141,34 @@ def get_files_in_dir(
         if path.is_file()
     ]
     return processed_files_in_dir
+
+
+def verify_pair_exists(
+    label: str, file1: Optional[Path | PathObj], file2: Optional[Path | PathObj]
+):
+
+    r1_exists = file1 and file1.exists()
+    r2_exists = file2 and file2.exists()
+
+    if not r1_exists and not r2_exists:
+        raise ValueError(f"Both {label} must exist. Neither currently exists.")
+    elif not r1_exists:
+        raise ValueError(f"Both {label} must exist. {file1} is missing.")
+    elif not r2_exists:
+        raise ValueError(f"Both {label} must exist. {file2} is missing.")
+
+
+def get_pair_match(
+    error_label: str,
+    valid_patterns: List[str],
+    r1_paths: List[PathObj],
+    r2_paths: List[PathObj],
+) -> Tuple[PathObj, PathObj]:
+    r1_matching = get_single_file_ending_with(valid_patterns, r1_paths)
+    r2_matching = get_single_file_ending_with(valid_patterns, r2_paths)
+    verify_pair_exists(error_label, r1_matching, r2_matching)
+    if r1_matching is None or r2_matching is None:
+        raise ValueError(
+            "Missing files (should have been captured by verification call?)"
+        )
+    return (r1_matching, r2_matching)

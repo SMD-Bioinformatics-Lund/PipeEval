@@ -26,9 +26,11 @@ from .util import (
     count_variants,
     do_comparison,
     get_files_in_dir,
+    get_pair_match,
     parse_vcf,
     get_files_ending_with,
     get_single_file_ending_with,
+    verify_pair_exists,
 )
 
 # logger = setup_stdout_logger()
@@ -73,14 +75,11 @@ def main(
 
     valid_comparisons = set(["default", "file", "vcf", "score", "score_sv", "yaml"])
     if comparisons is not None and len(comparisons & valid_comparisons) == 0:
-        raise ValueError(f"Valid comparisons are: {valid_comparisons}, found: {comparisons}")
-
-    if not results1_dir.exists() or not results2_dir.exists():
-        r1_exists = results1_dir.exists()
-        r2_exists = results2_dir.exists()
         raise ValueError(
-            f"Both results dir must exist. Currently r1: {r1_exists} r2: {r2_exists}"
+            f"Valid comparisons are: {valid_comparisons}, found: {comparisons}"
         )
+
+    verify_pair_exists("result dirs", results1_dir, results2_dir)
 
     if outdir is not None:
         outdir.mkdir(parents=True, exist_ok=True)
@@ -130,76 +129,64 @@ def main(
 
     if comparisons is None or "score" in comparisons:
         logger.info("--- Comparing scored SNV VCFs ---")
-        r1_scored_snv_vcf = get_single_file_ending_with(
-            config["settings"]["scored_snv"].split(","), r1_paths
+
+        (r1_scored_snv_vcf, r2_scored_snv_vcf) = get_pair_match(
+            "scored SNVs",
+            config["settings"]["scored_snv"].split(","),
+            r1_paths,
+            r2_paths,
         )
-        r2_scored_snv_vcf = get_single_file_ending_with(
-            config["settings"]["scored_snv"].split(","), r2_paths
+
+        out_path_presence = outdir / "scored_snv_presence.txt" if outdir else None
+        out_path_score_thres = (
+            outdir / f"scored_snv_score_thres_{score_threshold}.txt" if outdir else None
         )
-        if r1_scored_snv_vcf and r2_scored_snv_vcf:
-            out_path_presence = outdir / "scored_snv_presence.txt" if outdir else None
-            out_path_score_thres = (
-                outdir / f"scored_snv_score_thres_{score_threshold}.txt"
-                if outdir
-                else None
-            )
-            out_path_score_all = outdir / "scored_snv_score_all.txt" if outdir else None
-            variant_comparison(
-                r1_scored_snv_vcf,
-                r2_scored_snv_vcf,
-                score_threshold,
-                max_display,
-                out_path_presence,
-                out_path_score_thres,
-                out_path_score_all,
-            )
-        else:
-            logger.warning(
-                f"At least one scored SNV VCF missing. Looking for the patterns: {config['settings']['scored_snv']}"
-            )
+        out_path_score_all = outdir / "scored_snv_score_all.txt" if outdir else None
+        variant_comparison(
+            r1_scored_snv_vcf,
+            r2_scored_snv_vcf,
+            score_threshold,
+            max_display,
+            out_path_presence,
+            out_path_score_thres,
+            out_path_score_all,
+        )
 
     if comparisons is None or "score_sv" in comparisons:
         logger.info("--- Comparing scored SV VCFs ---")
-        r1_scored_sv_vcf = get_single_file_ending_with(
-            config["settings"]["scored_sv"].split(","), r1_paths
+
+        (r1_scored_sv_vcf, r2_scored_sv_vcf) = get_pair_match(
+            "scored SVs",
+            config["settings"]["scored_sv"].split(","),
+            r1_paths,
+            r2_paths,
         )
-        r2_scored_sv_vcf = get_single_file_ending_with(
-            config["settings"]["scored_sv"].split(","), r1_paths
+
+        out_path_presence = outdir / "scored_sv_presence.txt" if outdir else None
+        out_path_score_thres = (
+            outdir / f"scored_sv_score_thres_{score_threshold}.txt" if outdir else None
         )
-        if r1_scored_sv_vcf and r2_scored_sv_vcf:
-            out_path_presence = outdir / "scored_sv_presence.txt" if outdir else None
-            out_path_score_thres = (
-                outdir / f"scored_sv_score_thres_{score_threshold}.txt"
-                if outdir
-                else None
-            )
-            out_path_score_all = outdir / "scored_sv_score.txt" if outdir else None
-            variant_comparison(
-                r1_scored_sv_vcf,
-                r2_scored_sv_vcf,
-                score_threshold,
-                max_display,
-                out_path_presence,
-                out_path_score_thres,
-                out_path_score_all,
-            )
-        else:
-            logger.warning(
-                f"At least one scored SV VCF missing. Looking for the pattern: {config['settings']['scored_sv']}"
-            )
+        out_path_score_all = outdir / "scored_sv_score.txt" if outdir else None
+        variant_comparison(
+            r1_scored_sv_vcf,
+            r2_scored_sv_vcf,
+            score_threshold,
+            max_display,
+            out_path_presence,
+            out_path_score_thres,
+            out_path_score_all,
+        )
 
     if comparisons is None or "yaml" in comparisons:
         logger.info("--- Comparing YAML ---")
-        yaml_pattern = config["settings"]["yaml"]
-        r1_scored_yaml = get_single_file_ending_with([yaml_pattern], r1_paths)
-        r2_scored_yaml = get_single_file_ending_with([yaml_pattern], r2_paths)
-        if r1_scored_yaml and r2_scored_yaml:
-            out_path = outdir / "yaml_diff.txt" if outdir else None
-            compare_yaml(r1_scored_yaml, r2_scored_yaml, out_path)
-        else:
-            logger.warning(
-                f"At least Scout YAML missing. Looking for the pattern: {config['settings']['yaml']}"
-            )
+        (r1_scored_yaml, r2_scored_yaml) = get_pair_match(
+            "Scout YAMLs",
+            config["settings"]["yaml"].split(","),
+            r1_paths,
+            r2_paths,
+        )
+        out_path = outdir / "yaml_diff.txt" if outdir else None
+        compare_yaml(r1_scored_yaml, r2_scored_yaml, out_path)
 
 
 def check_same_files(
@@ -407,7 +394,6 @@ def compare_variant_score(
     else:
         logger.info("No differently scored variant found")
 
-
     full_comparison_table = get_table(
         diff_scored_variants,
         shared_variants,
@@ -419,10 +405,11 @@ def compare_variant_score(
             # Skip subscores for log printing
             print("\t".join(pretty_row), file=out_fh)
 
-        
         if len(diff_variants_above_thres) > max_count:
             logger.info(f"Only printing the {max_count} first")
-        first_rows_and_cols = [full_row[0:5] for full_row in full_comparison_table[0:max_count]]
+        first_rows_and_cols = [
+            full_row[0:5] for full_row in full_comparison_table[0:max_count]
+        ]
         pretty_rows = prettify_rows(first_rows_and_cols)
         for pretty_row in pretty_rows:
             logger.info(pretty_row)
