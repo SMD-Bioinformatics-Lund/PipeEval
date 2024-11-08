@@ -84,8 +84,6 @@ def main(
 
     if outdir is not None:
         outdir.mkdir(parents=True, exist_ok=True)
-        # log_file = outdir / "out.log"
-        # add_file_logger(logger, str(log_file))
 
     if run_id1 is None:
         run_id1 = str(results1_dir.name)
@@ -359,7 +357,7 @@ def compare_vcfs(
 
     out_fh = open(out_path, "w") if out_path else None
     log_and_write(f"{'Path':<{max_path_length}} {run_id1:>10} {run_id2:>10}", out_fh)
-    for path in paths:
+    for path in sorted(paths):
         r1_val = r1_counts.get(path) or "-"
         r2_val = r2_counts.get(path) or "-"
         log_and_write(
