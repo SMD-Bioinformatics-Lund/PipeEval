@@ -22,8 +22,13 @@ from configparser import ConfigParser
 from datetime import datetime
 from typing import List, Dict, Optional, Tuple
 
-from runner.gittools import check_valid_checkout, check_valid_repo, checkout_repo, get_git_commit_hash
-from util.shared_utils import load_config
+from runner.gittools import (
+    check_valid_checkout,
+    check_valid_repo,
+    checkout_repo,
+    get_git_commit_hash,
+)
+from util.shared_utils import check_valid_config_path, load_config
 
 from .help_classes import Case, CsvEntry
 
@@ -36,8 +41,8 @@ def main(
     config_path: Optional[str],
     label: Optional[str],
     checkout: str,
-    base_dir: Path,
-    wgs_repo: Path,
+    base_dir: Optional[Path],
+    repo: Optional[Path],
     start_data: str,
     dry_run: bool,
     stub_run: bool,
@@ -49,12 +54,16 @@ def main(
     curr_dir = os.path.dirname(os.path.abspath(__file__))
     config = load_config(curr_dir, config_path)
 
-    check_valid_config_arguments(config, run_type, start_data)
-    check_valid_repo(wgs_repo)
-    check_valid_checkout(wgs_repo, checkout)
-    LOG.info(f"Checking out: {checkout} in {str(wgs_repo)}")
-    checkout_repo(wgs_repo, checkout)
-    commit_hash = get_git_commit_hash(wgs_repo)
+    check_valid_config_arguments(config, run_type, start_data, base_dir, repo)
+    base_dir = (
+        base_dir if base_dir is not None else Path(config.get("settings", "baseout"))
+    )
+    repo = repo if repo is not None else Path(config.get("settings", "repo"))
+    check_valid_repo(repo)
+    check_valid_checkout(repo, checkout)
+    LOG.info(f"Checking out: {checkout} in {str(repo)}")
+    checkout_repo(repo, checkout)
+    commit_hash = get_git_commit_hash(repo)
 
     run_label = build_run_label(run_type, checkout, label, stub_run, start_data)
 
@@ -71,7 +80,9 @@ def main(
     results_dir.mkdir(exist_ok=True, parents=True)
 
     run_log_path = results_dir / "run.log"
-    write_run_log(run_log_path, run_type, label or "no label", checkout, config, commit_hash)
+    write_run_log(
+        run_log_path, run_type, label or "no label", checkout, config, commit_hash
+    )
 
     if not config.getboolean(run_type, "trio"):
         csv = get_single_csv(config, run_label, run_type, start_data, queue)
@@ -96,12 +107,30 @@ def main(
     setup_results_links(config, results_dir, run_label, run_type)
 
 
-def check_valid_config_arguments(config: ConfigParser, run_type: str, start_data: str):
+def check_valid_config_arguments(
+    config: ConfigParser,
+    run_type: str,
+    start_data: str,
+    base_dir: Optional[Path],
+    repo: Optional[Path],
+):
     if not config.has_section(run_type):
         raise ValueError(f"Valid config keys are: {config.sections()}")
     valid_start_data = ["fq", "bam", "vcf"]
     if start_data not in valid_start_data:
         raise ValueError(f"Valid start_data types are: {', '.join(valid_start_data)}")
+
+    if base_dir is None:
+        if not check_valid_config_path(config, "settings", "baseout"):
+            raise ValueError(
+                f"A valid output base folder must be specified either through the '--baseout' flag, or in the config['settings']['baseout']"
+            )
+
+    if repo is None:
+        if not check_valid_config_path(config, "settings", "repo"):
+            raise ValueError(
+                f"A valid repo must be specified either through the '--repo' flag, or in the config['settings']['repo']"
+            )
 
 
 def build_run_label(
@@ -126,7 +155,12 @@ def build_run_label(
 
 
 def write_run_log(
-    run_log_path: Path, run_type: str, tag: str, checkout_str: str, config: ConfigParser, commit_hash: str
+    run_log_path: Path,
+    run_type: str,
+    tag: str,
+    checkout_str: str,
+    config: ConfigParser,
+    commit_hash: str,
 ):
     with run_log_path.open("w") as out_fh:
         print("# Settings", file=out_fh)
@@ -349,11 +383,11 @@ def add_arguments(parser: argparse.ArgumentParser):
     )
     parser.add_argument(
         "--baseout",
-        required=True,
-        help="The base folder into which results folders are created following the pattern: {base}/{label}_{run_type}_{checkout})",
+        help="The base folder into which results folders are created following the pattern: {base}/{label}_{run_type}_{checkout}). Can also be specified in the config.",
     )
     parser.add_argument(
-        "--repo", required=True, help="Path to the Git repository of the pipeline"
+        "--repo",
+        help="Path to the Git repository of the pipeline. Can also be specified in the config.",
     )
     parser.add_argument(
         "--start_data",

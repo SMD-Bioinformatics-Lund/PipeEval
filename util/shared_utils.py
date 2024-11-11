@@ -28,3 +28,9 @@ def prettify_rows(rows: List[List[str]], padding: int = 4) -> List[str]:
         adjusted_row = "".join(adjusted_cells)
         pretty_rows.append(adjusted_row)
     return pretty_rows
+
+
+def check_valid_config_path(conf: ConfigParser, section: str, key: str) -> bool:
+    repo_config = Path(conf.get(section, key))
+    valid_path = repo_config.exists()
+    return valid_path
