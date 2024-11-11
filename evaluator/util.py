@@ -57,7 +57,7 @@ def do_comparison(set_1: Set[T], set_2: Set[T]) -> Comparison[T]:
     return Comparison(s1_only, s2_only, common)
 
 
-def parse_vcf(vcf: PathObj) -> Dict[str, ScoredVariant]:
+def parse_vcf(vcf: PathObj, is_sv: bool) -> Dict[str, ScoredVariant]:
 
     sub_score_name_pattern = re.compile('ID=RankResult,.*Description="(.*)">')
 
@@ -89,18 +89,23 @@ def parse_vcf(vcf: PathObj) -> Dict[str, ScoredVariant]:
             info = fields[7]
 
             info_fields = [field.split("=") for field in info.split(";")]
+            info_dict = dict(info_fields)
 
-            rank_score = None
-            rank_sub_scores = None
-            for key, val in info_fields:
-                if key == "RankScore":
-                    # FIXME
-                    rank_score = int(val.split(":")[1].replace(".0", ""))
-                elif key == "RankResult":
-                    # FIXME
-                    rank_sub_scores = [int(sub_sc) for sub_sc in val.split("|")]
-                if rank_score is not None and rank_sub_scores is not None:
-                    break
+            rank_score = (
+                int(info_dict["RankScore"].split(":")[1].replace(".0", ""))
+                if info_dict.get("RankScore") is not None
+                else None
+            )
+            rank_sub_scores = (
+                [int(sub_sc) for sub_sc in info_dict["RankResult"].split("|")]
+                if info_dict.get("RankResult") is not None
+                else None
+            )
+            sv_length = (
+                int(info_dict["SVLEN"].split(":")[1].replace(".0", ""))
+                if info_dict.get("SVLEN") is not None
+                else None
+            )
 
             sub_scores_dict: Dict[str, int] = {}
             if rank_sub_scores is not None:
@@ -110,7 +115,7 @@ def parse_vcf(vcf: PathObj) -> Dict[str, ScoredVariant]:
                     rank_sub_scores
                 ), f"Length of sub score names and values should match, found {rank_sub_score_names} and {rank_sub_scores} in line: {line}"
                 sub_scores_dict = dict(zip(rank_sub_score_names, rank_sub_scores))
-            variant = ScoredVariant(chr, pos, ref, alt, rank_score, sub_scores_dict)
+            variant = ScoredVariant(chr, pos, ref, alt, rank_score, sub_scores_dict, is_sv, sv_length)
             key = variant.get_simple_key()
             variants[key] = variant
     return variants
@@ -174,4 +179,3 @@ def get_pair_match(
             "Missing files (should have been captured by verification call?)"
         )
     return (r1_matching, r2_matching)
-

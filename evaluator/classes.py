@@ -14,6 +14,8 @@ class ScoredVariant:
         alt: str,
         rank_score: Optional[int],
         sub_scores: Dict[str, int],
+        is_sv: bool,
+        sv_length: Optional[int],
     ):
         self.chr = chr
         self.pos = pos
@@ -21,12 +23,17 @@ class ScoredVariant:
         self.alt = alt
         self.rank_score = rank_score
         self.sub_scores = sub_scores
+        self.is_sv = is_sv
+        self.sv_length = sv_length
 
     def __str__(self) -> str:
         return f"{self.chr}:{self.pos} {self.ref}/{self.alt} (Score: {self.rank_score})"
 
     def get_simple_key(self) -> str:
-        return f"{self.chr}_{self.pos}_{self.ref}_{self.alt}"
+        if not self.is_sv:
+            return f"{self.chr}_{self.pos}_{self.ref}_{self.alt}"
+        else:
+            return f"{self.chr}_{self.pos}_{self.sv_length}_{self.ref}_{self.alt}"
 
     def get_rank_score(self) -> int:
         if self.rank_score is None:
@@ -44,6 +51,7 @@ class ScoredVariant:
             and self.pos == other.pos
             and self.ref == other.ref
             and self.alt == other.alt
+            and self.sv_length == other.sv_length
         )
 
 
