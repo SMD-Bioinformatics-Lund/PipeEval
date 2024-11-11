@@ -1,7 +1,9 @@
 # Files
 *.log
+*.swp
 
 # Dirs
 data/
+repos/
 testdata/
 __pycache__/
