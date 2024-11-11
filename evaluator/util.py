@@ -102,7 +102,7 @@ def parse_vcf(vcf: PathObj, is_sv: bool) -> Dict[str, ScoredVariant]:
                 else None
             )
             sv_length = (
-                int(info_dict["SVLEN"].split(":")[1].replace(".0", ""))
+                int(info_dict["SVLEN"])
                 if info_dict.get("SVLEN") is not None
                 else None
             )
