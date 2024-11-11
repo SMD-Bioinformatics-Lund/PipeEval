@@ -22,7 +22,8 @@ def get_git_commit_hash(repo: Path) -> str:
         ["git", "log", "--oneline"],
         cwd=str(repo),
         check=True,
-        text=True,
+        # text=True is supported from Python 3.7
+        universal_newlines=True,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
     )
