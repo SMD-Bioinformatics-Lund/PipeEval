@@ -451,7 +451,7 @@ def add_arguments(parser: argparse.ArgumentParser):
     parser.add_argument("--run_id2", "-i2", help="See --run_id1 help")
     parser.add_argument("--results1", "-r1", required=True)
     parser.add_argument("--results2", "-r2", required=True)
-    parser.add_argument("--config", help="Additional configurations", required=True)
+    parser.add_argument("--config", help="Additional configurations")
     parser.add_argument(
         "--comparisons",
         help="Comma separated. Defaults to: default, run all by: file,vcf,score,score_sv,yaml",
