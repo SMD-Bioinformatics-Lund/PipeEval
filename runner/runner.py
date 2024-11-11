@@ -20,7 +20,7 @@ import sys
 import os
 from configparser import ConfigParser
 from datetime import datetime
-from typing import List, Dict, Optional, Tuple
+from typing import List, Dict, Optional
 
 from runner.gittools import (
     check_valid_checkout,
@@ -50,6 +50,7 @@ def main(
     skip_confirmation: bool,
     queue: Optional[str],
     no_start: bool,
+    datestamp: bool,
 ):
     curr_dir = os.path.dirname(os.path.abspath(__file__))
     config = load_config(curr_dir, config_path)
@@ -59,6 +60,8 @@ def main(
         base_dir if base_dir is not None else Path(config.get("settings", "baseout"))
     )
     repo = repo if repo is not None else Path(config.get("settings", "repo"))
+    datestamp = datestamp or config.getboolean("settings", "datestamp")
+
     check_valid_repo(repo)
     check_valid_checkout(repo, checkout)
     LOG.info(f"Checking out: {checkout} in {str(repo)}")
@@ -67,7 +70,11 @@ def main(
 
     run_label = build_run_label(run_type, checkout, label, stub_run, start_data)
 
-    results_dir = base_dir / run_label
+    if not datestamp:
+        results_dir = base_dir / run_label
+    else:
+        ds = datetime.now().strftime("%y%m%d-%H%M")
+        results_dir = base_dir / f"{ds}_{run_label}"
     if results_dir.exists():
         confirmation = input(
             f"The results dir {results_dir} already exists. Do you want to proceed? (y/n) "
@@ -371,6 +378,7 @@ def main_wrapper(args: argparse.Namespace):
         args.skip_confirmation,
         args.queue,
         args.nostart,
+        args.datestamp,
     )
 
 
@@ -420,6 +428,11 @@ def add_arguments(parser: argparse.ArgumentParser):
     parser.add_argument(
         "--queue",
         help="Optionally specify in which queue to run (i.e. low, grace-normal etc.)",
+    )
+    parser.add_argument(
+        "--datestamp",
+        help="Prefix output folder with datestamp (241111_1033_)",
+        action="store_true",
     )
     parser.add_argument(
         "--nostart",
