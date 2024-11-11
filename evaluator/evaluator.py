@@ -144,11 +144,13 @@ def main(
             outdir / f"scored_snv_score_thres_{score_threshold}.txt" if outdir else None
         )
         out_path_score_all = outdir / "scored_snv_score_all.txt" if outdir else None
+        is_sv = False
         variant_comparison(
             run_id1,
             run_id2,
             r1_scored_snv_vcf,
             r2_scored_snv_vcf,
+            is_sv,
             score_threshold,
             max_display,
             out_path_presence,
@@ -172,11 +174,13 @@ def main(
             outdir / f"scored_sv_score_thres_{score_threshold}.txt" if outdir else None
         )
         out_path_score_all = outdir / "scored_sv_score.txt" if outdir else None
+        is_sv = True
         variant_comparison(
             run_id1,
             run_id2,
             r1_scored_sv_vcf,
             r2_scored_sv_vcf,
+            is_sv,
             score_threshold,
             max_display,
             out_path_presence,
@@ -314,14 +318,15 @@ def variant_comparison(
     label2: str,
     r1_scored_vcf: PathObj,
     r2_scored_vcf: PathObj,
+    is_sv: bool,
     score_threshold: int,
     max_display: int,
     out_path_presence: Optional[Path],
     out_path_score_above_thres: Optional[Path],
     out_path_score_all: Optional[Path],
 ):
-    variants_r1 = parse_vcf(r1_scored_vcf)
-    variants_r2 = parse_vcf(r2_scored_vcf)
+    variants_r1 = parse_vcf(r1_scored_vcf, is_sv)
+    variants_r2 = parse_vcf(r2_scored_vcf, is_sv)
     comparison_results = do_comparison(
         set(variants_r1.keys()),
         set(variants_r2.keys()),
@@ -410,6 +415,32 @@ def compare_variant_score(
             diff_scored_variant = DiffScoredVariant(r1_variant, r2_variant)
             diff_scored_variants.append(diff_scored_variant)
 
+    if len(diff_scored_variants) > 0:
+        print_diff_score_info(
+            diff_scored_variants,
+            shared_variants,
+            variants_r1,
+            variants_r2,
+            out_path_all,
+            out_path_above_thres,
+            max_count,
+            score_threshold,
+        )
+    else:
+        logger.info("No differently scored variant found")
+
+
+def print_diff_score_info(
+    diff_scored_variants: List[DiffScoredVariant],
+    shared_variant_keys: Set[str],
+    variants_r1: Dict[str, ScoredVariant],
+    variants_r2: Dict[str, ScoredVariant],
+    out_path_all: Optional[Path],
+    out_path_above_thres: Optional[Path],
+    max_count: int,
+    score_threshold: int,
+):
+
     diff_scored_variants.sort(
         key=lambda var: var.r1.get_rank_score(),
         reverse=True,
@@ -419,19 +450,16 @@ def compare_variant_score(
         var for var in diff_scored_variants if var.any_above_thres(score_threshold)
     ]
 
-    if len(diff_scored_variants) > 0:
-        logger.info(
-            f"Number differently scored total: {len(diff_scored_variants)}",
-        )
-        logger.info(
-            f"Number differently scored above {score_threshold}: {len(diff_variants_above_thres)}",
-        )
-    else:
-        logger.info("No differently scored variant found")
+    logger.info(
+        f"Number differently scored total: {len(diff_scored_variants)}",
+    )
+    logger.info(
+        f"Number differently scored above {score_threshold}: {len(diff_variants_above_thres)}",
+    )
 
     full_comparison_table = get_table(
         diff_scored_variants,
-        shared_variants,
+        shared_variant_keys,
         variants_r1,
         variants_r2,
         with_subscore_summary=True,
@@ -453,7 +481,7 @@ def compare_variant_score(
 
     above_thres_comparison_table = get_table(
         diff_variants_above_thres,
-        shared_variants,
+        shared_variant_keys,
         variants_r1,
         variants_r2,
         with_subscore_summary=True,
