@@ -6,6 +6,7 @@ from .classes import DiffScoredVariant, ScoredVariant
 def get_comparison_row(
     var1: ScoredVariant,
     var2: ScoredVariant,
+    show_sv_len: bool,
     show_sub_scores: bool,
     show_sub_score_summary: bool,
 ) -> List[str]:
@@ -19,9 +20,12 @@ def get_comparison_row(
         var1.chr,
         str(var1.pos),
         f"{var1.ref}/{var1.alt}",
-        var1.get_rank_score_str(),
-        var2.get_rank_score_str(),
     ]
+
+    if show_sv_len:
+        fields.append(str(var1.sv_length))
+
+    fields.extend([var1.get_rank_score_str(), var2.get_rank_score_str()])
 
     if show_sub_score_summary:
         sub_score_sum_str = sub_score_summary(var1.sub_scores, var2.sub_scores)
@@ -44,6 +48,8 @@ def get_table(
 ) -> List[List[str]]:
 
     first_shared_key = list(shared_variant_keys)[0]
+    first_shared_variant = variants_r1[first_shared_key]
+    is_sv = first_shared_variant.is_sv
     header_fields = ["chr", "pos", "var", "score_r1", "score_r2"]
 
     if with_subscore_summary:
@@ -57,7 +63,11 @@ def get_table(
 
     for variant in variants:
         comparison_fields = get_comparison_row(
-            variant.r1, variant.r2, show_sub_scores=True, show_sub_score_summary=True
+            variant.r1,
+            variant.r2,
+            show_sv_len=is_sv,
+            show_sub_scores=True,
+            show_sub_score_summary=True,
         )
         rows.append(comparison_fields)
 
