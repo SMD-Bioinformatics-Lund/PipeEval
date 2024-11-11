@@ -17,7 +17,7 @@ def checkout_repo(repo: Path, checkout_string: str) -> Tuple[int, str]:
     return (results.returncode, results.stderr)
 
 
-def get_git_commit_hash(repo: Path) -> str:
+def get_git_commit_hash_and_log(repo: Path) -> Tuple[str, str]:
     result = subprocess.run(
         ["git", "log", "--oneline"],
         cwd=str(repo),
@@ -27,9 +27,9 @@ def get_git_commit_hash(repo: Path) -> str:
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
     )
-    first_line = result.stdout.splitlines()[0]
-    commit_hash = first_line.split(" ")[0]
-    return commit_hash
+    last_log = result.stdout.splitlines()[0]
+    commit_hash = last_log.split(" ")[0]
+    return (commit_hash, last_log)
 
 
 def check_valid_repo(repo: Path) -> Tuple[int, str]:

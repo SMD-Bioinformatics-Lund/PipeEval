@@ -26,7 +26,7 @@ from runner.gittools import (
     check_valid_checkout,
     check_valid_repo,
     checkout_repo,
-    get_git_commit_hash,
+    get_git_commit_hash_and_log,
 )
 from util.shared_utils import check_valid_config_path, load_config
 
@@ -66,7 +66,8 @@ def main(
     check_valid_checkout(repo, checkout)
     LOG.info(f"Checking out: {checkout} in {str(repo)}")
     checkout_repo(repo, checkout)
-    commit_hash = get_git_commit_hash(repo)
+    (commit_hash, last_log) = get_git_commit_hash_and_log(repo)
+    LOG.info(last_log)
 
     run_label = build_run_label(run_type, checkout, label, stub_run, start_data)
 
