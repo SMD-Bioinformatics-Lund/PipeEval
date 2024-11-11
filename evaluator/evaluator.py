@@ -95,7 +95,8 @@ def main(
     r2_paths = get_files_in_dir(results2_dir, run_id2, RUN_ID_PLACEHOLDER, results2_dir)
 
     if comparisons is None or "file" in comparisons:
-        logger.info("\n--- Comparing existing files ---")
+        logger.info("")
+        logger.info("--- Comparing existing files ---")
         out_path = outdir / "check_sample_files.txt" if outdir else None
 
         check_same_files(
@@ -108,7 +109,8 @@ def main(
         )
 
     if comparisons is not None and "vcf" in comparisons:
-        logger.info("\n--- Comparing VCF numbers ---")
+        logger.info("")
+        logger.info("--- Comparing VCF numbers ---")
         is_vcf_pattern = ".vcf$|.vcf.gz$"
         r1_vcfs = get_files_ending_with(is_vcf_pattern, r1_paths)
         r2_vcfs = get_files_ending_with(is_vcf_pattern, r2_paths)
@@ -127,7 +129,8 @@ def main(
             logger.warning("No VCFs detected, skipping VCF comparison")
 
     if comparisons is None or "score" in comparisons:
-        logger.info("\n--- Comparing scored SNV VCFs ---")
+        logger.info("")
+        logger.info("--- Comparing scored SNV VCFs ---")
 
         (r1_scored_snv_vcf, r2_scored_snv_vcf) = get_pair_match(
             "scored SNVs",
@@ -154,7 +157,8 @@ def main(
         )
 
     if comparisons is None or "score_sv" in comparisons:
-        logger.info("\n--- Comparing scored SV VCFs ---")
+        logger.info("")
+        logger.info("--- Comparing scored SV VCFs ---")
 
         (r1_scored_sv_vcf, r2_scored_sv_vcf) = get_pair_match(
             "scored SVs",
@@ -181,7 +185,8 @@ def main(
         )
 
     if comparisons is None or "yaml" in comparisons:
-        logger.info("\n--- Comparing YAML ---")
+        logger.info("")
+        logger.info("--- Comparing YAML ---")
         (r1_scored_yaml, r2_scored_yaml) = get_pair_match(
             "Scout YAMLs",
             config["settings"]["yaml"].split(","),
@@ -261,12 +266,10 @@ def compare_variant_presence(
     for line in summary_lines:
         logger.info(line)
 
-    # FIXME: Maybe we also want to split this out into a more extensive tsv
     if out_path is not None:
-
-        with open(out_path) as out_fh:
+        with out_path.open("w") as out_fh:
             for line in summary_lines:
-                logger.info(out_fh)
+                print(line, file=out_fh)
 
 
 def get_variant_presence_summary(
@@ -303,24 +306,6 @@ def get_variant_presence_summary(
         for var in list(r2_only)[0:max_display]:
             output.append(str(variants_r2[var]))
 
-    # Write all to file
-    if max_display is not None:
-        output.append(
-            f"First {min(len(r1_only), max_display)} only found in {label_r1}"
-        )
-    else:
-        output.append(f"Only found in {label_r1}")
-    for var in list(r1_only):
-        output.append(str(variants_r1[var]))
-
-    if max_display is not None:
-        output.append(
-            f"First {min(len(r2_only), max_display)} only found in {label_r2}"
-        )
-    else:
-        output.append(f"Only found in {label_r2}")
-    for var in list(r2_only):
-        output.append(str(variants_r2[var]))
     return output
 
 
