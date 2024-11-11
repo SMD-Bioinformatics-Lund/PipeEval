@@ -290,6 +290,7 @@ def build_start_nextflow_analysis_cmd(
     if stub_run:
         start_nextflow_command.append("--custom_flags")
         start_nextflow_command.append("'-stub-run'")
+        start_nextflow_command.append("'--no_scratch'")
 
     if no_start:
         start_nextflow_command.append("--nostart")
