@@ -95,7 +95,7 @@ def main(
     r2_paths = get_files_in_dir(results2_dir, run_id2, RUN_ID_PLACEHOLDER, results2_dir)
 
     if comparisons is None or "file" in comparisons:
-        logger.info("--- Comparing existing files ---")
+        logger.info("\n--- Comparing existing files ---")
         out_path = outdir / "check_sample_files.txt" if outdir else None
 
         check_same_files(
@@ -108,7 +108,7 @@ def main(
         )
 
     if comparisons is not None and "vcf" in comparisons:
-        logger.info("--- Comparing VCF numbers ---")
+        logger.info("\n--- Comparing VCF numbers ---")
         is_vcf_pattern = ".vcf$|.vcf.gz$"
         r1_vcfs = get_files_ending_with(is_vcf_pattern, r1_paths)
         r2_vcfs = get_files_ending_with(is_vcf_pattern, r2_paths)
@@ -127,7 +127,7 @@ def main(
             logger.warning("No VCFs detected, skipping VCF comparison")
 
     if comparisons is None or "score" in comparisons:
-        logger.info("--- Comparing scored SNV VCFs ---")
+        logger.info("\n--- Comparing scored SNV VCFs ---")
 
         (r1_scored_snv_vcf, r2_scored_snv_vcf) = get_pair_match(
             "scored SNVs",
@@ -142,6 +142,8 @@ def main(
         )
         out_path_score_all = outdir / "scored_snv_score_all.txt" if outdir else None
         variant_comparison(
+            run_id1,
+            run_id2,
             r1_scored_snv_vcf,
             r2_scored_snv_vcf,
             score_threshold,
@@ -152,7 +154,7 @@ def main(
         )
 
     if comparisons is None or "score_sv" in comparisons:
-        logger.info("--- Comparing scored SV VCFs ---")
+        logger.info("\n--- Comparing scored SV VCFs ---")
 
         (r1_scored_sv_vcf, r2_scored_sv_vcf) = get_pair_match(
             "scored SVs",
@@ -167,6 +169,8 @@ def main(
         )
         out_path_score_all = outdir / "scored_sv_score.txt" if outdir else None
         variant_comparison(
+            run_id1,
+            run_id2,
             r1_scored_sv_vcf,
             r2_scored_sv_vcf,
             score_threshold,
@@ -177,7 +181,7 @@ def main(
         )
 
     if comparisons is None or "yaml" in comparisons:
-        logger.info("--- Comparing YAML ---")
+        logger.info("\n--- Comparing YAML ---")
         (r1_scored_yaml, r2_scored_yaml) = get_pair_match(
             "Scout YAMLs",
             config["settings"]["yaml"].split(","),
@@ -210,7 +214,7 @@ def check_same_files(
 
     if len(comparison.r1) > 0:
         log_and_write(f"Files present in {r1_label} but missing in {r2_label}:", out_fh)
-        for path in comparison.r1:
+        for path in sorted(comparison.r1):
             if any_is_parent(path, ignore_files):
                 ignored[str(path.parent)] += 1
                 continue
@@ -218,7 +222,7 @@ def check_same_files(
 
     if len(comparison.r2) > 0:
         log_and_write(f"Files present in {r2_label} but missing in {r1_label}", out_fh)
-        for path in comparison.r2:
+        for path in sorted(comparison.r2):
             if any_is_parent(path, ignore_files):
                 ignored[str(path.parent)] += 1
                 continue
@@ -276,6 +280,8 @@ def compare_variant_presence(
 
 
 def variant_comparison(
+    label1: str,
+    label2: str,
     r1_scored_vcf: PathObj,
     r2_scored_vcf: PathObj,
     score_threshold: int,
@@ -291,8 +297,8 @@ def variant_comparison(
         set(variants_r2.keys()),
     )
     compare_variant_presence(
-        str(r1_scored_vcf.real_path),
-        str(r2_scored_vcf.real_path),
+        label1,
+        label2,
         variants_r1,
         variants_r2,
         comparison_results,
@@ -400,6 +406,7 @@ def compare_variant_score(
         variants_r2,
         with_subscore_summary=True,
     )
+    nbr_out_cols = 6
     with open(str(out_path_all), "w") as out_fh:
         for pretty_row in full_comparison_table:
             # Skip subscores for log printing
@@ -408,7 +415,7 @@ def compare_variant_score(
         if len(diff_variants_above_thres) > max_count:
             logger.info(f"Only printing the {max_count} first")
         first_rows_and_cols = [
-            full_row[0:5] for full_row in full_comparison_table[0:max_count]
+            full_row[0:nbr_out_cols] for full_row in full_comparison_table[0:max_count]
         ]
         pretty_rows = prettify_rows(first_rows_and_cols)
         for pretty_row in pretty_rows:
