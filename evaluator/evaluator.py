@@ -99,8 +99,8 @@ def main(
         out_path = outdir / "check_sample_files.txt" if outdir else None
 
         check_same_files(
-            results1_dir,
-            results2_dir,
+            run_id1,
+            run_id2,
             r1_paths,
             r2_paths,
             config.get("settings", "ignore").split(","),
@@ -193,16 +193,13 @@ def main(
 
 
 def check_same_files(
-    r1_dir: Path,
-    r2_dir: Path,
+    r1_label: str,
+    r2_label: str,
     r1_paths: List[PathObj],
     r2_paths: List[PathObj],
     ignore_files: List[str],
     out_path: Optional[Path],
 ):
-
-    r1_label = str(r1_dir)
-    r2_label = str(r2_dir)
 
     files_in_results1 = set(path.relative_path for path in r1_paths)
     files_in_results2 = set(path.relative_path for path in r2_paths)
@@ -247,36 +244,84 @@ def compare_variant_presence(
     out_path: Optional[Path],
 ):
 
+    common = comparison_results.shared
     r1_only = comparison_results.r1
     r2_only = comparison_results.r2
-    common = comparison_results.shared
 
-    out_fh = open(out_path, "w") if out_path else None
+    summary_lines = get_variant_presence_summary(
+        label_r1,
+        label_r2,
+        common,
+        r1_only,
+        r2_only,
+        variants_r1,
+        variants_r2,
+        max_display,
+    )
+    for line in summary_lines:
+        logger.info(line)
 
-    log_and_write(f"In common: {len(common)}", out_fh)
-    log_and_write(f"Only in {label_r1}: {len(r1_only)}", out_fh)
-    log_and_write(f"Only in {label_r2}: {len(r2_only)}", out_fh)
+    # FIXME: Maybe we also want to split this out into a more extensive tsv
+    if out_path is not None:
 
-    # Only show max max_display in STDOUT
-    logger.info(f"First {min(len(r1_only), max_display)} only found in {label_r1}")
-    for var in list(r1_only)[0:max_display]:
-        logger.info(str(variants_r1[var]))
-    logger.info(f"First {min(len(r2_only), max_display)} only found in {label_r2}")
-    for var in list(r2_only)[0:max_display]:
-        logger.info(str(variants_r2[var]))
+        with open(out_path) as out_fh:
+            for line in summary_lines:
+                logger.info(out_fh)
+
+
+def get_variant_presence_summary(
+    label_r1: str,
+    label_r2: str,
+    common: Set[str],
+    r1_only: Set[str],
+    r2_only: Set[str],
+    variants_r1: Dict[str, ScoredVariant],
+    variants_r2: Dict[str, ScoredVariant],
+    max_display: Optional[int],
+) -> List[str]:
+    output = []
+    output.append(f"In common: {len(common)}")
+    output.append(f"Only in {label_r1}: {len(r1_only)}")
+    output.append(f"Only in {label_r2}: {len(r2_only)}")
+
+    if len(r1_only) > 0:
+        if max_display is not None:
+            output.append(
+                f"First {min(len(r1_only), max_display)} only found in {label_r1}"
+            )
+        else:
+            output.append(f"Only found in {label_r1}")
+        for var in list(r1_only)[0:max_display]:
+            output.append(str(variants_r1[var]))
+    if len(r2_only) > 0:
+        if max_display is not None:
+            output.append(
+                f"First {min(len(r2_only), max_display)} only found in {label_r2}"
+            )
+        else:
+            output.append(f"Only found in {label_r2}")
+        for var in list(r2_only)[0:max_display]:
+            output.append(str(variants_r2[var]))
 
     # Write all to file
-    print(f"Only found in {label_r1}", file=out_fh)
+    if max_display is not None:
+        output.append(
+            f"First {min(len(r1_only), max_display)} only found in {label_r1}"
+        )
+    else:
+        output.append(f"Only found in {label_r1}")
     for var in list(r1_only):
-        print(str(variants_r1[var]), file=out_fh)
-    print(
-        f"First {min(len(r2_only), max_display)} only found in {label_r2}", file=out_fh
-    )
-    for var in list(r2_only):
-        print(str(variants_r2[var]), file=out_fh)
+        output.append(str(variants_r1[var]))
 
-    if out_fh:
-        out_fh.close()
+    if max_display is not None:
+        output.append(
+            f"First {min(len(r2_only), max_display)} only found in {label_r2}"
+        )
+    else:
+        output.append(f"Only found in {label_r2}")
+    for var in list(r2_only):
+        output.append(str(variants_r2[var]))
+    return output
 
 
 def variant_comparison(

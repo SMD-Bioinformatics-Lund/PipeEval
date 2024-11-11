@@ -44,10 +44,10 @@ def get_table(
 ) -> List[List[str]]:
 
     first_shared_key = list(shared_variant_keys)[0]
-    header_fields = ["chr", "pos", "var", "r1", "r2"]
+    header_fields = ["chr", "pos", "var", "score_r1", "score_r2"]
 
     if with_subscore_summary:
-        header_fields.append("rsum")
+        header_fields.append("score_diff_summary")
 
     for sub_score in variants_r1[first_shared_key].sub_scores:
         header_fields.append(f"r1_{sub_score}")
