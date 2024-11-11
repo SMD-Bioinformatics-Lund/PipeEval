@@ -127,16 +127,19 @@ def check_valid_config_arguments(
     if start_data not in valid_start_data:
         raise ValueError(f"Valid start_data types are: {', '.join(valid_start_data)}")
 
+    # FIXME: Look over the logic here. Not nice with repeated config.get at the moment
     if base_dir is None:
         if not check_valid_config_path(config, "settings", "baseout"):
+            found = config.get("settings", "baseout")
             raise ValueError(
-                f"A valid output base folder must be specified either through the '--baseout' flag, or in the config['settings']['baseout']"
+                f"A valid output base folder must be specified either through the '--baseout' flag, or in the config['settings']['baseout']. Found: {found}"
             )
 
     if repo is None:
         if not check_valid_config_path(config, "settings", "repo"):
+            found = config.get("settings", "repo")
             raise ValueError(
-                f"A valid repo must be specified either through the '--repo' flag, or in the config['settings']['repo']"
+                f"A valid repo must be specified either through the '--repo' flag, or in the config['settings']['repo']. Found: {found}"
             )
 
 
