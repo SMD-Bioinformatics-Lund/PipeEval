@@ -28,6 +28,7 @@ from .util import (
     do_comparison,
     get_files_in_dir,
     get_pair_match,
+    parse_var_key_for_sort,
     parse_vcf,
     get_files_ending_with,
     verify_pair_exists,
@@ -309,7 +310,7 @@ def get_variant_presence_summary(
             )
         else:
             output.append(f"Only found in {label_r1}")
-        for key in sorted(list(r1_only))[0:max_display]:
+        for key in sorted(list(r1_only), key=parse_var_key_for_sort)[0:max_display]:
             output.append(str(variants_r1[key]))
     if len(r2_only) > 0:
         if max_display is not None:
@@ -318,7 +319,7 @@ def get_variant_presence_summary(
             )
         else:
             output.append(f"Only found in {label_r2}")
-        for key in sorted(list(r2_only))[0:max_display]:
+        for key in sorted(list(r2_only), key=parse_var_key_for_sort)[0:max_display]:
             output.append(str(variants_r2[key]))
 
     return output

@@ -209,3 +209,13 @@ def detect_run_id(logger: Logger, base_dir_name: str, verbose: bool) -> str:
         logger.info(f"Datestamp not detected, full folder name used as run ID")
         dir_name = str(base_dir_name)
         return dir_name
+
+
+def parse_var_key_for_sort(entry: str) -> Tuple[int, int]:
+    chrom, pos = entry.split("_")[0:2]
+    # If prefixed with chr, remove it
+    if chrom.startswith("chr"):
+        chrom = chrom.replace("chr", "")
+    chrom_map = {"X": 24, "Y": 25, "M": 26, "MT": 26}
+    chrom_numeric = chrom_map.get(chrom, int(chrom))
+    return chrom_numeric, int(pos)
