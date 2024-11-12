@@ -217,5 +217,11 @@ def parse_var_key_for_sort(entry: str) -> Tuple[int, int]:
     if chrom.startswith("chr"):
         chrom = chrom.replace("chr", "")
     chrom_map = {"X": 24, "Y": 25, "M": 26, "MT": 26}
-    chrom_numeric = chrom_map.get(chrom, int(chrom))
+    if chrom in chrom_map:
+        chrom_numeric = chrom_map[chrom]
+    else:
+        try:
+            chrom_numeric = int(chrom)
+        except ValueError:
+            raise ValueError(f"Unexpected chromosome format: {chrom}")
     return chrom_numeric, int(pos)
