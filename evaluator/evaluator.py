@@ -325,8 +325,8 @@ def get_variant_presence_summary(
 
 
 def variant_comparison(
-    label1: str,
-    label2: str,
+    run_id1: str,
+    run_id2: str,
     r1_scored_vcf: PathObj,
     r2_scored_vcf: PathObj,
     is_sv: bool,
@@ -343,8 +343,8 @@ def variant_comparison(
         set(variants_r2.keys()),
     )
     compare_variant_presence(
-        label1,
-        label2,
+        run_id1,
+        run_id2,
         variants_r1,
         variants_r2,
         comparison_results,
@@ -353,6 +353,8 @@ def variant_comparison(
     )
     shared_variants = comparison_results.shared
     compare_variant_score(
+        run_id1,
+        run_id2,
         shared_variants,
         variants_r1,
         variants_r2,
@@ -360,6 +362,7 @@ def variant_comparison(
         max_display,
         out_path_score_above_thres,
         out_path_score_all,
+        is_sv,
     )
 
 
@@ -408,6 +411,8 @@ def compare_vcfs(
 
 
 def compare_variant_score(
+    run_id1: str,
+    run_id2: str,
     shared_variants: Set[str],
     variants_r1: Dict[str, ScoredVariant],
     variants_r2: Dict[str, ScoredVariant],
@@ -415,6 +420,7 @@ def compare_variant_score(
     max_count: int,
     out_path_above_thres: Optional[Path],
     out_path_all: Optional[Path],
+    is_sv: bool,
 ):
 
     diff_scored_variants: List[DiffScoredVariant] = []
@@ -428,6 +434,8 @@ def compare_variant_score(
 
     if len(diff_scored_variants) > 0:
         print_diff_score_info(
+            run_id1,
+            run_id2,
             diff_scored_variants,
             shared_variants,
             variants_r1,
@@ -436,12 +444,15 @@ def compare_variant_score(
             out_path_above_thres,
             max_count,
             score_threshold,
+            is_sv,
         )
     else:
         logger.info("No differently scored variant found")
 
 
 def print_diff_score_info(
+    run_id1: str,
+    run_id2: str,
     diff_scored_variants: List[DiffScoredVariant],
     shared_variant_keys: Set[str],
     variants_r1: Dict[str, ScoredVariant],
@@ -450,6 +461,7 @@ def print_diff_score_info(
     out_path_above_thres: Optional[Path],
     max_count: int,
     score_threshold: int,
+    is_sv: bool,
 ):
 
     diff_scored_variants.sort(
@@ -469,13 +481,15 @@ def print_diff_score_info(
     )
 
     full_comparison_table = get_table(
+        run_id1,
+        run_id2,
         diff_scored_variants,
         shared_variant_keys,
         variants_r1,
         variants_r2,
-        with_subscore_summary=True,
+        is_sv,
     )
-    nbr_out_cols = 6
+    nbr_out_cols = 7 if is_sv else 6
     with open(str(out_path_all), "w") as out_fh:
         for pretty_row in full_comparison_table:
             # Skip subscores for log printing
@@ -491,11 +505,13 @@ def print_diff_score_info(
             logger.info(pretty_row)
 
     above_thres_comparison_table = get_table(
+        run_id1,
+        run_id2,
         diff_variants_above_thres,
         shared_variant_keys,
         variants_r1,
         variants_r2,
-        with_subscore_summary=True,
+        is_sv,
     )
     with open(str(out_path_above_thres), "w") as out_fh:
         for pretty_row in above_thres_comparison_table:

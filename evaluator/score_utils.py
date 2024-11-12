@@ -40,20 +40,20 @@ def get_comparison_row(
 
 
 def get_table(
+    run_id1: str,
+    run_id2: str,
     variants: List[DiffScoredVariant],
     shared_variant_keys: Set[str],
     variants_r1: Dict[str, ScoredVariant],
     variants_r2: Dict[str, ScoredVariant],
-    with_subscore_summary: bool,
+    is_sv: bool,
 ) -> List[List[str]]:
 
     first_shared_key = list(shared_variant_keys)[0]
-    first_shared_variant = variants_r1[first_shared_key]
-    is_sv = first_shared_variant.is_sv
-    header_fields = ["chr", "pos", "var", "score_r1", "score_r2"]
-
-    if with_subscore_summary:
-        header_fields.append("score_diff_summary")
+    header_fields = ["chr", "pos", "var"]
+    if is_sv:
+        header_fields.append("sv_len")
+    header_fields.extend([f"score_{run_id1}", f"score_{run_id2}", "score_diff_summary"])
 
     for sub_score in variants_r1[first_shared_key].sub_scores:
         header_fields.append(f"r1_{sub_score}")
