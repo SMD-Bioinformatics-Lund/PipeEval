@@ -490,20 +490,20 @@ def print_diff_score_info(
         variants_r2,
         is_sv,
     )
-    nbr_out_cols = 7 if is_sv else 6
-    with open(str(out_path_all), "w") as out_fh:
-        for pretty_row in full_comparison_table:
-            # Skip subscores for log printing
-            print("\t".join(pretty_row), file=out_fh)
+    if out_path_all is not None:
+        with open(str(out_path_all), "w") as out_fh:
+            for row in full_comparison_table:
+                print("\t".join(row), file=out_fh)
 
-        if len(diff_variants_above_thres) > max_count:
-            logger.info(f"Only printing the {max_count} first")
-        first_rows_and_cols = [
-            full_row[0:nbr_out_cols] for full_row in full_comparison_table[0:max_count]
-        ]
-        pretty_rows = prettify_rows(first_rows_and_cols)
-        for pretty_row in pretty_rows:
-            logger.info(pretty_row)
+    if len(diff_variants_above_thres) > max_count:
+        logger.info(f"Only printing the {max_count} first")
+    nbr_out_cols = 7 if is_sv else 6
+    first_rows_and_cols = [
+        full_row[0:nbr_out_cols] for full_row in full_comparison_table[0:max_count]
+    ]
+    pretty_rows = prettify_rows(first_rows_and_cols)
+    for row in pretty_rows:
+        logger.info(row)
 
     above_thres_comparison_table = get_table(
         run_id1,
@@ -514,9 +514,10 @@ def print_diff_score_info(
         variants_r2,
         is_sv,
     )
-    with open(str(out_path_above_thres), "w") as out_fh:
-        for pretty_row in above_thres_comparison_table:
-            print("\t".join(pretty_row), file=out_fh)
+    if out_path_all is not None:
+        with open(str(out_path_above_thres), "w") as out_fh:
+            for row in above_thres_comparison_table:
+                print("\t".join(row), file=out_fh)
 
 
 def compare_yaml(yaml_r1: PathObj, yaml_r2: PathObj, out_path: Optional[Path]):
