@@ -19,7 +19,7 @@ def get_comparison_row(
     fields = [
         var1.chr,
         str(var1.pos),
-        f"{var1.ref}/{var1.alt}",
+        f"{var1.get_trunc_ref()}/{var1.get_trunc_alt()}",
     ]
 
     if show_sv_len:
