@@ -116,8 +116,8 @@ def main(
         r1_vcfs = get_files_ending_with(is_vcf_pattern, r1_paths)
         r2_vcfs = get_files_ending_with(is_vcf_pattern, r2_paths)
         if verbose:
-            logger.debug(f"Looking for paths: ${r1_paths} found: ${r1_vcfs}")
-            logger.debug(f"Looking for paths: ${r2_paths} found: ${r2_vcfs}")
+            logger.info(f"Looking for paths: ${r1_paths} found: ${r1_vcfs}")
+            logger.info(f"Looking for paths: ${r2_paths} found: ${r2_vcfs}")
         if len(r1_vcfs) > 0 or len(r2_vcfs) > 0:
             out_path = outdir / "all_vcf_compare.txt" if outdir else None
             compare_vcfs(
@@ -142,7 +142,7 @@ def main(
             config["settings"]["scored_snv"].split(","),
             r1_paths,
             r2_paths,
-            verbose
+            verbose,
         )
 
         out_path_presence = outdir / "scored_snv_presence.txt" if outdir else None
