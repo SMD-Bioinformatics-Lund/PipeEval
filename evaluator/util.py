@@ -89,7 +89,11 @@ def parse_vcf(vcf: PathObj, is_sv: bool) -> Dict[str, ScoredVariant]:
             alt = fields[4]
             info = fields[7]
 
-            info_fields = [field.split("=") for field in info.split(";")]
+            info_fields = [
+                field.split("=")
+                for field in info.split(";")
+                if len(field.split("=")) == 2
+            ]
             info_dict = dict(info_fields)
 
             rank_score = (
