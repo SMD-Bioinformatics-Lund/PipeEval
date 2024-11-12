@@ -89,10 +89,10 @@ def parse_vcf(vcf: PathObj, is_sv: bool) -> Dict[str, ScoredVariant]:
             alt = fields[4]
             info = fields[7]
 
+            # Some INFO fields are not in the expected format key=value
             info_fields = [
-                field.split("=")
+                field.split("=") if field.find("=") != -1 else [field, "<MISSING>"]
                 for field in info.split(";")
-                if len(field.split("=")) == 2
             ]
             info_dict = dict(info_fields)
 
