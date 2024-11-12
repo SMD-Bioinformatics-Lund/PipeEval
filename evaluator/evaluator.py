@@ -514,7 +514,7 @@ def print_diff_score_info(
         variants_r2,
         is_sv,
     )
-    if out_path_all is not None:
+    if out_path_above_thres is not None:
         with open(str(out_path_above_thres), "w") as out_fh:
             for row in above_thres_comparison_table:
                 print("\t".join(row), file=out_fh)
