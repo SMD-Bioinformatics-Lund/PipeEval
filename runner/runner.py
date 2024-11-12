@@ -226,7 +226,14 @@ def get_trio_csv(
     cases: List[Case] = []
     for case_id in case_ids:
         case_dict = config[case_id]
+
         case = parse_case(dict(case_dict), start_data, is_trio=True)
+
+        # # FIXME: Finish this up
+        # if stub_run:
+        #     stub_case = config["settings"]
+        #     for key in stub_case:
+        #         case[key] = stub_case[key]
 
         if not Path(case.read1).exists() or not Path(case.read2).exists():
             raise FileNotFoundError(
