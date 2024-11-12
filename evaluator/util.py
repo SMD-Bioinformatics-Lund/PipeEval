@@ -177,8 +177,8 @@ def get_pair_match(
     r1_matching = get_single_file_ending_with(valid_patterns, r1_paths)
     r2_matching = get_single_file_ending_with(valid_patterns, r2_paths)
     if verbose:
-        logger.info(f"Looking for pattern {valid_patterns}, found ${r1_matching} in r1")
-        logger.info(f"Looking for pattern {valid_patterns}, found ${r2_matching} in r2")
+        logger.info(f"Looking for pattern {valid_patterns}, found {r1_matching} in r1")
+        logger.info(f"Looking for pattern {valid_patterns}, found {r2_matching} in r2")
 
     verify_pair_exists(error_label, r1_matching, r2_matching)
     if r1_matching is None or r2_matching is None:
