@@ -309,8 +309,8 @@ def get_variant_presence_summary(
             )
         else:
             output.append(f"Only found in {label_r1}")
-        for var in list(r1_only)[0:max_display]:
-            output.append(str(variants_r1[var]))
+        for key in sorted(list(r1_only))[0:max_display]:
+            output.append(str(variants_r1[key]))
     if len(r2_only) > 0:
         if max_display is not None:
             output.append(
@@ -318,8 +318,8 @@ def get_variant_presence_summary(
             )
         else:
             output.append(f"Only found in {label_r2}")
-        for var in list(r2_only)[0:max_display]:
-            output.append(str(variants_r2[var]))
+        for key in sorted(list(r2_only))[0:max_display]:
+            output.append(str(variants_r2[key]))
 
     return output
 

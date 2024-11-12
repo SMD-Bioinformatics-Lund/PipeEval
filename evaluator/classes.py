@@ -2,6 +2,8 @@ import gzip
 from pathlib import Path
 from typing import Dict, Optional, TextIO, List
 
+TRUNC_LENGTH = 50
+
 
 class ScoredVariant:
     """Represents position, call and scores of a variant"""
@@ -27,7 +29,19 @@ class ScoredVariant:
         self.sv_length = sv_length
 
     def __str__(self) -> str:
-        return f"{self.chr}:{self.pos} {self.ref}/{self.alt} (Score: {self.rank_score})"
+        trunc_ref = (
+            self.ref[0:TRUNC_LENGTH] + "..."
+            if len(self.ref) > TRUNC_LENGTH
+            else self.ref
+        )
+        trunc_alt = (
+            self.alt[0:TRUNC_LENGTH] + "..."
+            if len(self.alt) > TRUNC_LENGTH
+            else self.alt
+        )
+        return (
+            f"{self.chr}:{self.pos} {trunc_ref}/{trunc_alt} (Score: {self.rank_score})"
+        )
 
     def get_simple_key(self) -> str:
         if not self.is_sv:
