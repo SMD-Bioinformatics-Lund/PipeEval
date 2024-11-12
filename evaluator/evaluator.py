@@ -24,6 +24,7 @@ from .util import (
     PathObj,
     any_is_parent,
     count_variants,
+    detect_run_id,
     do_comparison,
     get_files_in_dir,
     get_pair_match,
@@ -85,11 +86,11 @@ def main(
         outdir.mkdir(parents=True, exist_ok=True)
 
     if run_id1 is None:
-        run_id1 = str(results1_dir.name)
+        run_id1 = detect_run_id(logger, results1_dir.name, verbose)
         logger.info(f"--run_id1 not set, assigned: {run_id1}")
 
     if run_id2 is None:
-        run_id2 = str(results2_dir.name)
+        run_id2 = detect_run_id(logger, results2_dir.name, verbose)
         logger.info(f"--run_id2 not set, assigned: {run_id2}")
 
     r1_paths = get_files_in_dir(results1_dir, run_id1, RUN_ID_PLACEHOLDER, results1_dir)
@@ -169,10 +170,12 @@ def main(
         logger.info("--- Comparing scored SV VCFs ---")
 
         (r1_scored_sv_vcf, r2_scored_sv_vcf) = get_pair_match(
+            logger,
             "scored SVs",
             config["settings"]["scored_sv"].split(","),
             r1_paths,
             r2_paths,
+            verbose,
         )
 
         out_path_presence = outdir / "scored_sv_presence.txt" if outdir else None
@@ -198,10 +201,12 @@ def main(
         logger.info("")
         logger.info("--- Comparing YAML ---")
         (r1_scored_yaml, r2_scored_yaml) = get_pair_match(
+            logger,
             "Scout YAMLs",
             config["settings"]["yaml"].split(","),
             r1_paths,
             r2_paths,
+            verbose,
         )
         out_path = outdir / "yaml_diff.txt" if outdir else None
         compare_yaml(r1_scored_yaml, r2_scored_yaml, out_path)
