@@ -93,9 +93,9 @@ def main(
     )
 
     if not config.getboolean(run_type, "trio"):
-        csv = get_single_csv(config, run_label, run_type, start_data, queue)
+        csv = get_single_csv(config, run_label, run_type, start_data, queue, stub_run)
     else:
-        csv = get_trio_csv(config, run_label, run_type, start_data, queue)
+        csv = get_trio_csv(config, run_label, run_type, start_data, queue, stub_run)
     out_csv = results_dir / "run.csv"
     csv.write_to_file(str(out_csv))
 
@@ -196,10 +196,18 @@ def get_single_csv(
     run_type: str,
     start_data: str,
     queue: Optional[str],
+    stub_run: bool,
 ):
     assay = config[run_type]["assay"]
     case_id = config[run_type]["case"]
     case_dict = config[case_id]
+
+    # Replace real data with dummy files in stub run to avoid scratching
+    if stub_run:
+        stub_case = config["settings"]
+        for key in stub_case:
+            case_dict[key] = stub_case[key]
+
     case = parse_case(dict(case_dict), start_data, is_trio=False)
 
     if not Path(case.read1).exists() or not Path(case.read2).exists():
@@ -215,6 +223,7 @@ def get_trio_csv(
     run_type: str,
     start_data: str,
     queue: Optional[str],
+    stub_run: bool,
 ):
 
     assay = config[run_type]["assay"]
@@ -227,13 +236,13 @@ def get_trio_csv(
     for case_id in case_ids:
         case_dict = config[case_id]
 
-        case = parse_case(dict(case_dict), start_data, is_trio=True)
+        # Replace real data with dummy files in stub run to avoid scratching
+        if stub_run:
+            stub_case = config["settings"]
+            for key in stub_case:
+                case_dict[key] = stub_case[key]
 
-        # # FIXME: Finish this up
-        # if stub_run:
-        #     stub_case = config["settings"]
-        #     for key in stub_case:
-        #         case[key] = stub_case[key]
+        case = parse_case(dict(case_dict), start_data, is_trio=True)
 
         if not Path(case.read1).exists() or not Path(case.read2).exists():
             raise FileNotFoundError(
