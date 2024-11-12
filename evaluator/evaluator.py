@@ -67,6 +67,7 @@ def main(
     score_threshold: int,
     max_display: int,
     outdir: Optional[Path],
+    verbose: bool,
 ):
 
     curr_dir = os.path.dirname(os.path.abspath(__file__))
@@ -114,6 +115,9 @@ def main(
         is_vcf_pattern = ".vcf$|.vcf.gz$"
         r1_vcfs = get_files_ending_with(is_vcf_pattern, r1_paths)
         r2_vcfs = get_files_ending_with(is_vcf_pattern, r2_paths)
+        if verbose:
+            logger.debug(f"Looking for paths: ${r1_paths} found: ${r1_vcfs}")
+            logger.debug(f"Looking for paths: ${r2_paths} found: ${r2_vcfs}")
         if len(r1_vcfs) > 0 or len(r2_vcfs) > 0:
             out_path = outdir / "all_vcf_compare.txt" if outdir else None
             compare_vcfs(
@@ -133,10 +137,12 @@ def main(
         logger.info("--- Comparing scored SNV VCFs ---")
 
         (r1_scored_snv_vcf, r2_scored_snv_vcf) = get_pair_match(
+            logger,
             "scored SNVs",
             config["settings"]["scored_snv"].split(","),
             r1_paths,
             r2_paths,
+            verbose
         )
 
         out_path_presence = outdir / "scored_snv_presence.txt" if outdir else None
@@ -534,6 +540,11 @@ def add_arguments(parser: argparse.ArgumentParser):
         default=15,
         help="Max number of top variants to print to STDOUT",
     )
+    parser.add_argument(
+        "--verbose",
+        action="store_true",
+        help="Print additional information",
+    )
     parser.add_argument("--outdir", help="Optional output folder to store result files")
 
 
@@ -548,6 +559,7 @@ def main_wrapper(args: argparse.Namespace):
         args.score_threshold,
         args.max_display,
         Path(args.outdir) if args.outdir is not None else None,
+        args.verbose,
     )
 
 

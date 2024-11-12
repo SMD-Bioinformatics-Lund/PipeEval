@@ -1,3 +1,4 @@
+from logging import Logger
 from pathlib import Path
 import re
 from typing import Dict, Generic, List, Optional, Set, Tuple, TypeVar, Union
@@ -102,9 +103,7 @@ def parse_vcf(vcf: PathObj, is_sv: bool) -> Dict[str, ScoredVariant]:
                 else None
             )
             sv_length = (
-                int(info_dict["SVLEN"])
-                if info_dict.get("SVLEN") is not None
-                else None
+                int(info_dict["SVLEN"]) if info_dict.get("SVLEN") is not None else None
             )
 
             sub_scores_dict: Dict[str, int] = {}
@@ -115,7 +114,9 @@ def parse_vcf(vcf: PathObj, is_sv: bool) -> Dict[str, ScoredVariant]:
                     rank_sub_scores
                 ), f"Length of sub score names and values should match, found {rank_sub_score_names} and {rank_sub_scores} in line: {line}"
                 sub_scores_dict = dict(zip(rank_sub_score_names, rank_sub_scores))
-            variant = ScoredVariant(chr, pos, ref, alt, rank_score, sub_scores_dict, is_sv, sv_length)
+            variant = ScoredVariant(
+                chr, pos, ref, alt, rank_score, sub_scores_dict, is_sv, sv_length
+            )
             key = variant.get_simple_key()
             variants[key] = variant
     return variants
@@ -166,13 +167,19 @@ def verify_pair_exists(
 
 
 def get_pair_match(
+    logger: Logger,
     error_label: str,
     valid_patterns: List[str],
     r1_paths: List[PathObj],
     r2_paths: List[PathObj],
+    verbose: bool,
 ) -> Tuple[PathObj, PathObj]:
     r1_matching = get_single_file_ending_with(valid_patterns, r1_paths)
     r2_matching = get_single_file_ending_with(valid_patterns, r2_paths)
+    if verbose:
+        logger.debug(f"Looking for pattern {valid_patterns}, found ${r1_paths} in r1")
+        logger.debug(f"Looking for pattern {valid_patterns}, found ${r2_paths} in r2")
+
     verify_pair_exists(error_label, r1_matching, r2_matching)
     if r1_matching is None or r2_matching is None:
         raise ValueError(
