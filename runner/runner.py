@@ -124,9 +124,16 @@ def main(
     )
 
     start_run(start_nextflow_command, dry_run, skip_confirmation)
-    write_resume_script(
-        results_dir, config["settings"]["start_nextflow_analysis"], out_csv, stub_run
-    )
+
+    if dry_run:
+        logging.info(f"(dry) Writing resume.sh")
+    else:
+        write_resume_script(
+            results_dir,
+            config["settings"]["start_nextflow_analysis"],
+            out_csv,
+            stub_run,
+        )
 
     setup_results_links(config, results_dir, run_label, run_type, dry_run)
 
