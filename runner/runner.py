@@ -392,7 +392,7 @@ def main_wrapper(args: argparse.Namespace):
         )
         main(
             args.config,
-            f"{args.label}_baseline",
+            "baseline" if args.label is None else f"{args.label}_baseline",
             args.baseline,
             Path(args.baseout) if args.baseout is not None else None,
             Path(args.repo) if args.repo is not None else None,
