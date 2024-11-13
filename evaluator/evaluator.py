@@ -230,20 +230,28 @@ def check_same_files(
 
     out_fh = open(out_path, "w") if out_path else None
 
-    if len(comparison.r1) > 0:
+    r1_non_ignored = set()
+    for path in sorted(comparison.r1):
+        if any_is_parent(path, ignore_files):
+            ignored[str(path.parent)] += 1
+        else:
+            r1_non_ignored.add(path)
+
+    r2_non_ignored = set()
+    for path in sorted(comparison.r1):
+        if any_is_parent(path, ignore_files):
+            ignored[str(path.parent)] += 1
+        else:
+            r2_non_ignored.add(path)
+
+    if len(r1_non_ignored) > 0:
         log_and_write(f"Files present in {r1_label} but missing in {r2_label}:", out_fh)
         for path in sorted(comparison.r1):
-            if any_is_parent(path, ignore_files):
-                ignored[str(path.parent)] += 1
-                continue
             log_and_write(f"  {path}", out_fh)
 
-    if len(comparison.r2) > 0:
-        log_and_write(f"Files present in {r2_label} but missing in {r1_label}", out_fh)
+    if len(r2_non_ignored) > 0:
+        log_and_write(f"Files present in {r2_label} but missing in {r1_label}:", out_fh)
         for path in sorted(comparison.r2):
-            if any_is_parent(path, ignore_files):
-                ignored[str(path.parent)] += 1
-                continue
             log_and_write(f"  {path}", out_fh)
 
     if len(ignored) > 0:
