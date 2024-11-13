@@ -89,19 +89,31 @@ def main(
             LOG.info("Exiting ...")
             sys.exit(1)
 
-    results_dir.mkdir(exist_ok=True, parents=True)
+    if not dry_run:
+        results_dir.mkdir(exist_ok=True, parents=True)
 
     run_log_path = results_dir / "run.log"
-    write_run_log(
-        run_log_path, run_type, label or "no label", checkout, config, commit_hash
-    )
+    if dry_run:
+        logging.info(f"(dry) Writing log to {run_log_path}")
+    else:
+        write_run_log(
+            run_log_path,
+            run_type,
+            label or "no label",
+            checkout,
+            config,
+            commit_hash,
+        )
 
     if not config.getboolean(run_type, "trio"):
         csv = get_single_csv(config, run_label, run_type, start_data, queue, stub_run)
     else:
         csv = get_trio_csv(config, run_label, run_type, start_data, queue, stub_run)
     out_csv = results_dir / "run.csv"
-    csv.write_to_file(str(out_csv))
+    if dry_run:
+        logging.info(f"(dry) Writing CSV to {out_csv}")
+    else:
+        csv.write_to_file(str(out_csv))
 
     start_nextflow_command = build_start_nextflow_analysis_cmd(
         config["settings"]["start_nextflow_analysis"],
@@ -116,7 +128,7 @@ def main(
         results_dir, config["settings"]["start_nextflow_analysis"], out_csv, stub_run
     )
 
-    setup_results_links(config, results_dir, run_label, run_type)
+    setup_results_links(config, results_dir, run_label, run_type, dry_run)
 
 
 def check_valid_config_arguments(
@@ -335,7 +347,7 @@ def start_run(
         else:
             subprocess.run(start_nextflow_command, check=True)
     else:
-        LOG.info(joined_command)
+        LOG.info("(dry) " + joined_command)
 
 
 def write_resume_script(results_dir: Path, run_command: str, csv: Path, stub_run: bool):
@@ -352,7 +364,7 @@ def write_resume_script(results_dir: Path, run_command: str, csv: Path, stub_run
 
 
 def setup_results_links(
-    config: ConfigParser, results_dir: Path, run_label: str, run_type: str
+    config: ConfigParser, results_dir: Path, run_label: str, run_type: str, dry: bool
 ):
 
     assay = config[run_type]["assay"]
@@ -374,19 +386,27 @@ def setup_results_links(
 
     if log_link.exists():
         LOG.warning(f"{log_link} already exists, removing previous link")
-        log_link.unlink()
+        if not dry:
+            log_link.unlink()
 
     if trace_link.exists():
         LOG.warning(f"{trace_link} already exists, removing previous link")
-        trace_link.unlink()
+        if not dry:
+            trace_link.unlink()
 
     if work_link.exists():
         LOG.warning(f"{work_link} already exists, removing previous link")
-        work_link.unlink()
+        if not dry:
+            work_link.unlink()
 
-    log_link.symlink_to(log_link_target)
-    trace_link.symlink_to(trace_link_target)
-    work_link.symlink_to(work_link_target)
+    if not dry:
+        log_link.symlink_to(log_link_target)
+        trace_link.symlink_to(trace_link_target)
+        work_link.symlink_to(work_link_target)
+    else:
+        LOG.info("(dry) log_link.symlink_to(log_link_target)")
+        LOG.info("(dry) trace_link.symlink_to(trace_link_target)")
+        LOG.info("(dry) work_link.symlink_to(work_link_target)")
 
 
 def main_wrapper(args: argparse.Namespace):
