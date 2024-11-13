@@ -520,10 +520,21 @@ def print_diff_score_info(
                 print("\t".join(row), file=out_fh)
 
 
-def compare_yaml(yaml_r1: PathObj, yaml_r2: PathObj, out_path: Optional[Path]):
+def compare_yaml(
+    run_id1: str,
+    run_id2: str,
+    yaml_r1: PathObj,
+    yaml_r2: PathObj,
+    out_path: Optional[Path],
+):
+
     with yaml_r1.get_filehandle() as r1_fh, yaml_r2.get_filehandle() as r2_fh:
-        r1_lines = r1_fh.readlines()
-        r2_lines = r2_fh.readlines()
+        r1_lines = [
+            line.replace(run_id1, RUN_ID_PLACEHOLDER) for line in r1_fh.readlines()
+        ]
+        r2_lines = [
+            line.replace(run_id2, RUN_ID_PLACEHOLDER) for line in r2_fh.readlines()
+        ]
 
     out_fh = open(out_path, "w") if out_path else None
     diff = list(difflib.unified_diff(r1_lines, r2_lines))
