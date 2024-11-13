@@ -59,6 +59,10 @@ def main(
     base_dir = (
         base_dir if base_dir is not None else Path(config.get("settings", "baseout"))
     )
+    if repo is not None:
+        logging.warning(
+            "Note that the path specified in --repo might not be the same as specified in the assay as defined in the config. Most likely this will yield unexpected results."
+        )
     repo = repo if repo is not None else Path(config.get("settings", "repo"))
     datestamp = datestamp or config.getboolean("settings", "datestamp")
 
