@@ -394,6 +394,9 @@ def main_wrapper(args: argparse.Namespace):
         logging.info(
             "Performing additional baseline run as specified by --baseline flag"
         )
+        logging.warning(
+            "--baseline flag might not work as intended at the moment, as it checks out a separate version of the repo where both baseline and checkout are executed."
+        )
         main(
             args.config,
             "baseline" if args.label is None else f"{args.label}_baseline",
