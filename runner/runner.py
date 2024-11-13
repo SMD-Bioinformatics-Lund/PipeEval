@@ -147,7 +147,7 @@ def main(
         dry_run,
     )
 
-    setup_results_links(config, results_dir, run_label, run_type, dry_run)
+    setup_results_links(config, results_dir, run_label, dry_run)
 
 
 def check_valid_config_arguments(
@@ -407,10 +407,11 @@ def write_resume_script(
 
 
 def setup_results_links(
-    config: ConfigParser, results_dir: Path, run_label: str, run_type: str, dry: bool
+    config: ConfigParser, results_dir: Path, run_label: str, dry: bool
 ):
 
-    assay = config[run_type]["assay"]
+    # assay = config[run_type]["assay"]
+    assay = "placeholder"
 
     log_base_dir = config["settings"]["log_base_dir"]
     trace_base_dir = config["settings"]["trace_base_dir"]
