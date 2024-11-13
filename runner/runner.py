@@ -37,6 +37,9 @@ logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 LOG = logging.getLogger(__name__)
 
 
+ASSAY_PLACEHOLDER = "pipeeval"
+
+
 def main(
     config: ConfigParser,
     label: Optional[str],
@@ -245,7 +248,7 @@ def get_single_csv(
     if not Path(case.read1).exists() or not Path(case.read2).exists():
         raise FileNotFoundError(f"One or both files missing: {case.read1} {case.read2}")
 
-    run_csv = CsvEntry(run_label, [case], queue)
+    run_csv = CsvEntry(run_label, [case], queue, ASSAY_PLACEHOLDER)
     return run_csv
 
 
@@ -281,7 +284,7 @@ def get_trio_csv(
 
         cases.append(case)
 
-    run_csv = CsvEntry(run_label, cases, queue)
+    run_csv = CsvEntry(run_label, cases, queue, ASSAY_PLACEHOLDER)
     return run_csv
 
 
@@ -408,8 +411,6 @@ def setup_results_links(
     config: ConfigParser, results_dir: Path, run_label: str, dry: bool
 ):
 
-    assay = "PipeEval"
-
     log_base_dir = config["settings"]["log_base_dir"]
     trace_base_dir = config["settings"]["trace_base_dir"]
     work_base_dir = config["settings"]["work_base_dir"]
@@ -421,9 +422,13 @@ def setup_results_links(
     trace_link = results_dir / "trace.txt"
     work_link = results_dir / "work"
 
-    log_link_target = Path(f"{log_base_dir}/{run_label}.{assay}.{date_stamp}.log")
-    trace_link_target = Path(f"{trace_base_dir}/{run_label}.{assay}.trace.txt")
-    work_link_target = Path(f"{work_base_dir}/{run_label}.{assay}")
+    log_link_target = Path(
+        f"{log_base_dir}/{run_label}.{ASSAY_PLACEHOLDER}.{date_stamp}.log"
+    )
+    trace_link_target = Path(
+        f"{trace_base_dir}/{run_label}.{ASSAY_PLACEHOLDER}.trace.txt"
+    )
+    work_link_target = Path(f"{work_base_dir}/{run_label}.{ASSAY_PLACEHOLDER}")
 
     if log_link.exists():
         LOG.warning(f"{log_link} already exists, removing previous link")

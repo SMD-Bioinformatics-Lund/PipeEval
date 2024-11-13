@@ -63,10 +63,16 @@ class CsvEntry:
         "read2",
     ]
 
-    def __init__(self, group: str, cases: List[Case], priority: Optional[str]):
+    def __init__(
+        self,
+        group: str,
+        cases: List[Case],
+        priority: Optional[str],
+        assay_placeholder: str,
+    ):
         self.cases = cases
 
-        self.assay = "PipeEval"
+        self.assay = assay_placeholder
         self.group = group
         self.clarity_pool_id = "NA"
         self.diagnosis = "NA"
