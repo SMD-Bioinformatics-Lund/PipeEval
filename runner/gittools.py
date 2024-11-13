@@ -17,6 +17,31 @@ def checkout_repo(repo: Path, checkout_string: str) -> Tuple[int, str]:
     return (results.returncode, results.stderr)
 
 
+def check_if_on_branchhead(repo: Path) -> bool:
+    results = subprocess.run(
+        ["git", "rev-parse", "--abbrev-ref", "HEAD"],
+        cwd=str(repo),
+        # text=True is supported from Python 3.7
+        universal_newlines=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        check=True,
+    )
+    return results.stdout.strip() != "HEAD"
+
+
+def pull_branch(repo: Path, branch: str) -> None:
+    subprocess.run(
+        ["git", "pull", "origin", branch],
+        cwd=str(repo),
+        # text=True is supported from Python 3.7
+        universal_newlines=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        check=True,
+    )
+
+
 def get_git_commit_hash_and_log(repo: Path) -> Tuple[str, str]:
     result = subprocess.run(
         ["git", "log", "--oneline"],

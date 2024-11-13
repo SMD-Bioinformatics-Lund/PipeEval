@@ -23,10 +23,12 @@ from datetime import datetime
 from typing import Any, List, Dict, Optional
 
 from runner.gittools import (
+    check_if_on_branchhead,
     check_valid_checkout,
     check_valid_repo,
     checkout_repo,
     get_git_commit_hash_and_log,
+    pull_branch,
 )
 from util.shared_utils import check_valid_config_path, load_config
 
@@ -67,6 +69,15 @@ def main(
     check_valid_checkout(repo, checkout)
     LOG.info(f"Checking out: {checkout} in {str(repo)}")
     checkout_repo(repo, checkout)
+    on_branch_head = check_if_on_branchhead(repo)
+    if on_branch_head:
+        branch = checkout
+        confirmation = input(
+            f"You have checked out the branch {branch} in {repo}. Do you want to pull? (y/n) "
+        )
+        if confirmation == "y":
+            LOG.info("Pulling from origin")
+            pull_branch(repo, branch)
     (commit_hash, last_log) = get_git_commit_hash_and_log(repo)
     LOG.info(last_log)
 
