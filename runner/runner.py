@@ -38,7 +38,7 @@ LOG = logging.getLogger(__name__)
 
 
 def main(
-    config_path: Optional[str],
+    config: ConfigParser,
     label: Optional[str],
     checkout: str,
     base_dir: Optional[Path],
@@ -52,8 +52,6 @@ def main(
     no_start: bool,
     datestamp: bool,
 ):
-    curr_dir = os.path.dirname(os.path.abspath(__file__))
-    config = load_config(curr_dir, config_path)
 
     check_valid_config_arguments(config, run_type, start_data, base_dir, repo)
     base_dir = (
@@ -453,6 +451,10 @@ def setup_results_links(
 
 
 def main_wrapper(args: argparse.Namespace):
+
+    curr_dir = os.path.dirname(os.path.abspath(__file__))
+    config = load_config(curr_dir, args.config)
+
     if args.baseline is not None:
         logging.info(
             "Performing additional baseline run as specified by --baseline flag"
@@ -460,12 +462,18 @@ def main_wrapper(args: argparse.Namespace):
         logging.warning(
             "--baseline flag might not work as intended at the moment, as it checks out a separate version of the repo where both baseline and checkout are executed."
         )
+
+        if args.baseline_repo is not None:
+            baseline_repo = str(args.baseline_repo)
+        else:
+            baseline_repo = config["settings"]["baseline_repo"]
+
         main(
-            args.config,
+            config,
             "baseline" if args.label is None else f"{args.label}_baseline",
             args.baseline,
             Path(args.baseout) if args.baseout is not None else None,
-            Path(args.repo) if args.repo is not None else None,
+            Path(baseline_repo),
             args.start_data,
             args.dry,
             args.stub,
@@ -477,7 +485,7 @@ def main_wrapper(args: argparse.Namespace):
         )
         logging.info("Now proceeding with checking out the --checkout")
     main(
-        args.config,
+        config,
         args.label,
         args.checkout,
         Path(args.baseout) if args.baseout is not None else None,
@@ -507,6 +515,10 @@ def add_arguments(parser: argparse.ArgumentParser):
     parser.add_argument(
         "--repo",
         help="Path to the Git repository of the pipeline. Can also be specified in the config.",
+    )
+    parser.add_argument(
+        "--baseline_repo",
+        help="Optional second repo if running with --baseline option. Can also be specified in the config.",
     )
     parser.add_argument(
         "--start_data",
