@@ -378,12 +378,9 @@ def variant_comparisons(
         out_path_presence,
     )
     shared_variants = comparison_results.shared
+    check_max_annots = 1000
     compare_variant_annotation(
-        run_id1,
-        run_id2,
-        shared_variants,
-        variants_r1,
-        variants_r2,
+        run_id1, run_id2, shared_variants, variants_r1, variants_r2, check_max_annots
     )
     compare_variant_score(
         run_id1,
@@ -405,9 +402,19 @@ def compare_variant_annotation(
     shared_variant_keys: Set[str],
     variants_r1: Dict[str, ScoredVariant],
     variants_r2: Dict[str, ScoredVariant],
+    max_considered: int,
 ):
+    # First sum up the differing
+    # I.e. X have N with A annotation key, Y have N with B annotation key
+
+    # I suspect this will be quite time consuming. Maybe we should just do this for a sample?
     r1_only = defaultdict(int)
     r2_only = defaultdict(int)
+
+    diffs_per_annot_key = defaultdict(list)
+
+    nbr_checked = 0
+
     for key in shared_variant_keys:
         var_r1 = variants_r1[key]
         var_r2 = variants_r2[key]
@@ -419,8 +426,24 @@ def compare_variant_annotation(
             r1_only[info_key] += 1
         for info_key in comparison_results.r2:
             r2_only[info_key] += 1
+
+        for shared_annot_key in comparison_results.shared:
+            info_val_r1 = var_r1.info_dict[shared_annot_key]
+            info_val_r2 = var_r2.info_dict[shared_annot_key]
+
+            if info_val_r1 != info_val_r2:
+                diffs_per_annot_key[shared_annot_key].append([info_val_r1, info_val_r2])
+
+        nbr_checked += 1
+        if nbr_checked >= max_considered:
+            logger.info(f"Breaking after looking at {nbr_checked} entries")
+            break
+
     print(r1_only)
     print(r2_only)
+    for key, differing_vals in diffs_per_annot_key:
+        print(f"{key}: Number: {len(differing_vals)} First: {differing_vals[0]}")
+    # Next, I suspect we are interested in the same annotation with different content
 
 
 def compare_vcfs(
