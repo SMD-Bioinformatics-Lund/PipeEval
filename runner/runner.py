@@ -56,6 +56,7 @@ def main(
     queue: Optional[str],
     no_start: bool,
     datestamp: bool,
+    verbose: bool,
 ):
 
     check_valid_config_arguments(config, run_type, start_data, base_dir, repo)
@@ -66,10 +67,10 @@ def main(
     datestamp = datestamp or config.getboolean("settings", "datestamp")
 
     check_valid_repo(repo)
-    check_valid_checkout(repo, checkout)
+    check_valid_checkout(LOG, repo, checkout, verbose)
     LOG.info(f"Checking out: {checkout} in {str(repo)}")
-    checkout_repo(repo, checkout)
-    on_branch_head = check_if_on_branchhead(repo)
+    checkout_repo(LOG, repo, checkout, verbose)
+    on_branch_head = check_if_on_branchhead(LOG, repo, verbose)
     if on_branch_head:
         branch = checkout
         confirmation = input(
@@ -77,8 +78,8 @@ def main(
         )
         if confirmation == "y":
             LOG.info("Pulling from origin")
-            pull_branch(repo, branch)
-    (commit_hash, last_log) = get_git_commit_hash_and_log(repo)
+            pull_branch(LOG, repo, branch, verbose)
+    (commit_hash, last_log) = get_git_commit_hash_and_log(LOG, repo, verbose)
     LOG.info(last_log)
 
     run_label = build_run_label(run_type, checkout, label, stub_run, start_data)
@@ -491,6 +492,7 @@ def main_wrapper(args: argparse.Namespace):
             args.queue,
             args.nostart,
             args.datestamp,
+            args.verbose,
         )
         logging.info("Now proceeding with checking out the --checkout")
     main(
@@ -507,6 +509,7 @@ def main_wrapper(args: argparse.Namespace):
         args.queue,
         args.nostart,
         args.datestamp,
+        args.verbose,
     )
 
 
@@ -574,6 +577,7 @@ def add_arguments(parser: argparse.ArgumentParser):
     parser.add_argument(
         "--baseline", help="Start a second baseline run and specified checkout"
     )
+    parser.add_argument("--verbose", help="Print additional debug output")
 
 
 if __name__ == "__main__":

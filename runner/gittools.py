@@ -1,12 +1,18 @@
+from logging import Logger
 from pathlib import Path
 import subprocess
 from typing import Tuple
 
 
-def checkout_repo(repo: Path, checkout_string: str) -> Tuple[int, str]:
+def checkout_repo(
+    logger: Logger, repo: Path, checkout_string: str, verbose: bool
+) -> Tuple[int, str]:
 
+    command = ["git", "checkout", checkout_string]
+    if verbose:
+        logger.info(f"Executing: {command} in {repo}")
     results = subprocess.run(
-        ["git", "checkout", checkout_string],
+        command,
         cwd=str(repo),
         # text=True is supported from Python 3.7
         universal_newlines=True,
@@ -17,9 +23,12 @@ def checkout_repo(repo: Path, checkout_string: str) -> Tuple[int, str]:
     return (results.returncode, results.stderr)
 
 
-def check_if_on_branchhead(repo: Path) -> bool:
+def check_if_on_branchhead(logger: Logger, repo: Path, verbose: bool) -> bool:
+    command = ["git", "rev-parse", "--abbrev-ref", "HEAD"]
+    if verbose:
+        logger.info(f"Executing: {command} in {repo}")
     results = subprocess.run(
-        ["git", "rev-parse", "--abbrev-ref", "HEAD"],
+        command,
         cwd=str(repo),
         # text=True is supported from Python 3.7
         universal_newlines=True,
@@ -30,9 +39,12 @@ def check_if_on_branchhead(repo: Path) -> bool:
     return results.stdout.strip() != "HEAD"
 
 
-def pull_branch(repo: Path, branch: str) -> None:
+def pull_branch(logger: Logger, repo: Path, branch: str, verbose: bool) -> None:
+    command = ["git", "pull", "origin", branch]
+    if verbose:
+        logger.info(f"Executing: {command} in {repo}")
     subprocess.run(
-        ["git", "pull", "origin", branch],
+        command,
         cwd=str(repo),
         # text=True is supported from Python 3.7
         universal_newlines=True,
@@ -42,9 +54,14 @@ def pull_branch(repo: Path, branch: str) -> None:
     )
 
 
-def get_git_commit_hash_and_log(repo: Path) -> Tuple[str, str]:
+def get_git_commit_hash_and_log(
+    logger: Logger, repo: Path, verbose: bool
+) -> Tuple[str, str]:
+    command = ["git", "log", "--oneline"]
+    if verbose:
+        logger.info(f"Executing: {command} in {repo}")
     result = subprocess.run(
-        ["git", "log", "--oneline"],
+        command,
         cwd=str(repo),
         check=True,
         # text=True is supported from Python 3.7
@@ -70,9 +87,14 @@ def check_valid_repo(repo: Path) -> Tuple[int, str]:
     return (0, "")
 
 
-def check_valid_checkout(repo: Path, checkout_obj: str) -> Tuple[int, str]:
+def check_valid_checkout(
+    logger: Logger, repo: Path, checkout_obj: str, verbose: bool
+) -> Tuple[int, str]:
+    command = ["git", "rev-parse", "--verify", checkout_obj]
+    if verbose:
+        logger.info(f"Executing: {command} in {repo}")
     results = subprocess.run(
-        ["git", "rev-parse", "--verify", checkout_obj],
+        command,
         cwd=str(repo),
         universal_newlines=True,
         stdout=subprocess.PIPE,
