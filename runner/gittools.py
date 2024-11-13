@@ -43,7 +43,7 @@ def pull_branch(logger: Logger, repo: Path, branch: str, verbose: bool) -> None:
     command = ["git", "pull", "origin", branch]
     if verbose:
         logger.info(f"Executing: {command} in {repo}")
-    subprocess.run(
+    results = subprocess.run(
         command,
         cwd=str(repo),
         # text=True is supported from Python 3.7
@@ -52,6 +52,7 @@ def pull_branch(logger: Logger, repo: Path, branch: str, verbose: bool) -> None:
         stderr=subprocess.PIPE,
         check=True,
     )
+    logger.info(results.stdout)
 
 
 def get_git_commit_hash_and_log(
