@@ -336,7 +336,7 @@ def build_start_nextflow_analysis_cmd(
         "--container",
         "/fs1/resources/containers/wgs_active.sif",
         "--pipeline",
-        "/fs1/pipelines/pipeeval/repos/cmd_wgs/main.nf",
+        "'/fs1/pipelines/pipeeval/repos/cmd_wgs/main.nf -profile onco'",
     ]
     if stub_run:
         start_nextflow_command.append("--custom_flags")
