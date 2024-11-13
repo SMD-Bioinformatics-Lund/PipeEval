@@ -201,7 +201,7 @@ def main(
     if comparisons is None or "yaml" in comparisons:
         logger.info("")
         logger.info("--- Comparing YAML ---")
-        (r1_scored_yaml, r2_scored_yaml) = get_pair_match(
+        (r1_yaml, r2_yaml) = get_pair_match(
             logger,
             "Scout YAMLs",
             config["settings"]["yaml"].split(","),
@@ -210,7 +210,21 @@ def main(
             verbose,
         )
         out_path = outdir / "yaml_diff.txt" if outdir else None
-        compare_yaml(run_id1, run_id2, r1_scored_yaml, r2_scored_yaml, out_path)
+        diff_compare_files(run_id1, run_id2, r1_yaml, r2_yaml, out_path)
+
+    if comparisons is None or "versions" in comparisons:
+        logger.info("")
+        logger.info("--- Comparing version files ---")
+        (r1_versions, r2_versions) = get_pair_match(
+            logger,
+            "Scout YAMLs",
+            config["settings"]["versions"].split(","),
+            r1_paths,
+            r2_paths,
+            verbose,
+        )
+        out_path = outdir / "yaml_diff.txt" if outdir else None
+        diff_compare_files(run_id1, run_id2, r1_versions, r2_versions, out_path)
 
 
 def check_same_files(
@@ -531,7 +545,7 @@ def print_diff_score_info(
                 print("\t".join(row), file=out_fh)
 
 
-def compare_yaml(
+def diff_compare_files(
     run_id1: str,
     run_id2: str,
     yaml_r1: PathObj,
