@@ -577,7 +577,7 @@ def add_arguments(parser: argparse.ArgumentParser):
     parser.add_argument(
         "--baseline", help="Start a second baseline run and specified checkout"
     )
-    parser.add_argument("--verbose", help="Print additional debug output")
+    parser.add_argument("--verbose", action="store_true", help="Print additional debug output")
 
 
 if __name__ == "__main__":
