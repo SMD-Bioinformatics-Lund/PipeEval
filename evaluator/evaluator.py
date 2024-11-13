@@ -153,7 +153,7 @@ def main(
         )
         out_path_score_all = outdir / "scored_snv_score_all.txt" if outdir else None
         is_sv = False
-        variant_comparison(
+        variant_comparisons(
             run_id1,
             run_id2,
             r1_scored_snv_vcf,
@@ -185,7 +185,7 @@ def main(
         )
         out_path_score_all = outdir / "scored_sv_score.txt" if outdir else None
         is_sv = True
-        variant_comparison(
+        variant_comparisons(
             run_id1,
             run_id2,
             r1_scored_sv_vcf,
@@ -350,7 +350,7 @@ def get_variant_presence_summary(
     return output
 
 
-def variant_comparison(
+def variant_comparisons(
     run_id1: str,
     run_id2: str,
     r1_scored_vcf: PathObj,
@@ -378,6 +378,13 @@ def variant_comparison(
         out_path_presence,
     )
     shared_variants = comparison_results.shared
+    compare_variant_annotation(
+        run_id1,
+        run_id2,
+        shared_variants,
+        variants_r1,
+        variants_r2,
+    )
     compare_variant_score(
         run_id1,
         run_id2,
@@ -390,6 +397,30 @@ def variant_comparison(
         out_path_score_all,
         is_sv,
     )
+
+
+def compare_variant_annotation(
+    run_id1: str,
+    run_id2: str,
+    shared_variant_keys: Set[str],
+    variants_r1: Dict[str, ScoredVariant],
+    variants_r2: Dict[str, ScoredVariant],
+):
+    r1_only = defaultdict(int)
+    r2_only = defaultdict(int)
+    for key in shared_variant_keys:
+        var_r1 = variants_r1[key]
+        var_r2 = variants_r2[key]
+
+        annot_keys_r1 = var_r1.info_dict.keys()
+        annot_keys_r2 = var_r2.info_dict.keys()
+        comparison_results = do_comparison(set(annot_keys_r1), set(annot_keys_r2))
+        for info_key in comparison_results.r1:
+            r1_only[info_key] += 1
+        for info_key in comparison_results.r2:
+            r2_only[info_key] += 1
+    print(r1_only)
+    print(r2_only)
 
 
 def compare_vcfs(
@@ -584,7 +615,7 @@ def add_arguments(parser: argparse.ArgumentParser):
     parser.add_argument("--config", help="Additional configurations")
     parser.add_argument(
         "--comparisons",
-        help="Comma separated. Defaults to: default, run all by: file,vcf,score,score_sv,yaml",
+        help="Comma separated. Defaults to: default, run all by: file,vcf,score,score_sv,yaml,versions,annotations,annotations_sv",
         default="default",
     )
     parser.add_argument(

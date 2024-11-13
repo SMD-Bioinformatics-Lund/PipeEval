@@ -18,6 +18,7 @@ class ScoredVariant:
         sub_scores: Dict[str, int],
         is_sv: bool,
         sv_length: Optional[int],
+        info_dict: Dict[str, str],
     ):
         self.chr = chr
         self.pos = pos
@@ -27,6 +28,7 @@ class ScoredVariant:
         self.sub_scores = sub_scores
         self.is_sv = is_sv
         self.sv_length = sv_length
+        self.info_dict = info_dict
 
     def get_trunc_ref(self) -> str:
         trunc_ref = (
