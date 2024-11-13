@@ -217,7 +217,7 @@ def main(
         logger.info("--- Comparing version files ---")
         (r1_versions, r2_versions) = get_pair_match(
             logger,
-            "Scout YAMLs",
+            "versions",
             config["settings"]["versions"].split(","),
             r1_paths,
             r2_paths,
@@ -548,12 +548,12 @@ def print_diff_score_info(
 def diff_compare_files(
     run_id1: str,
     run_id2: str,
-    yaml_r1: PathObj,
-    yaml_r2: PathObj,
+    file1: PathObj,
+    file2: PathObj,
     out_path: Optional[Path],
 ):
 
-    with yaml_r1.get_filehandle() as r1_fh, yaml_r2.get_filehandle() as r2_fh:
+    with file1.get_filehandle() as r1_fh, file2.get_filehandle() as r2_fh:
         r1_lines = [
             line.replace(run_id1, RUN_ID_PLACEHOLDER) for line in r1_fh.readlines()
         ]
