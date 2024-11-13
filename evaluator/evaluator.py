@@ -134,7 +134,7 @@ def main(
         else:
             logger.warning("No VCFs detected, skipping VCF comparison")
 
-    if comparisons is None or "score" in comparisons:
+    if comparisons is None or "score" in comparisons or "annotation" in comparisons:
         logger.info("")
         logger.info("--- Comparing scored SNV VCFs ---")
 
@@ -164,9 +164,11 @@ def main(
             out_path_presence,
             out_path_score_thres,
             out_path_score_all,
+            comparisons is None or "score" in comparisons,
+            comparisons is None or "annotation" in comparisons,
         )
 
-    if comparisons is None or "score_sv" in comparisons:
+    if comparisons is None or "score_sv" in comparisons or "annotate_sv" in comparisons:
         logger.info("")
         logger.info("--- Comparing scored SV VCFs ---")
 
@@ -196,6 +198,8 @@ def main(
             out_path_presence,
             out_path_score_thres,
             out_path_score_all,
+            comparisons is None or "score" in comparisons,
+            comparisons is None or "annotation" in comparisons,
         )
 
     if comparisons is None or "yaml" in comparisons:
@@ -361,23 +365,25 @@ def variant_comparisons(
     out_path_presence: Optional[Path],
     out_path_score_above_thres: Optional[Path],
     out_path_score_all: Optional[Path],
+    do_score_check: bool,
+    do_annot_check: bool,
 ):
-    variants_r1 = parse_vcf(r1_scored_vcf, is_sv)
-    variants_r2 = parse_vcf(r2_scored_vcf, is_sv)
-    comparison_results = do_comparison(
-        set(variants_r1.keys()),
-        set(variants_r2.keys()),
-    )
-    compare_variant_presence(
-        run_id1,
-        run_id2,
-        variants_r1,
-        variants_r2,
-        comparison_results,
-        max_display,
-        out_path_presence,
-    )
-    shared_variants = comparison_results.shared
+    # variants_r1 = parse_vcf(r1_scored_vcf, is_sv)
+    # variants_r2 = parse_vcf(r2_scored_vcf, is_sv)
+    # comparison_results = do_comparison(
+    #     set(variants_r1.keys()),
+    #     set(variants_r2.keys()),
+    # )
+    # compare_variant_presence(
+    #     run_id1,
+    #     run_id2,
+    #     variants_r1,
+    #     variants_r2,
+    #     comparison_results,
+    #     max_display,
+    #     out_path_presence,
+    # )
+    # shared_variants = comparison_results.shared
     check_max_annots = 1000
     compare_variant_annotation(
         run_id1, run_id2, shared_variants, variants_r1, variants_r2, check_max_annots
@@ -638,7 +644,7 @@ def add_arguments(parser: argparse.ArgumentParser):
     parser.add_argument("--config", help="Additional configurations")
     parser.add_argument(
         "--comparisons",
-        help="Comma separated. Defaults to: default, run all by: file,vcf,score,score_sv,yaml,versions,annotations,annotations_sv",
+        help="Comma separated. Defaults to: default, run all by: file,vcf,score,score_sv,yaml,versions,annotation,annotation_sv",
         default="default",
     )
     parser.add_argument(
