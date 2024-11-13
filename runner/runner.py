@@ -386,6 +386,26 @@ def setup_results_links(
 
 
 def main_wrapper(args: argparse.Namespace):
+    if args.baseline is not None:
+        logging.info(
+            "Performing additional baseline run as specified by --baseline flag"
+        )
+        main(
+            args.config,
+            f"{args.label}_baseline",
+            args.baseline,
+            Path(args.baseout) if args.baseout is not None else None,
+            Path(args.repo) if args.repo is not None else None,
+            args.start_data,
+            args.dry,
+            args.stub,
+            args.run_type,
+            args.skip_confirmation,
+            args.queue,
+            args.nostart,
+            args.datestamp,
+        )
+        logging.info("Now proceeding with checking out the --checkout")
     main(
         args.config,
         args.label,
@@ -459,6 +479,9 @@ def add_arguments(parser: argparse.ArgumentParser):
         "--nostart",
         action="store_true",
         help="Run start_nextflow_analysis.pl with nostart, printing the path to the SLURM job only",
+    )
+    parser.add_argument(
+        "--baseline", help="Start a second baseline run and specified checkout"
     )
 
 
