@@ -105,8 +105,7 @@ def main(
             commit_hash,
         )
 
-    case_id = config[run_type]["case"]
-    run_type_settings = dict(config[case_id])
+    run_type_settings = dict(config[run_type])
 
     if not config.getboolean(run_type, "trio"):
         csv = get_single_csv(
@@ -133,7 +132,7 @@ def main(
         config["settings"]["nextflow_version"],
         config["settings"]["container"],
         str(repo / config["settings"]["runscript"]),
-        config["settings"]["profile"],
+        run_type_settings["profile"],
         stub_run,
         no_start,
     )
