@@ -331,8 +331,6 @@ def build_start_nextflow_analysis_cmd(
         "lowest",
         "--singularity_version",
         "3.8.0",
-        "--nextflow_version",
-        "21.10.6",
         "--container",
         "/fs1/resources/containers/wgs_active.sif",
         "--pipeline",
