@@ -15,7 +15,7 @@ Only standard libs are currently used.
 ```{python}
 python3 main.py run \
     --checkout jw_update_genmod \
-    --baseout out/genmod \
+    --base out/genmod \
     --config default.config \
     --run_type giab_single \
     --start_data bam \
@@ -24,7 +24,7 @@ python3 main.py run \
 ```
 
 ```{python}
-usage: main.py run [-h] [--label LABEL] --checkout CHECKOUT --baseout BASEOUT
+usage: main.py run [-h] [--label LABEL] --checkout CHECKOUT --base BASE
                    --repo REPO [--start_data START_DATA] --run_type RUN_TYPE
                    [--dry] [--skip_confirmation] [--stub] --config CONFIG
                    [--queue QUEUE] [--nostart]
@@ -35,7 +35,7 @@ optional arguments:
   -h, --help            show this help message and exit
   --label LABEL         Something for you to use to remember the run
   --checkout CHECKOUT   Tag, commit or branch to check out in --repo
-  --baseout BASEOUT     The base folder into which results folders are created
+  --base BASE     The base folder into which results folders are created
                         following the pattern:
                         {base}/{label}_{run_type}_{checkout})
   --repo REPO           Path to the Git repository of the pipeline

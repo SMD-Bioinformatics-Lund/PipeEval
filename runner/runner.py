@@ -58,7 +58,7 @@ def main(
 
     check_valid_config_arguments(config, run_type, start_data, base_dir, repo)
     base_dir = (
-        base_dir if base_dir is not None else Path(config.get("settings", "baseout"))
+        base_dir if base_dir is not None else Path(config.get("settings", "base"))
     )
     if repo is not None:
         logging.warning(
@@ -166,10 +166,10 @@ def check_valid_config_arguments(
 
     # FIXME: Look over the logic here. Not nice with repeated config.get at the moment
     if base_dir is None:
-        if not check_valid_config_path(config, "settings", "baseout"):
-            found = config.get("settings", "baseout")
+        if not check_valid_config_path(config, "settings", "base"):
+            found = config.get("settings", "base")
             raise ValueError(
-                f"A valid output base folder must be specified either through the '--baseout' flag, or in the config['settings']['baseout']. Found: {found}"
+                f"A valid output base folder must be specified either through the '--base' flag, or in the config['settings']['base']. Found: {found}"
             )
 
     if repo is None:
@@ -477,7 +477,7 @@ def main_wrapper(args: argparse.Namespace):
             config,
             "baseline" if args.label is None else f"{args.label}_baseline",
             args.baseline,
-            Path(args.baseout) if args.baseout is not None else None,
+            Path(args.base) if args.base is not None else None,
             Path(baseline_repo),
             args.start_data,
             args.dry,
@@ -493,7 +493,7 @@ def main_wrapper(args: argparse.Namespace):
         config,
         args.label,
         args.checkout,
-        Path(args.baseout) if args.baseout is not None else None,
+        Path(args.base) if args.base is not None else None,
         Path(args.repo) if args.repo is not None else None,
         args.start_data,
         args.dry,
@@ -514,7 +514,7 @@ def add_arguments(parser: argparse.ArgumentParser):
         help="Tag, commit or branch to check out in --repo",
     )
     parser.add_argument(
-        "--baseout",
+        "--base",
         help="The base folder into which results folders are created following the pattern: {base}/{label}_{run_type}_{checkout}). Can also be specified in the config.",
     )
     parser.add_argument(
