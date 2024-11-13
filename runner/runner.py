@@ -20,7 +20,7 @@ import sys
 import os
 from configparser import ConfigParser
 from datetime import datetime
-from typing import List, Dict, Optional
+from typing import Any, List, Dict, Optional
 
 from runner.gittools import (
     check_valid_checkout,
@@ -105,10 +105,17 @@ def main(
             commit_hash,
         )
 
+    case_id = config[run_type]["case"]
+    run_type_settings = dict(config[case_id])
+
     if not config.getboolean(run_type, "trio"):
-        csv = get_single_csv(config, run_label, run_type, start_data, queue, stub_run)
+        csv = get_single_csv(
+            config, run_type_settings, run_label, start_data, queue, stub_run
+        )
     else:
-        csv = get_trio_csv(config, run_label, run_type, start_data, queue, stub_run)
+        csv = get_trio_csv(
+            config, run_type_settings, run_label, start_data, queue, stub_run
+        )
     out_csv = results_dir / "run.csv"
     if dry_run:
         logging.info(f"(dry) Writing CSV to {out_csv}")
@@ -221,16 +228,12 @@ def write_run_log(
 
 def get_single_csv(
     config: ConfigParser,
+    case_dict: Dict[str, Any],
     run_label: str,
-    run_type: str,
     start_data: str,
     queue: Optional[str],
     stub_run: bool,
 ):
-    assay = config[run_type]["assay"]
-    case_id = config[run_type]["case"]
-    case_dict = config[case_id]
-
     # Replace real data with dummy files in stub run to avoid scratching
     if stub_run:
         stub_case = config["settings"]
@@ -242,22 +245,20 @@ def get_single_csv(
     if not Path(case.read1).exists() or not Path(case.read2).exists():
         raise FileNotFoundError(f"One or both files missing: {case.read1} {case.read2}")
 
-    run_csv = CsvEntry(run_label, assay, [case], queue)
+    run_csv = CsvEntry(run_label, [case], queue)
     return run_csv
 
 
 def get_trio_csv(
     config: ConfigParser,
+    run_type_settings: Dict[str, Any],
     run_label: str,
-    run_type: str,
     start_data: str,
     queue: Optional[str],
     stub_run: bool,
 ):
 
-    assay = config[run_type]["assay"]
-
-    case_ids = config[run_type]["cases"].split(",")
+    case_ids = run_type_settings["cases"].split(",")
     assert (
         len(case_ids) == 3
     ), f"For a trio, three fields are expected, found: {case_ids}"
@@ -280,7 +281,7 @@ def get_trio_csv(
 
         cases.append(case)
 
-    run_csv = CsvEntry(run_label, assay, cases, queue)
+    run_csv = CsvEntry(run_label, cases, queue)
     return run_csv
 
 
