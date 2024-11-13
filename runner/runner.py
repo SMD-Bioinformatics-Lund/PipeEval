@@ -410,8 +410,7 @@ def setup_results_links(
     config: ConfigParser, results_dir: Path, run_label: str, dry: bool
 ):
 
-    # assay = config[run_type]["assay"]
-    assay = "placeholder"
+    assay = "unknown"
 
     log_base_dir = config["settings"]["log_base_dir"]
     trace_base_dir = config["settings"]["trace_base_dir"]
