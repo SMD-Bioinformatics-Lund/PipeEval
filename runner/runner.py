@@ -323,6 +323,20 @@ def build_start_nextflow_analysis_cmd(
         str(out_dir.resolve()),
         "--crondir",
         str(cron_dir.resolve()),
+        "--executor",
+        "slurm",
+        "--cluster",
+        "grace",
+        "--queue",
+        "lowest",
+        "--singularity_version",
+        "3.8.0",
+        "--nextflow_version",
+        "21.10.6",
+        "--container",
+        "/fs1/resources/containers/wgs_active.sif",
+        "--pipeline",
+        "/fs1/pipelines/pipeeval/repos/cmd_wgs/main.nf -profile wgs",
     ]
     if stub_run:
         start_nextflow_command.append("--custom_flags")
