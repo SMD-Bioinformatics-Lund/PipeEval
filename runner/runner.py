@@ -60,10 +60,6 @@ def main(
     base_dir = (
         base_dir if base_dir is not None else Path(config.get("settings", "base"))
     )
-    if repo is not None:
-        logging.warning(
-            "Note that the path specified in --repo might not be the same as specified in the assay as defined in the config. Most likely this will yield unexpected results."
-        )
     repo = repo if repo is not None else Path(config.get("settings", "repo"))
     datestamp = datestamp or config.getboolean("settings", "datestamp")
 
@@ -463,9 +459,6 @@ def main_wrapper(args: argparse.Namespace):
     if args.baseline is not None:
         logging.info(
             "Performing additional baseline run as specified by --baseline flag"
-        )
-        logging.warning(
-            "--baseline flag might not work as intended at the moment, as it checks out a separate version of the repo where both baseline and checkout are executed."
         )
 
         if args.baseline_repo is not None:
