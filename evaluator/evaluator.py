@@ -210,7 +210,7 @@ def main(
             verbose,
         )
         out_path = outdir / "yaml_diff.txt" if outdir else None
-        compare_yaml(r1_scored_yaml, r2_scored_yaml, out_path)
+        compare_yaml(run_id1, run_id2, r1_scored_yaml, r2_scored_yaml, out_path)
 
 
 def check_same_files(
