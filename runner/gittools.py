@@ -52,7 +52,7 @@ def pull_branch(logger: Logger, repo: Path, branch: str, verbose: bool) -> None:
         stderr=subprocess.PIPE,
         check=True,
     )
-    logger.info(results.stdout)
+    logger.info(results.stdout.rstrip())
 
 
 def get_git_commit_hash_and_log(
