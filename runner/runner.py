@@ -411,9 +411,9 @@ def setup_results_links(
         trace_link.symlink_to(trace_link_target)
         work_link.symlink_to(work_link_target)
     else:
-        LOG.info("(dry) log_link.symlink_to(log_link_target)")
-        LOG.info("(dry) trace_link.symlink_to(trace_link_target)")
-        LOG.info("(dry) work_link.symlink_to(work_link_target)")
+        LOG.info(f"(dry) Linking log from {log_link_target} to {log_link}")
+        LOG.info(f"(dry) Linking trace from {trace_link_target} to {trace_link}")
+        LOG.info(f"(dry) Linking work from {work_link_target} to {work_link}")
 
 
 def main_wrapper(args: argparse.Namespace):
