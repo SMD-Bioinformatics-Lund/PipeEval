@@ -37,6 +37,7 @@ class CsvEntry:
         "id",
         "type",
         "sex",
+        "assay",
         "diagnosis",
         "phenotype",
         "group",
@@ -65,6 +66,7 @@ class CsvEntry:
     def __init__(self, group: str, cases: List[Case], priority: Optional[str]):
         self.cases = cases
 
+        self.assay = "PipeEval"
         self.group = group
         self.clarity_pool_id = "NA"
         self.diagnosis = "NA"
