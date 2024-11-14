@@ -1,3 +1,7 @@
+# 1.0.4
+
+* Calculate length through END - pos + 1
+
 # 1.0.3
 
 * Skip confirmation skips the Git pull confirmation as well

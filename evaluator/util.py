@@ -106,9 +106,11 @@ def parse_vcf(vcf: PathObj, is_sv: bool) -> Dict[str, ScoredVariant]:
                 if info_dict.get("RankResult") is not None
                 else None
             )
-            sv_length = (
-                int(info_dict["SVLEN"]) if info_dict.get("SVLEN") is not None else None
-            )
+            if info_dict.get("END") is not None:
+                sv_end = int(info_dict["SVLEN"])
+                sv_length = sv_end - pos + 1
+            else:
+                sv_length = None
 
             sub_scores_dict: Dict[str, int] = {}
             if rank_sub_scores is not None:
