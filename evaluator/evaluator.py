@@ -454,7 +454,7 @@ def compare_variant_annotation(
 
     print(r1_only)
     print(r2_only)
-    for key, differing_vals in diffs_per_annot_key:
+    for key, differing_vals in diffs_per_annot_key.items():
         print(f"{key}: Number: {len(differing_vals)} First: {differing_vals[0]}")
     # Next, I suspect we are interested in the same annotation with different content
 
