@@ -384,7 +384,7 @@ def variant_comparisons(
         out_path_presence,
     )
     shared_variants = comparison_results.shared
-    check_max_annots = 1000
+    check_max_annots = 10000
     if do_annot_check:
         logger.info("")
         logger.info("--- Comparing annotations ---")
@@ -461,25 +461,31 @@ def compare_variant_annotation(
             break
 
     if len(r1_only) == 0 and len(r2_only) == 0:
-        logger.info("No annotation keys found uniquely in one VCF")
+        logger.info(
+            f"No annotation keys found uniquely in one VCF among first {max_considered} variants"
+        )
     else:
         if len(r1_only) > 0:
-            logger.info(f"Annotation keys only found in {run_id1}")
+            logger.info(
+                f"Annotation keys only found in {run_id1} among {max_considered} variants"
+            )
             for variant_key, val in r1_only:
                 logger.info(f"{variant_key}: {val}")
         if len(r2_only) > 0:
-            logger.info(f"Annotation keys only found in {run_id2}")
+            logger.info(
+                f"Annotation keys only found in {run_id2} among {max_considered} variants"
+            )
             for variant_key, val in r2_only:
                 logger.info(f"{variant_key}: {val}")
 
     if len(diffs_per_annot_key) == 0:
-        logger.info("Among shared annotation keys, all values were the same")
+        logger.info(f"Among shared annotation keys, all values were the same")
     else:
         logger.info(
-            f"Found {len(diffs_per_annot_key)} shared keys with differing annotation values"
+            f"Found {len(diffs_per_annot_key)} shared keys with differing annotation values among {max_considered} variants"
         )
 
-        longest_key = max([len(info_key) for info_key in diffs_per_annot_key])
+        left_adjust = max([len(info_key) for info_key in diffs_per_annot_key]) + 2
 
         for info_key, differing_vals in diffs_per_annot_key.items():
             first_differing_variant = differing_vals[0]
@@ -497,7 +503,7 @@ def compare_variant_annotation(
             variant_info = variant.get_basic_info()
             left_col = f"{info_key}:"
             logger.info(
-                f"{left_col.ljust(longest_key)} Number: {len(differing_vals)} First ({variant_info}): {example_r1} / {example_r2}"
+                f"{left_col.ljust(left_adjust)} Number: {len(differing_vals)} First ({variant_info}): {example_r1} / {example_r2}"
             )
 
 

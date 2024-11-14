@@ -70,7 +70,7 @@ class ScoredVariant:
         return str(self.rank_score) if self.rank_score is not None else ""
 
     def get_basic_info(self) -> str:
-        return f"{self.chr}:{self.pos} {self.get_trunc_ref()} / {self.get_trunc_alt()}"
+        return f"{self.chr}:{self.pos} {self.get_trunc_ref()}/{self.get_trunc_alt()}"
 
     def __eq__(self, other) -> bool:
         return (
