@@ -45,10 +45,10 @@ VALID_COMPARISONS = set(
         "default",
         "file",
         "vcf",
-        "score",
+        "score_snv",
         "score_sv",
         "yaml",
-        "annotation",
+        "annotation_snv",
         "annotation_sv",
     ]
 )
@@ -146,7 +146,7 @@ def main(
         else:
             logger.warning("No VCFs detected, skipping VCF comparison")
 
-    if comparisons is None or "score" in comparisons or "annotation" in comparisons:
+    if comparisons is None or "score_snv" in comparisons or "annotation_snv" in comparisons:
         logger.info("")
         logger.info("--- Comparing scored SNV VCFs ---")
 
@@ -177,11 +177,15 @@ def main(
             out_path_presence,
             out_path_score_thres,
             out_path_score_all,
-            comparisons is None or "score" in comparisons,
-            comparisons is None or "annotation" in comparisons,
+            comparisons is None or "score_snv" in comparisons,
+            comparisons is None or "annotation_snv" in comparisons,
         )
 
-    if comparisons is None or "score_sv" in comparisons or "annotate_sv" in comparisons:
+    if (
+        comparisons is None
+        or "score_sv" in comparisons
+        or "annotation_sv" in comparisons
+    ):
         logger.info("")
         logger.info("--- Comparing scored SV VCFs ---")
 
@@ -212,8 +216,8 @@ def main(
             out_path_presence,
             out_path_score_thres,
             out_path_score_all,
-            comparisons is None or "score" in comparisons,
-            comparisons is None or "annotation" in comparisons,
+            comparisons is None or "score_sv" in comparisons,
+            comparisons is None or "annotation_sv" in comparisons,
         )
 
     if comparisons is None or "yaml" in comparisons:
