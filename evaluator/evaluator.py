@@ -434,9 +434,9 @@ def compare_variant_annotation(
 
     max_str_len = 50
 
-    for key in shared_variant_keys:
-        var_r1 = variants_r1[key]
-        var_r2 = variants_r2[key]
+    for variant_key in shared_variant_keys:
+        var_r1 = variants_r1[variant_key]
+        var_r2 = variants_r2[variant_key]
 
         annot_keys_r1 = var_r1.info_dict.keys()
         annot_keys_r2 = var_r2.info_dict.keys()
@@ -451,7 +451,9 @@ def compare_variant_annotation(
             info_val_r2 = var_r2.info_dict[shared_annot_key]
 
             if info_val_r1 != info_val_r2:
-                diffs_per_annot_key[shared_annot_key].append([info_val_r1, info_val_r2])
+                diffs_per_annot_key[shared_annot_key].append(
+                    [info_val_r1, info_val_r2, variant_key]
+                )
 
         nbr_checked += 1
         if nbr_checked >= max_considered:
@@ -463,12 +465,12 @@ def compare_variant_annotation(
     else:
         if len(r1_only) > 0:
             logger.info(f"Annotation keys only found in {run_id1}")
-            for key, val in r1_only:
-                logger.info(f"{key}: {val}")
+            for variant_key, val in r1_only:
+                logger.info(f"{variant_key}: {val}")
         if len(r2_only) > 0:
             logger.info(f"Annotation keys only found in {run_id2}")
-            for key, val in r2_only:
-                logger.info(f"{key}: {val}")
+            for variant_key, val in r2_only:
+                logger.info(f"{variant_key}: {val}")
 
     if len(diffs_per_annot_key) == 0:
         logger.info("Among shared annotation keys, all values were the same")
@@ -477,23 +479,22 @@ def compare_variant_annotation(
             f"Found {len(diffs_per_annot_key)} shared keys with differing annotation values"
         )
 
-        for key, differing_vals in diffs_per_annot_key.items():
-            example = differing_vals[0]
+        for info_key, differing_vals in diffs_per_annot_key.items():
+            first_differing_variant = differing_vals[0]
+            r1_val = first_differing_variant[0]
+            r2_val = first_differing_variant[1]
+            variant_key = first_differing_variant[2]
             # FIXME: Utility function
             example_r1 = (
-                example[0]
-                if len(example[0]) < max_str_len
-                else example[0][0:max_str_len] + "..."
+                r1_val if len(r1_val) < max_str_len else r1_val[0:max_str_len] + "..."
             )
             example_r2 = (
-                example[1]
-                if len(example[1]) < max_str_len
-                else example[1][1:max_str_len] + "..."
+                r2_val if len(r2_val) < max_str_len else r2_val[0:max_str_len] + "..."
             )
-            variant = variants_r1[key]
+            variant = variants_r1[variant_key]
             variant_info = variant.get_basic_info()
             logger.info(
-                f"{key}: Number: {len(differing_vals)} First ({variant_info}): {example_r1} / {example_r2}"
+                f"{info_key}: Number: {len(differing_vals)} First ({variant_info}): {example_r1} / {example_r2}"
             )
 
 
