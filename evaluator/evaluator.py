@@ -428,6 +428,8 @@ def compare_variant_annotation(
 
     nbr_checked = 0
 
+    max_str_len = 50
+
     for key in shared_variant_keys:
         var_r1 = variants_r1[key]
         var_r2 = variants_r2[key]
@@ -455,7 +457,21 @@ def compare_variant_annotation(
     print(r1_only)
     print(r2_only)
     for key, differing_vals in diffs_per_annot_key.items():
-        print(f"{key}: Number: {len(differing_vals)} First: {differing_vals[0]}")
+        example = differing_vals[0]
+        # FIXME: Utility function
+        example_r1 = (
+            example[0]
+            if len(example[0]) < max_str_len
+            else example[0:max_str_len] + "..."
+        )
+        example_r2 = (
+            example[1]
+            if len(example[1]) < max_str_len
+            else example[1:max_str_len] + "..."
+        )
+        print(
+            f"{key}: Number: {len(differing_vals)} First: {example_r1} / {example_r2}"
+        )
     # Next, I suspect we are interested in the same annotation with different content
 
 
