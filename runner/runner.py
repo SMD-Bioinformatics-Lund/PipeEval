@@ -73,9 +73,12 @@ def main(
     on_branch_head = check_if_on_branchhead(LOG, repo, verbose)
     if on_branch_head:
         branch = checkout
-        confirmation = input(
-            f"You have checked out the branch {branch} in {repo}. Do you want to pull? (y/n) "
-        )
+        if skip_confirmation:
+            confirmation = "y"
+        else:
+            confirmation = input(
+                f"You have checked out the branch {branch} in {repo}. Do you want to pull? (y/n) "
+            )
         if confirmation == "y":
             LOG.info("Pulling from origin")
             pull_branch(LOG, repo, branch, verbose)
@@ -89,7 +92,7 @@ def main(
     else:
         ds = datetime.now().strftime("%y%m%d-%H%M")
         results_dir = base_dir / f"{ds}_{run_label}"
-    if results_dir.exists():
+    if results_dir.exists() and not skip_confirmation:
         confirmation = input(
             f"The results dir {results_dir} already exists. Do you want to proceed? (y/n) "
         )
@@ -577,7 +580,9 @@ def add_arguments(parser: argparse.ArgumentParser):
     parser.add_argument(
         "--baseline", help="Start a second baseline run and specified checkout"
     )
-    parser.add_argument("--verbose", action="store_true", help="Print additional debug output")
+    parser.add_argument(
+        "--verbose", action="store_true", help="Print additional debug output"
+    )
 
 
 if __name__ == "__main__":

@@ -1,3 +1,7 @@
+# 1.0.3
+
+* Skip confirmation skips the Git pull confirmation as well
+
 # 1.0.2
 
 * Info about no anntation keys found when present in one
