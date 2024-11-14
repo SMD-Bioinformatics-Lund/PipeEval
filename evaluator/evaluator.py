@@ -14,7 +14,7 @@ from collections import defaultdict
 import difflib
 import logging
 
-from util.shared_utils import load_config, prettify_rows
+from util.shared_utils import load_config, prettify_rows, truncate_string
 
 from .score_utils import get_table
 from .classes import DiffScoredVariant
@@ -146,7 +146,11 @@ def main(
         else:
             logger.warning("No VCFs detected, skipping VCF comparison")
 
-    if comparisons is None or "score_snv" in comparisons or "annotation_snv" in comparisons:
+    if (
+        comparisons is None
+        or "score_snv" in comparisons
+        or "annotation_snv" in comparisons
+    ):
         logger.info("")
         logger.info("--- Comparing scored SNV VCFs ---")
 
@@ -446,11 +450,20 @@ def compare_variant_annotation(
     r1_only = defaultdict(int)
     r2_only = defaultdict(int)
 
-    diffs_per_annot_key = defaultdict(list)
-
     nbr_checked = 0
 
     max_str_len = 50
+
+    class AnnotComp:
+        def __init__(
+            self, variant_key: str, info_key: str, r1_annot: str, r2_annot: str
+        ):
+            self.variant_key = variant_key
+            self.info_key = info_key
+            self.r1_annot = r1_annot
+            self.r2_annot = r2_annot
+
+    diffs_per_annot_key: defaultdict[str, List[AnnotComp]] = defaultdict(list)
 
     for variant_key in shared_variant_keys:
         var_r1 = variants_r1[variant_key]
@@ -469,9 +482,10 @@ def compare_variant_annotation(
             info_val_r2 = var_r2.info_dict[shared_annot_key]
 
             if info_val_r1 != info_val_r2:
-                diffs_per_annot_key[shared_annot_key].append(
-                    [info_val_r1, info_val_r2, variant_key]
+                annot_comp = AnnotComp(
+                    variant_key, shared_annot_key, info_val_r1, info_val_r2
                 )
+                diffs_per_annot_key[shared_annot_key].append(annot_comp)
 
         nbr_checked += 1
         if nbr_checked >= max_considered:
@@ -512,16 +526,11 @@ def compare_variant_annotation(
 
         for info_key, differing_vals in diffs_per_annot_key.items():
             first_differing_variant = differing_vals[0]
-            r1_val = first_differing_variant[0]
-            r2_val = first_differing_variant[1]
-            variant_key = first_differing_variant[2]
-            # FIXME: Utility function
-            example_r1 = (
-                r1_val if len(r1_val) < max_str_len else r1_val[0:max_str_len] + "..."
-            )
-            example_r2 = (
-                r2_val if len(r2_val) < max_str_len else r2_val[0:max_str_len] + "..."
-            )
+            r1_val = first_differing_variant.r1_annot
+            r2_val = first_differing_variant.r2_annot
+            variant_key = first_differing_variant.variant_key
+            example_r1 = truncate_string(r1_val, max_str_len)
+            example_r2 = truncate_string(r2_val, max_str_len)
             variant = variants_r1[variant_key]
             variant_info = variant.get_basic_info()
             logger.info(
@@ -745,7 +754,7 @@ def add_arguments(parser: argparse.ArgumentParser):
     parser.add_argument(
         "--max_checked_annots",
         help="Max number of annotations to check",
-        default=20000,
+        default=10000,
         type=int,
     )
 

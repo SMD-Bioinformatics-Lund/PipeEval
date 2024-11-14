@@ -34,3 +34,10 @@ def check_valid_config_path(conf: ConfigParser, section: str, key: str) -> bool:
     repo_config = Path(conf.get(section, key))
     valid_path = repo_config.exists()
     return valid_path
+
+
+def truncate_string(text: str, max_len: int) -> str:
+    if len(text) > max_len:
+        return text[0:max_len] + "..."
+    else:
+        return text
