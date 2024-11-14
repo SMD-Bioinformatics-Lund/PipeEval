@@ -95,6 +95,7 @@ def compare_variant_annotation(
             f"Found {len(diffs_per_annot_key)} shared keys with differing annotation values among {max_considered} variants"
         )
         logger.info("Showing number differing and first variant for each annotation")
+        print_annot_value_diff(logger, diffs_per_annot_key)
 
 
 def print_annot_value_diff(logger: Logger, diffs_per_annot: Dict[str, List[AnnotComp]]):
