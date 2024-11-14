@@ -386,6 +386,8 @@ def variant_comparisons(
     shared_variants = comparison_results.shared
     check_max_annots = 1000
     if do_annot_check:
+        logger.info("")
+        logger.info("--- Comparing annotations ---")
         compare_variant_annotation(
             run_id1,
             run_id2,
@@ -395,6 +397,8 @@ def variant_comparisons(
             check_max_annots,
         )
     if do_score_check:
+        logger.info("")
+        logger.info("--- Comparing score ---")
         compare_variant_score(
             run_id1,
             run_id2,
@@ -454,18 +458,15 @@ def compare_variant_annotation(
             logger.info(f"Breaking after looking at {nbr_checked} entries")
             break
 
-    logger.info("")
-    logger.info("--- Comparing annotations ---")
-
     if len(r1_only) == 0 and len(r2_only) == 0:
         logger.info("No annotation keys found uniquely in one VCF")
     else:
         if len(r1_only) > 0:
-            logger.info("Annotation keys only found in r1")
+            logger.info(f"Annotation keys only found in {run_id1}")
             for key, val in r1_only:
                 logger.info(f"{key}: {val}")
         if len(r2_only) > 0:
-            logger.info("Annotation keys only found in r2")
+            logger.info(f"Annotation keys only found in {run_id2}")
             for key, val in r2_only:
                 logger.info(f"{key}: {val}")
 
@@ -489,8 +490,10 @@ def compare_variant_annotation(
                 if len(example[1]) < max_str_len
                 else example[1][1:max_str_len] + "..."
             )
-            print(
-                f"{key}: Number: {len(differing_vals)} First: {example_r1} / {example_r2}"
+            variant = variants_r1[key]
+            variant_info = variant.get_basic_info()
+            logger.info(
+                f"{key}: Number: {len(differing_vals)} First ({variant_info}): {example_r1} / {example_r2}"
             )
 
 
