@@ -508,7 +508,7 @@ def compare_variant_annotation(
             left_col = f"{info_key}:"
             center_col = f"{len(differing_vals)} differing"
             logger.info(
-                f"{left_col.ljust(left_adjust)} {center_col.ljust(10)} {variant_info}: {example_r1} / {example_r2}"
+                f"{left_col.ljust(left_adjust)} {center_col.ljust(20)} {variant_info}: {example_r1} / {example_r2}"
             )
 
 
