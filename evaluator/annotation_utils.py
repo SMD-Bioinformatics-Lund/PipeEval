@@ -52,13 +52,13 @@ def compare_variant_annotation(
             logger.info(
                 f"Annotation keys only found in {run_id1} among {max_considered} variants"
             )
-            for variant_key, val in r1_only_annots:
+            for variant_key, val in r1_only_annots.items():
                 logger.info(f"{variant_key}: {val}")
         if len(r2_only_annots) > 0:
             logger.info(
                 f"Annotation keys only found in {run_id2} among {max_considered} variants"
             )
-            for variant_key, val in r2_only_annots:
+            for variant_key, val in r2_only_annots.items():
                 logger.info(f"{variant_key}: {val}")
 
     if len(diffs_per_annot_key) == 0:
