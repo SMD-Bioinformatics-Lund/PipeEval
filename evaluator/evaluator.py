@@ -15,6 +15,7 @@ import difflib
 import logging
 
 from evaluator.annotation_utils import compare_variant_annotation
+from util.constants import RUN_ID_PLACEHOLDER
 from util.shared_utils import load_config, prettify_rows, truncate_string
 
 from .score_utils import get_table
@@ -39,7 +40,6 @@ from .util import (
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-RUN_ID_PLACEHOLDER = "RUNID"
 VCF_SUFFIX = [".vcf", ".vcf.gz"]
 VALID_COMPARISONS = set(
     [

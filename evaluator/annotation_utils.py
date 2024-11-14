@@ -4,7 +4,7 @@ from collections import defaultdict
 
 from evaluator.classes import ScoredVariant
 from evaluator.util import do_comparison, parse_var_key_for_sort
-from util.constants import MAX_STR_LEN
+from util.constants import MAX_STR_LEN, RUN_ID_PLACEHOLDER
 from util.shared_utils import prettify_rows, truncate_string
 
 
@@ -35,7 +35,7 @@ def compare_variant_annotation(
 ):
 
     (diffs_per_annot_key, r1_only_annots, r2_only_annots) = calculate_annotation_diffs(
-        shared_variant_keys, variants_r1, variants_r2, max_considered
+        shared_variant_keys, variants_r1, variants_r2, max_considered, run_id1, run_id2
     )
 
     if max_considered < len(shared_variant_keys):
@@ -80,6 +80,8 @@ def calculate_annotation_diffs(
     variants_r1: Dict[str, ScoredVariant],
     variants_r2: Dict[str, ScoredVariant],
     max_considered: int,
+    run_id1: str,
+    run_id2: str,
 ) -> Tuple[Dict[str, List[AnnotComp]], Dict[str, int], Dict[str, int]]:
     r1_only_annots = defaultdict(int)
     r2_only_annots = defaultdict(int)
@@ -99,8 +101,12 @@ def calculate_annotation_diffs(
             r2_only_annots[info_key] += 1
 
         for shared_annot_key in comparison_results.shared:
-            info_val_r1 = var_r1.info_dict[shared_annot_key]
-            info_val_r2 = var_r2.info_dict[shared_annot_key]
+            info_val_r1 = var_r1.info_dict[shared_annot_key].replace(
+                run_id1, RUN_ID_PLACEHOLDER
+            )
+            info_val_r2 = var_r2.info_dict[shared_annot_key].replace(
+                run_id2, RUN_ID_PLACEHOLDER
+            )
 
             if info_val_r1 != info_val_r2:
                 annot_comp = AnnotComp(
