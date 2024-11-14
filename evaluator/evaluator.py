@@ -479,6 +479,8 @@ def compare_variant_annotation(
             f"Found {len(diffs_per_annot_key)} shared keys with differing annotation values"
         )
 
+        longest_key = max([len(info_key) for info_key in diffs_per_annot_key])
+
         for info_key, differing_vals in diffs_per_annot_key.items():
             first_differing_variant = differing_vals[0]
             r1_val = first_differing_variant[0]
@@ -493,8 +495,9 @@ def compare_variant_annotation(
             )
             variant = variants_r1[variant_key]
             variant_info = variant.get_basic_info()
+            left_col = f"{info_key}:"
             logger.info(
-                f"{info_key}: Number: {len(differing_vals)} First ({variant_info}): {example_r1} / {example_r2}"
+                f"{left_col.ljust(longest_key)} Number: {len(differing_vals)} First ({variant_info}): {example_r1} / {example_r2}"
             )
 
 
