@@ -462,12 +462,12 @@ def compare_variant_annotation(
         example_r1 = (
             example[0]
             if len(example[0]) < max_str_len
-            else example[0:max_str_len] + "..."
+            else example[0][0:max_str_len] + "..."
         )
         example_r2 = (
             example[1]
             if len(example[1]) < max_str_len
-            else example[1:max_str_len] + "..."
+            else example[1][1:max_str_len] + "..."
         )
         print(
             f"{key}: Number: {len(differing_vals)} First: {example_r1} / {example_r2}"
