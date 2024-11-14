@@ -70,6 +70,7 @@ def main(
     max_display: int,
     outdir: Optional[Path],
     verbose: bool,
+    max_checked_annots: int,
 ):
 
     curr_dir = os.path.dirname(os.path.abspath(__file__))
@@ -161,6 +162,7 @@ def main(
             is_sv,
             score_threshold,
             max_display,
+            max_checked_annots,
             out_path_presence,
             out_path_score_thres,
             out_path_score_all,
@@ -195,6 +197,7 @@ def main(
             is_sv,
             score_threshold,
             max_display,
+            max_checked_annots,
             out_path_presence,
             out_path_score_thres,
             out_path_score_all,
@@ -362,6 +365,7 @@ def variant_comparisons(
     is_sv: bool,
     score_threshold: int,
     max_display: int,
+    max_checked_annots: int,
     out_path_presence: Optional[Path],
     out_path_score_above_thres: Optional[Path],
     out_path_score_all: Optional[Path],
@@ -384,7 +388,6 @@ def variant_comparisons(
         out_path_presence,
     )
     shared_variants = comparison_results.shared
-    check_max_annots = 10000
     if do_annot_check:
         logger.info("")
         logger.info("--- Comparing annotations ---")
@@ -394,7 +397,7 @@ def variant_comparisons(
             shared_variants,
             variants_r1,
             variants_r2,
-            check_max_annots,
+            max_checked_annots,
         )
     if do_score_check:
         logger.info("")
@@ -484,6 +487,7 @@ def compare_variant_annotation(
         logger.info(
             f"Found {len(diffs_per_annot_key)} shared keys with differing annotation values among {max_considered} variants"
         )
+        logger.info("Showing number differing and first variant for each annotation")
 
         left_adjust = max([len(info_key) for info_key in diffs_per_annot_key]) + 2
 
@@ -502,8 +506,9 @@ def compare_variant_annotation(
             variant = variants_r1[variant_key]
             variant_info = variant.get_basic_info()
             left_col = f"{info_key}:"
+            center_col = f"{len(differing_vals)} differing"
             logger.info(
-                f"{left_col.ljust(left_adjust)} Number: {len(differing_vals)} First ({variant_info}): {example_r1} / {example_r2}"
+                f"{left_col.ljust(left_adjust)} {center_col.ljust(10)} {variant_info}: {example_r1} / {example_r2}"
             )
 
 
@@ -720,6 +725,12 @@ def add_arguments(parser: argparse.ArgumentParser):
         help="Print additional information",
     )
     parser.add_argument("--outdir", help="Optional output folder to store result files")
+    parser.add_argument(
+        "--max_checked_annots",
+        help="Max number of annotations to check",
+        default=20000,
+        type=int,
+    )
 
 
 def main_wrapper(args: argparse.Namespace):
@@ -734,6 +745,7 @@ def main_wrapper(args: argparse.Namespace):
         args.max_display,
         Path(args.outdir) if args.outdir is not None else None,
         args.verbose,
+        args.max_checked_annots,
     )
 
 
