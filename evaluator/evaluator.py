@@ -451,7 +451,6 @@ def compare_variant_annotation(
     r2_only = defaultdict(int)
 
     nbr_checked = 0
-
     max_str_len = 50
 
     class AnnotComp:
@@ -465,7 +464,7 @@ def compare_variant_annotation(
 
     diffs_per_annot_key: defaultdict[str, List[AnnotComp]] = defaultdict(list)
 
-    for variant_key in shared_variant_keys:
+    for variant_key in sorted(shared_variant_keys):
         var_r1 = variants_r1[variant_key]
         var_r2 = variants_r2[variant_key]
 
@@ -519,9 +518,15 @@ def compare_variant_annotation(
         logger.info("Showing number differing and first variant for each annotation")
 
         info_key_length = max([len(info_key) for info_key in diffs_per_annot_key])
-        # Get the length of the values
+        # Get the str-length of the counts
         count_length = max(
             [len(str(len(info_nbr))) for info_nbr in diffs_per_annot_key.values()]
+        )
+        var_info_length = max(
+            [
+                len(differing_vals[0].variant_key)
+                for differing_vals in diffs_per_annot_key.values()
+            ]
         )
 
         for info_key, differing_vals in diffs_per_annot_key.items():
@@ -533,8 +538,13 @@ def compare_variant_annotation(
             example_r2 = truncate_string(r2_val, max_str_len)
             variant = variants_r1[variant_key]
             variant_info = variant.get_basic_info()
+
+            key_col = f"{info_key.ljust(info_key_length + 2)}"
+            count_col = f"{str(len(differing_vals)).ljust(count_length + 2)}"
+            variant_info_col = f"{variant_info.ljust(var_info_length + 2)}"
+
             logger.info(
-                f"{info_key.ljust(info_key_length + 2)} {str(len(differing_vals)).ljust(count_length + 2)} {variant_info}: {example_r1} / {example_r2}"
+                f"{key_col} {count_col} {variant_info_col} {example_r1} / {example_r2}"
             )
 
 
