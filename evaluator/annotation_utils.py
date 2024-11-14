@@ -54,12 +54,16 @@ def compare_variant_annotation(
             )
             for variant_key, val in r1_only_annots.items():
                 logger.info(f"{variant_key}: {val}")
+        else:
+            logger.info(f"No annotation keys found only in {run_id1}")
         if len(r2_only_annots) > 0:
             logger.info(
                 f"Annotation keys only found in {run_id2} among {max_considered} variants"
             )
             for variant_key, val in r2_only_annots.items():
                 logger.info(f"{variant_key}: {val}")
+        else:
+            logger.info(f"No annotation keys found only in {run_id2}")
 
     if len(diffs_per_annot_key) == 0:
         logger.info(f"Among shared annotation keys, all values were the same")
