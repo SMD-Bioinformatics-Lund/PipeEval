@@ -97,9 +97,7 @@ def compare_variant_annotation(
         logger.info("Showing number differing and first variant for each annotation")
 
 
-def print_annot_value_diff(
-    logger: Logger, diffs_per_annot: defaultdict[str, List[AnnotComp]]
-):
+def print_annot_value_diff(logger: Logger, diffs_per_annot: Dict[str, List[AnnotComp]]):
 
     output_rows = []
     for info_key, annot_value_diffs in diffs_per_annot.items():
