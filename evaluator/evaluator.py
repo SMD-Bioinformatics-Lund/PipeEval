@@ -490,8 +490,9 @@ def compare_variant_annotation(
         logger.info("Showing number differing and first variant for each annotation")
 
         info_key_length = max([len(info_key) for info_key in diffs_per_annot_key])
+        # Get the length of the values
         count_length = max(
-            [len(str(info_nbr)) for info_nbr in diffs_per_annot_key.values()]
+            [len(str(len(info_nbr))) for info_nbr in diffs_per_annot_key.values()]
         )
 
         for info_key, differing_vals in diffs_per_annot_key.items():
@@ -509,7 +510,7 @@ def compare_variant_annotation(
             variant = variants_r1[variant_key]
             variant_info = variant.get_basic_info()
             logger.info(
-                f"{info_key.ljust(info_key_length + 2)} {str(differing_vals).ljust(count_length + 2)} {variant_info}: {example_r1} / {example_r2}"
+                f"{info_key.ljust(info_key_length + 2)} {str(len(differing_vals)).ljust(count_length + 2)} {variant_info}: {example_r1} / {example_r2}"
             )
 
 
