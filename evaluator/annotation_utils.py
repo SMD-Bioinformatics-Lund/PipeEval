@@ -3,7 +3,7 @@ from typing import Dict, Set, List, Tuple
 from collections import defaultdict
 
 from evaluator.classes import ScoredVariant
-from evaluator.util import do_comparison
+from evaluator.util import do_comparison, parse_var_key_for_sort
 from util.constants import MAX_STR_LEN
 from util.shared_utils import prettify_rows, truncate_string
 
@@ -86,7 +86,7 @@ def calculate_annotation_diffs(
 
     diffs_per_annot_key: defaultdict[str, List[AnnotComp]] = defaultdict(list)
     nbr_checked = 0
-    for variant_key in sorted(shared_variant_keys):
+    for variant_key in sorted(shared_variant_keys, key=parse_var_key_for_sort):
         var_r1 = variants_r1[variant_key]
         var_r2 = variants_r2[variant_key]
 
