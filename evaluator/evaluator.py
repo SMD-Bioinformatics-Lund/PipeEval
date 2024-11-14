@@ -368,38 +368,45 @@ def variant_comparisons(
     do_score_check: bool,
     do_annot_check: bool,
 ):
-    # variants_r1 = parse_vcf(r1_scored_vcf, is_sv)
-    # variants_r2 = parse_vcf(r2_scored_vcf, is_sv)
-    # comparison_results = do_comparison(
-    #     set(variants_r1.keys()),
-    #     set(variants_r2.keys()),
-    # )
-    # compare_variant_presence(
-    #     run_id1,
-    #     run_id2,
-    #     variants_r1,
-    #     variants_r2,
-    #     comparison_results,
-    #     max_display,
-    #     out_path_presence,
-    # )
-    # shared_variants = comparison_results.shared
-    check_max_annots = 1000
-    compare_variant_annotation(
-        run_id1, run_id2, shared_variants, variants_r1, variants_r2, check_max_annots
+    variants_r1 = parse_vcf(r1_scored_vcf, is_sv)
+    variants_r2 = parse_vcf(r2_scored_vcf, is_sv)
+    comparison_results = do_comparison(
+        set(variants_r1.keys()),
+        set(variants_r2.keys()),
     )
-    compare_variant_score(
+    compare_variant_presence(
         run_id1,
         run_id2,
-        shared_variants,
         variants_r1,
         variants_r2,
-        score_threshold,
+        comparison_results,
         max_display,
-        out_path_score_above_thres,
-        out_path_score_all,
-        is_sv,
+        out_path_presence,
     )
+    shared_variants = comparison_results.shared
+    check_max_annots = 1000
+    if do_annot_check:
+        compare_variant_annotation(
+            run_id1,
+            run_id2,
+            shared_variants,
+            variants_r1,
+            variants_r2,
+            check_max_annots,
+        )
+    if do_score_check:
+        compare_variant_score(
+            run_id1,
+            run_id2,
+            shared_variants,
+            variants_r1,
+            variants_r2,
+            score_threshold,
+            max_display,
+            out_path_score_above_thres,
+            out_path_score_all,
+            is_sv,
+        )
 
 
 def compare_variant_annotation(
