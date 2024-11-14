@@ -454,25 +454,44 @@ def compare_variant_annotation(
             logger.info(f"Breaking after looking at {nbr_checked} entries")
             break
 
-    print(r1_only)
-    print(r2_only)
-    for key, differing_vals in diffs_per_annot_key.items():
-        example = differing_vals[0]
-        # FIXME: Utility function
-        example_r1 = (
-            example[0]
-            if len(example[0]) < max_str_len
-            else example[0][0:max_str_len] + "..."
+    logger.info("")
+    logger.info("--- Comparing annotations ---")
+
+    if len(r1_only) == 0 and len(r2_only) == 0:
+        logger.info("No annotation keys found uniquely in one VCF")
+    else:
+        if len(r1_only) > 0:
+            logger.info("Annotation keys only found in r1")
+            for key, val in r1_only:
+                logger.info(f"{key}: {val}")
+        if len(r2_only) > 0:
+            logger.info("Annotation keys only found in r2")
+            for key, val in r2_only:
+                logger.info(f"{key}: {val}")
+
+    if len(diffs_per_annot_key) == 0:
+        logger.info("Among shared annotation keys, all values were the same")
+    else:
+        logger.info(
+            f"Found {len(diffs_per_annot_key)} shared keys with differing annotation values"
         )
-        example_r2 = (
-            example[1]
-            if len(example[1]) < max_str_len
-            else example[1][1:max_str_len] + "..."
-        )
-        print(
-            f"{key}: Number: {len(differing_vals)} First: {example_r1} / {example_r2}"
-        )
-    # Next, I suspect we are interested in the same annotation with different content
+
+        for key, differing_vals in diffs_per_annot_key.items():
+            example = differing_vals[0]
+            # FIXME: Utility function
+            example_r1 = (
+                example[0]
+                if len(example[0]) < max_str_len
+                else example[0][0:max_str_len] + "..."
+            )
+            example_r2 = (
+                example[1]
+                if len(example[1]) < max_str_len
+                else example[1][1:max_str_len] + "..."
+            )
+            print(
+                f"{key}: Number: {len(differing_vals)} First: {example_r1} / {example_r2}"
+            )
 
 
 def compare_vcfs(
