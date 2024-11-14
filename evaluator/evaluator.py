@@ -14,6 +14,7 @@ from collections import defaultdict
 import difflib
 import logging
 
+from evaluator.annotation_utils import compare_variant_annotation
 from util.shared_utils import load_config, prettify_rows, truncate_string
 
 from .score_utils import get_table
@@ -411,6 +412,7 @@ def variant_comparisons(
         logger.info("")
         logger.info("--- Comparing annotations ---")
         compare_variant_annotation(
+            logger,
             run_id1,
             run_id2,
             shared_variants,
@@ -433,119 +435,6 @@ def variant_comparisons(
             out_path_score_all,
             is_sv,
         )
-
-
-def compare_variant_annotation(
-    run_id1: str,
-    run_id2: str,
-    shared_variant_keys: Set[str],
-    variants_r1: Dict[str, ScoredVariant],
-    variants_r2: Dict[str, ScoredVariant],
-    max_considered: int,
-):
-    # First sum up the differing
-    # I.e. X have N with A annotation key, Y have N with B annotation key
-
-    # I suspect this will be quite time consuming. Maybe we should just do this for a sample?
-    r1_only = defaultdict(int)
-    r2_only = defaultdict(int)
-
-    nbr_checked = 0
-    max_str_len = 50
-
-    class AnnotComp:
-        def __init__(
-            self, variant_key: str, info_key: str, r1_annot: str, r2_annot: str
-        ):
-            self.variant_key = variant_key
-            self.info_key = info_key
-            self.r1_annot = r1_annot
-            self.r2_annot = r2_annot
-
-    diffs_per_annot_key: defaultdict[str, List[AnnotComp]] = defaultdict(list)
-
-    for variant_key in sorted(shared_variant_keys):
-        var_r1 = variants_r1[variant_key]
-        var_r2 = variants_r2[variant_key]
-
-        annot_keys_r1 = var_r1.info_dict.keys()
-        annot_keys_r2 = var_r2.info_dict.keys()
-        comparison_results = do_comparison(set(annot_keys_r1), set(annot_keys_r2))
-        for info_key in comparison_results.r1:
-            r1_only[info_key] += 1
-        for info_key in comparison_results.r2:
-            r2_only[info_key] += 1
-
-        for shared_annot_key in comparison_results.shared:
-            info_val_r1 = var_r1.info_dict[shared_annot_key]
-            info_val_r2 = var_r2.info_dict[shared_annot_key]
-
-            if info_val_r1 != info_val_r2:
-                annot_comp = AnnotComp(
-                    variant_key, shared_annot_key, info_val_r1, info_val_r2
-                )
-                diffs_per_annot_key[shared_annot_key].append(annot_comp)
-
-        nbr_checked += 1
-        if nbr_checked >= max_considered:
-            logger.info(f"Breaking after looking at {nbr_checked} entries")
-            break
-
-    if len(r1_only) == 0 and len(r2_only) == 0:
-        logger.info(
-            f"No annotation keys found uniquely in one VCF among first {max_considered} variants"
-        )
-    else:
-        if len(r1_only) > 0:
-            logger.info(
-                f"Annotation keys only found in {run_id1} among {max_considered} variants"
-            )
-            for variant_key, val in r1_only:
-                logger.info(f"{variant_key}: {val}")
-        if len(r2_only) > 0:
-            logger.info(
-                f"Annotation keys only found in {run_id2} among {max_considered} variants"
-            )
-            for variant_key, val in r2_only:
-                logger.info(f"{variant_key}: {val}")
-
-    if len(diffs_per_annot_key) == 0:
-        logger.info(f"Among shared annotation keys, all values were the same")
-    else:
-        logger.info(
-            f"Found {len(diffs_per_annot_key)} shared keys with differing annotation values among {max_considered} variants"
-        )
-        logger.info("Showing number differing and first variant for each annotation")
-
-        info_key_length = max([len(info_key) for info_key in diffs_per_annot_key])
-        # Get the str-length of the counts
-        count_length = max(
-            [len(str(len(info_nbr))) for info_nbr in diffs_per_annot_key.values()]
-        )
-        var_info_length = max(
-            [
-                len(differing_vals[0].variant_key)
-                for differing_vals in diffs_per_annot_key.values()
-            ]
-        )
-
-        for info_key, differing_vals in diffs_per_annot_key.items():
-            first_differing_variant = differing_vals[0]
-            r1_val = first_differing_variant.r1_annot
-            r2_val = first_differing_variant.r2_annot
-            variant_key = first_differing_variant.variant_key
-            example_r1 = truncate_string(r1_val, max_str_len)
-            example_r2 = truncate_string(r2_val, max_str_len)
-            variant = variants_r1[variant_key]
-            variant_info = variant.get_basic_info()
-
-            key_col = f"{info_key.ljust(info_key_length + 2)}"
-            count_col = f"{str(len(differing_vals)).ljust(count_length + 2)}"
-            variant_info_col = f"{variant_info.ljust(var_info_length + 2)}"
-
-            logger.info(
-                f"{key_col} {count_col} {variant_info_col} {example_r1} / {example_r2}"
-            )
 
 
 def compare_vcfs(
