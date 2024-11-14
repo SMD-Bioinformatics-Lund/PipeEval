@@ -40,6 +40,18 @@ logger.setLevel(logging.INFO)
 
 RUN_ID_PLACEHOLDER = "RUNID"
 VCF_SUFFIX = [".vcf", ".vcf.gz"]
+VALID_COMPARISONS = set(
+    [
+        "default",
+        "file",
+        "vcf",
+        "score",
+        "score_sv",
+        "yaml",
+        "annotation",
+        "annotation_sv",
+    ]
+)
 
 description = """
 Compare results for runs in the CMD constitutional pipeline.
@@ -76,10 +88,9 @@ def main(
     curr_dir = os.path.dirname(os.path.abspath(__file__))
     config = load_config(curr_dir, config_path)
 
-    valid_comparisons = set(["default", "file", "vcf", "score", "score_sv", "yaml"])
-    if comparisons is not None and len(comparisons & valid_comparisons) == 0:
+    if comparisons is not None and len(comparisons & VALID_COMPARISONS) == 0:
         raise ValueError(
-            f"Valid comparisons are: {valid_comparisons}, found: {comparisons}"
+            f"Valid comparisons are: {VALID_COMPARISONS}, found: {comparisons}"
         )
 
     verify_pair_exists("result dirs", results1_dir, results2_dir)
@@ -706,7 +717,7 @@ def add_arguments(parser: argparse.ArgumentParser):
     parser.add_argument("--config", help="Additional configurations")
     parser.add_argument(
         "--comparisons",
-        help="Comma separated. Defaults to: default, run all by: file,vcf,score,score_sv,yaml,versions,annotation,annotation_sv",
+        help=f"Comma separated. Defaults to: default, run all by: {','.join(VALID_COMPARISONS)}",
         default="default",
     )
     parser.add_argument(
