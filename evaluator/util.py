@@ -107,7 +107,7 @@ def parse_vcf(vcf: PathObj, is_sv: bool) -> Dict[str, ScoredVariant]:
                 else None
             )
             if info_dict.get("END") is not None:
-                sv_end = int(info_dict["SVLEN"])
+                sv_end = int(info_dict["END"])
                 sv_length = sv_end - pos + 1
             else:
                 sv_length = None
