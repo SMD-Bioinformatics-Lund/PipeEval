@@ -161,6 +161,8 @@ def main(
             config["settings"]["scored_snv"].split(","),
             r1_paths,
             r2_paths,
+            results1_dir,
+            results2_dir,
             verbose,
         )
 
@@ -200,6 +202,8 @@ def main(
             config["settings"]["scored_sv"].split(","),
             r1_paths,
             r2_paths,
+            results1_dir,
+            results2_dir,
             verbose,
         )
 
@@ -234,6 +238,8 @@ def main(
             config["settings"]["yaml"].split(","),
             r1_paths,
             r2_paths,
+            results1_dir,
+            results2_dir,
             verbose,
         )
         out_path = outdir / "yaml_diff.txt" if outdir else None
@@ -248,6 +254,8 @@ def main(
             config["settings"]["versions"].split(","),
             r1_paths,
             r2_paths,
+            results1_dir,
+            results2_dir,
             verbose,
         )
         out_path = outdir / "yaml_diff.txt" if outdir else None
