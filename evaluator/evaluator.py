@@ -387,7 +387,7 @@ def get_variant_presence_summary(
             r1_table.append(row_fields)
         pretty_rows = prettify_rows(r1_table)
         for row in pretty_rows:
-            print(row)
+            output.append(row)
 
     if len(r2_only) > 0:
         if max_display is not None:
@@ -403,7 +403,7 @@ def get_variant_presence_summary(
             r2_table.append(row_fields)
         pretty_rows = prettify_rows(r2_table)
         for row in pretty_rows:
-            print(row)
+            output.append(row)
 
     return output
 
