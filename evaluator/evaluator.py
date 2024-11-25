@@ -550,6 +550,9 @@ def print_diff_score_info(
     logger.info(
         f"Number differently scored above {score_threshold}: {len(diff_variants_above_thres)}",
     )
+    logger.info(
+        f"Total number shared variants: {len(shared_variant_keys)} (r1: {len(variants_r1)}, r2: {len(variants_r2)})",
+    )
 
     full_comparison_table = get_table(
         run_id1,
