@@ -343,6 +343,16 @@ def compare_variant_presence(
         logger.info(line)
 
     if out_path is not None:
+        summary_lines = get_variant_presence_summary(
+            label_r1,
+            label_r2,
+            common,
+            r1_only,
+            r2_only,
+            variants_r1,
+            variants_r2,
+            max_display=None,
+        )
         with out_path.open("w") as out_fh:
             for line in summary_lines:
                 print(line, file=out_fh)
