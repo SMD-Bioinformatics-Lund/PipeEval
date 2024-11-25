@@ -2,7 +2,8 @@
 
 * Show total number of variants in scored comparisons
 * Simplify README by removing help printout
-* Pretty print annotations
+* Pretty print variant presence/absence
+* Update "tag" to "label" in run.log
 
 # 1.0.4
 

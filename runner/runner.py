@@ -215,7 +215,7 @@ def build_run_label(
 def write_run_log(
     run_log_path: Path,
     run_type: str,
-    tag: str,
+    label: str,
     checkout_str: str,
     config: ConfigParser,
     commit_hash: str,
@@ -224,7 +224,7 @@ def write_run_log(
         print("# Settings", file=out_fh)
         print(f"output dir: {run_log_path.parent}", file=out_fh)
         print(f"run type: {run_type}", file=out_fh)
-        print(f"tag: {tag}", file=out_fh)
+        print(f"run label: {label}", file=out_fh)
         print(f"checkout: {checkout_str}", file=out_fh)
         print(f"commit hash: {commit_hash}", file=out_fh)
         print("", file=out_fh)
