@@ -2,6 +2,7 @@
 
 * Show total number of variants in scored comparisons
 * Simplify README by removing help printout
+* Pretty print annotations
 
 # 1.0.4
 

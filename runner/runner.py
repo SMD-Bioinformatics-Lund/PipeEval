@@ -383,11 +383,11 @@ def build_start_nextflow_analysis_cmd(
 def start_run(
     start_nextflow_command: List[str], dry_run: bool, skip_confirmation: bool
 ):
-    joined_command = " ".join(start_nextflow_command)
     if not dry_run:
         if not skip_confirmation:
+            pretty_command = " \\n    ".join(start_nextflow_command)
             confirmation = input(
-                f"Do you want to run the following command:\n{joined_command}\n(y/n) "
+                f"Do you want to run the following command:\n{pretty_command}\n(y/n) "
             )
 
             if confirmation == "y":
@@ -397,6 +397,7 @@ def start_run(
         else:
             subprocess.run(start_nextflow_command, check=True)
     else:
+        joined_command = " ".join(start_nextflow_command)
         LOG.info("(dry) " + joined_command)
 
 

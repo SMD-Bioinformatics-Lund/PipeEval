@@ -1,6 +1,6 @@
 import gzip
 from pathlib import Path
-from typing import Dict, Optional, TextIO
+from typing import Dict, Optional, TextIO, List
 
 TRUNC_LENGTH = 30
 
@@ -71,6 +71,14 @@ class ScoredVariant:
 
     def get_basic_info(self) -> str:
         return f"{self.chr}:{self.pos} {self.get_trunc_ref()}/{self.get_trunc_alt()}"
+
+    def get_row_fields(self) -> List[str]:
+        row = [self.chr, self.pos, self.get_trunc_ref(), self.get_trunc_alt()]
+        if self.sv_length is not None:
+            row.append(str(self.sv_length))
+        if self.rank_score is not None:
+            row.append(str(self.rank_score))
+        return row
 
     def __eq__(self, other) -> bool:
         return (

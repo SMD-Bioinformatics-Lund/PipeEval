@@ -362,8 +362,15 @@ def get_variant_presence_summary(
             )
         else:
             output.append(f"Only found in {label_r1}")
+
+        r1_table = []
         for key in sorted(list(r1_only), key=parse_var_key_for_sort)[0:max_display]:
-            output.append(str(variants_r1[key]))
+            row_fields = variants_r1[key].get_row_fields()
+            r1_table.append(row_fields)
+        pretty_rows = prettify_rows(r1_table)
+        for row in pretty_rows:
+            print(row)
+
     if len(r2_only) > 0:
         if max_display is not None:
             output.append(
@@ -371,8 +378,14 @@ def get_variant_presence_summary(
             )
         else:
             output.append(f"Only found in {label_r2}")
+
+        r2_table = []
         for key in sorted(list(r2_only), key=parse_var_key_for_sort)[0:max_display]:
-            output.append(str(variants_r2[key]))
+            row_fields = variants_r2[key].get_row_fields()
+            r2_table.append(row_fields)
+        pretty_rows = prettify_rows(r2_table)
+        for row in pretty_rows:
+            print(row)
 
     return output
 
