@@ -5,6 +5,7 @@
 * Pretty print variant presence/absence
 * Update "tag" to "label" in run.log
 * When running eval with verbose, show the real matching paths instead of with placeholder and show base dir if not matching
+* Add header to annotation output and separate columns for pos and ref/alt
 
 # 1.0.4
 

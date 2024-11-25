@@ -16,7 +16,7 @@ import logging
 
 from evaluator.annotation_utils import compare_variant_annotation
 from util.constants import RUN_ID_PLACEHOLDER
-from util.shared_utils import load_config, prettify_rows, truncate_string
+from util.shared_utils import load_config, prettify_rows
 
 from .score_utils import get_table
 from .classes import DiffScoredVariant
