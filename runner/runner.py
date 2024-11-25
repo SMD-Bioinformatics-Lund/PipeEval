@@ -385,7 +385,7 @@ def start_run(
 ):
     if not dry_run:
         if not skip_confirmation:
-            pretty_command = " \\n    ".join(start_nextflow_command)
+            pretty_command = " \\\n    ".join(start_nextflow_command)
             confirmation = input(
                 f"Do you want to run the following command:\n{pretty_command}\n(y/n) "
             )
