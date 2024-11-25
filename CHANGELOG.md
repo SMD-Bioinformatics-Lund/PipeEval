@@ -4,7 +4,7 @@
 * Simplify README by removing help printout
 * Pretty print variant presence/absence
 * Update "tag" to "label" in run.log
-* When running eval with verbose, show the real matching paths instead of with placeholder
+* When running eval with verbose, show the real matching paths instead of with placeholder and show base dir if not matching
 
 # 1.0.4
 
