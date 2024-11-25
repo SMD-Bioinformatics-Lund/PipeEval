@@ -13,13 +13,14 @@ class AnnotComp:
         self,
         variant_key: str,
         info_key: str,
-        variant_basic_info: str,
+        variant: ScoredVariant,
         r1_annot: str,
         r2_annot: str,
     ):
         self.variant_key = variant_key
         self.info_key = info_key
-        self.variant_basic_info = variant_basic_info
+        self.variant_pos = variant
+        self.variant = variant
         self.r1_annot = r1_annot
         self.r2_annot = r2_annot
 
@@ -116,7 +117,7 @@ def calculate_annotation_diffs(
                 annot_comp = AnnotComp(
                     variant_key,
                     shared_annot_key,
-                    variants_r1[variant_key].get_basic_info(),
+                    variants_r1[variant_key],
                     info_val_r1,
                     info_val_r2,
                 )
@@ -132,18 +133,22 @@ def get_annot_value_diff_summary(
     diffs_per_annot: Dict[str, List[AnnotComp]]
 ) -> List[str]:
 
-    output_rows = []
+    header = ["key", "number", "pos", "ref/alt", "first example"]
+    output_rows = [header]
     for info_key, annot_value_diffs in diffs_per_annot.items():
         first_differing_variant = annot_value_diffs[0]
         r1_val = first_differing_variant.r1_annot
         r2_val = first_differing_variant.r2_annot
-        variant_info = first_differing_variant.variant_basic_info
+        var = first_differing_variant.variant
+        variant_pos = f"{var.chr}:{var.pos}"
+        variant_ref_alt = f"{var.get_trunc_ref()}:{var.get_trunc_alt()}"
         example_r1 = truncate_string(r1_val, MAX_STR_LEN)
         example_r2 = truncate_string(r2_val, MAX_STR_LEN)
         row = [
             info_key,
             len(annot_value_diffs),
-            variant_info,
+            variant_pos,
+            variant_ref_alt,
             f"{example_r1} / {example_r2}",
         ]
         output_rows.append(row)

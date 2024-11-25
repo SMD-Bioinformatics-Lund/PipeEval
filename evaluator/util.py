@@ -192,13 +192,30 @@ def get_pair_match(
     valid_patterns: List[str],
     r1_paths: List[PathObj],
     r2_paths: List[PathObj],
+    r1_base_dir: Path,
+    r2_base_dir: Path,
     verbose: bool,
 ) -> Tuple[PathObj, PathObj]:
     r1_matching = get_single_file_ending_with(valid_patterns, r1_paths)
     r2_matching = get_single_file_ending_with(valid_patterns, r2_paths)
     if verbose:
-        logger.info(f"Looking for pattern {valid_patterns}, found {r1_matching} in r1")
-        logger.info(f"Looking for pattern {valid_patterns}, found {r2_matching} in r2")
+        if r1_matching is not None:
+            logger.info(
+                f"Looking for pattern(s) {valid_patterns}, found {r1_matching.real_path} in r1"
+            )
+        else:
+            logger.info(
+                f"Looking for pattern(s) {valid_patterns}, did not match any file in {r1_base_dir}"
+            )
+
+        if r2_matching is not None:
+            logger.info(
+                f"Looking for pattern(s) {valid_patterns}, found {r2_matching.real_path} in r2"
+            )
+        else:
+            logger.info(
+                f"Looking for pattern(s) {valid_patterns}, did not match any file in {r2_base_dir}"
+            )
 
     verify_pair_exists(error_label, r1_matching, r2_matching)
     if r1_matching is None or r2_matching is None:

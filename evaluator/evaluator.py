@@ -16,7 +16,7 @@ import logging
 
 from evaluator.annotation_utils import compare_variant_annotation
 from util.constants import RUN_ID_PLACEHOLDER
-from util.shared_utils import load_config, prettify_rows, truncate_string
+from util.shared_utils import load_config, prettify_rows
 
 from .score_utils import get_table
 from .classes import DiffScoredVariant
@@ -161,6 +161,8 @@ def main(
             config["settings"]["scored_snv"].split(","),
             r1_paths,
             r2_paths,
+            results1_dir,
+            results2_dir,
             verbose,
         )
 
@@ -200,6 +202,8 @@ def main(
             config["settings"]["scored_sv"].split(","),
             r1_paths,
             r2_paths,
+            results1_dir,
+            results2_dir,
             verbose,
         )
 
@@ -234,6 +238,8 @@ def main(
             config["settings"]["yaml"].split(","),
             r1_paths,
             r2_paths,
+            results1_dir,
+            results2_dir,
             verbose,
         )
         out_path = outdir / "yaml_diff.txt" if outdir else None
@@ -248,6 +254,8 @@ def main(
             config["settings"]["versions"].split(","),
             r1_paths,
             r2_paths,
+            results1_dir,
+            results2_dir,
             verbose,
         )
         out_path = outdir / "yaml_diff.txt" if outdir else None
@@ -335,8 +343,18 @@ def compare_variant_presence(
         logger.info(line)
 
     if out_path is not None:
+        full_summary_lines = get_variant_presence_summary(
+            label_r1,
+            label_r2,
+            common,
+            r1_only,
+            r2_only,
+            variants_r1,
+            variants_r2,
+            max_display=None,
+        )
         with out_path.open("w") as out_fh:
-            for line in summary_lines:
+            for line in full_summary_lines:
                 print(line, file=out_fh)
 
 
@@ -362,8 +380,15 @@ def get_variant_presence_summary(
             )
         else:
             output.append(f"Only found in {label_r1}")
+
+        r1_table = []
         for key in sorted(list(r1_only), key=parse_var_key_for_sort)[0:max_display]:
-            output.append(str(variants_r1[key]))
+            row_fields = variants_r1[key].get_row_fields()
+            r1_table.append(row_fields)
+        pretty_rows = prettify_rows(r1_table)
+        for row in pretty_rows:
+            output.append(row)
+
     if len(r2_only) > 0:
         if max_display is not None:
             output.append(
@@ -371,8 +396,14 @@ def get_variant_presence_summary(
             )
         else:
             output.append(f"Only found in {label_r2}")
+
+        r2_table = []
         for key in sorted(list(r2_only), key=parse_var_key_for_sort)[0:max_display]:
-            output.append(str(variants_r2[key]))
+            row_fields = variants_r2[key].get_row_fields()
+            r2_table.append(row_fields)
+        pretty_rows = prettify_rows(r2_table)
+        for row in pretty_rows:
+            output.append(row)
 
     return output
 
@@ -549,6 +580,9 @@ def print_diff_score_info(
     )
     logger.info(
         f"Number differently scored above {score_threshold}: {len(diff_variants_above_thres)}",
+    )
+    logger.info(
+        f"Total number shared variants: {len(shared_variant_keys)} (r1: {len(variants_r1)}, r2: {len(variants_r2)})",
     )
 
     full_comparison_table = get_table(
