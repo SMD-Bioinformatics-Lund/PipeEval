@@ -1,3 +1,8 @@
+# 1.1.0
+
+* Show total number of variants in scored comparisons
+* Simplify README by removing help printout
+
 # 1.0.4
 
 * Calculate length through END - pos + 1
