@@ -727,7 +727,7 @@ def main_wrapper(args: argparse.Namespace):
         Path(args.outdir) if args.outdir is not None else None,
         args.verbose,
         args.max_checked_annots,
-        args.line_number,
+        args.show_line_numbers,
     )
 
 
