@@ -616,7 +616,13 @@ def print_diff_score_info(
 
     if len(diff_variants_above_thres) > max_count:
         logger.info(f"Only printing the {max_count} first")
-    nbr_out_cols = 7 if is_sv else 6
+    # FIXME: Get rid of this uglyness. It should handle number of cols in a flexible way
+    # variant.get_row() might be part of a solution
+    nbr_out_cols = 6
+    if is_sv:
+        nbr_out_cols += 1
+    if show_line_numbers:
+        nbr_out_cols += 1
     first_rows_and_cols = [
         full_row[0:nbr_out_cols] for full_row in full_comparison_table[0:max_count]
     ]
