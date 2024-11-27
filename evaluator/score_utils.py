@@ -27,7 +27,7 @@ def get_comparison_row(
         fields.append(str(var1.sv_length))
 
     if show_line_numbers:
-        line_numbers = f"{var1.vcf_line_number}/{var2.vcf_line_number}"
+        line_numbers = f"{var1.line_number}/{var2.line_number}"
         fields.append(line_numbers)
 
     fields.extend([var1.get_rank_score_str(), var2.get_rank_score_str()])

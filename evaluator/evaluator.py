@@ -390,7 +390,7 @@ def get_variant_presence_summary(
 
         r1_table = []
         for key in sorted(list(r1_only), key=parse_var_key_for_sort)[0:max_display]:
-            row_fields = variants_r1[key].get_row_fields(show_line_numbers)
+            row_fields = variants_r1[key].get_row(show_line_numbers)
             r1_table.append(row_fields)
         pretty_rows = prettify_rows(r1_table)
         for row in pretty_rows:
@@ -406,7 +406,7 @@ def get_variant_presence_summary(
 
         r2_table = []
         for key in sorted(list(r2_only), key=parse_var_key_for_sort)[0:max_display]:
-            row_fields = variants_r2[key].get_row_fields(show_line_numbers)
+            row_fields = variants_r2[key].get_row(show_line_numbers)
             r2_table.append(row_fields)
         pretty_rows = prettify_rows(r2_table)
         for row in pretty_rows:
@@ -598,6 +598,7 @@ def print_diff_score_info(
         f"Total number shared variants: {len(shared_variant_keys)} (r1: {len(variants_r1)}, r2: {len(variants_r2)})",
     )
 
+    # FIXME: Merge with variant.get_row() ? To use just one method
     full_comparison_table = get_table(
         run_id1,
         run_id2,
