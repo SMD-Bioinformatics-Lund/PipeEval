@@ -66,8 +66,10 @@ def parse_vcf(vcf: PathObj, is_sv: bool) -> Dict[str, ScoredVariant]:
 
     variants: Dict[str, ScoredVariant] = {}
     with vcf.get_filehandle() as in_fh:
+        line_nbr = 0
         for line in in_fh:
             line = line.rstrip()
+            line_nbr += 1
             if line.startswith("#"):
 
                 if rank_sub_score_names is None and line.startswith(
@@ -130,6 +132,7 @@ def parse_vcf(vcf: PathObj, is_sv: bool) -> Dict[str, ScoredVariant]:
                 is_sv,
                 sv_length,
                 info_dict,
+                line_nbr,
             )
             key = variant.get_simple_key()
             variants[key] = variant

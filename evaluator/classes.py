@@ -19,6 +19,7 @@ class ScoredVariant:
         is_sv: bool,
         sv_length: Optional[int],
         info_dict: Dict[str, str],
+        vcf_line_number: int,
     ):
         self.chr = chr
         self.pos = pos
@@ -29,6 +30,7 @@ class ScoredVariant:
         self.is_sv = is_sv
         self.sv_length = sv_length
         self.info_dict = info_dict
+        self.vcf_line_number = vcf_line_number
 
     def get_trunc_ref(self) -> str:
         trunc_ref = (
@@ -72,8 +74,10 @@ class ScoredVariant:
     def get_basic_info(self) -> str:
         return f"{self.chr}:{self.pos} {self.get_trunc_ref()}/{self.get_trunc_alt()}"
 
-    def get_row_fields(self) -> List[str]:
+    def get_row_fields(self, show_line_numbers: bool) -> List[str]:
         row = [self.chr, self.pos, self.get_trunc_ref(), self.get_trunc_alt()]
+        if show_line_numbers:
+            row.append(self.vcf_line_number)
         if self.sv_length is not None:
             row.append(str(self.sv_length))
         if self.rank_score is not None:

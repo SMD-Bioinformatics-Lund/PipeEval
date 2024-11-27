@@ -84,6 +84,7 @@ def main(
     outdir: Optional[Path],
     verbose: bool,
     max_checked_annots: int,
+    show_line_numbers: bool,
 ):
 
     curr_dir = os.path.dirname(os.path.abspath(__file__))
@@ -135,7 +136,7 @@ def main(
             logger.info(f"Looking for paths: {r2_paths} found: {r2_vcfs}")
         if len(r1_vcfs) > 0 or len(r2_vcfs) > 0:
             out_path = outdir / "all_vcf_compare.txt" if outdir else None
-            compare_vcfs(
+            compare_all_vcfs(
                 r1_vcfs,
                 r2_vcfs,
                 run_id1,
@@ -186,6 +187,7 @@ def main(
             out_path_score_all,
             comparisons is None or "score_snv" in comparisons,
             comparisons is None or "annotation_snv" in comparisons,
+            show_line_numbers,
         )
 
     if (
@@ -227,6 +229,7 @@ def main(
             out_path_score_all,
             comparisons is None or "score_sv" in comparisons,
             comparisons is None or "annotation_sv" in comparisons,
+            show_line_numbers,
         )
 
     if comparisons is None or "yaml" in comparisons:
@@ -323,6 +326,7 @@ def compare_variant_presence(
     comparison_results: Comparison[str],
     max_display: int,
     out_path: Optional[Path],
+    show_line_numbers: bool,
 ):
 
     common = comparison_results.shared
@@ -337,6 +341,7 @@ def compare_variant_presence(
         r2_only,
         variants_r1,
         variants_r2,
+        show_line_numbers,
         max_display,
     )
     for line in summary_lines:
@@ -351,6 +356,7 @@ def compare_variant_presence(
             r2_only,
             variants_r1,
             variants_r2,
+            show_line_numbers,
             max_display=None,
         )
         with out_path.open("w") as out_fh:
@@ -366,6 +372,7 @@ def get_variant_presence_summary(
     r2_only: Set[str],
     variants_r1: Dict[str, ScoredVariant],
     variants_r2: Dict[str, ScoredVariant],
+    show_line_numbers: bool,
     max_display: Optional[int],
 ) -> List[str]:
     output = []
@@ -383,7 +390,7 @@ def get_variant_presence_summary(
 
         r1_table = []
         for key in sorted(list(r1_only), key=parse_var_key_for_sort)[0:max_display]:
-            row_fields = variants_r1[key].get_row_fields()
+            row_fields = variants_r1[key].get_row_fields(show_line_numbers)
             r1_table.append(row_fields)
         pretty_rows = prettify_rows(r1_table)
         for row in pretty_rows:
@@ -399,7 +406,7 @@ def get_variant_presence_summary(
 
         r2_table = []
         for key in sorted(list(r2_only), key=parse_var_key_for_sort)[0:max_display]:
-            row_fields = variants_r2[key].get_row_fields()
+            row_fields = variants_r2[key].get_row_fields(show_line_numbers)
             r2_table.append(row_fields)
         pretty_rows = prettify_rows(r2_table)
         for row in pretty_rows:
@@ -422,6 +429,7 @@ def variant_comparisons(
     out_path_score_all: Optional[Path],
     do_score_check: bool,
     do_annot_check: bool,
+    show_line_numbers: bool,
 ):
     variants_r1 = parse_vcf(r1_scored_vcf, is_sv)
     variants_r2 = parse_vcf(r2_scored_vcf, is_sv)
@@ -437,6 +445,7 @@ def variant_comparisons(
         comparison_results,
         max_display,
         out_path_presence,
+        show_line_numbers,
     )
     shared_variants = comparison_results.shared
     if do_annot_check:
@@ -465,10 +474,11 @@ def variant_comparisons(
             out_path_score_above_thres,
             out_path_score_all,
             is_sv,
+            show_line_numbers,
         )
 
 
-def compare_vcfs(
+def compare_all_vcfs(
     r1_vcfs: List[PathObj],
     r2_vcfs: List[PathObj],
     run_id1: str,
@@ -523,6 +533,7 @@ def compare_variant_score(
     out_path_above_thres: Optional[Path],
     out_path_all: Optional[Path],
     is_sv: bool,
+    show_line_numbers: bool,
 ):
 
     diff_scored_variants: List[DiffScoredVariant] = []
@@ -547,6 +558,7 @@ def compare_variant_score(
             max_count,
             score_threshold,
             is_sv,
+            show_line_numbers,
         )
     else:
         logger.info("No differently scored variant found")
@@ -564,6 +576,7 @@ def print_diff_score_info(
     max_count: int,
     score_threshold: int,
     is_sv: bool,
+    show_line_numbers: bool,
 ):
 
     diff_scored_variants.sort(
@@ -593,6 +606,7 @@ def print_diff_score_info(
         variants_r1,
         variants_r2,
         is_sv,
+        show_line_numbers,
     )
     if out_path_all is not None:
         with open(str(out_path_all), "w") as out_fh:
@@ -617,6 +631,7 @@ def print_diff_score_info(
         variants_r1,
         variants_r2,
         is_sv,
+        show_line_numbers,
     )
     if out_path_above_thres is not None:
         with open(str(out_path_above_thres), "w") as out_fh:
@@ -690,6 +705,12 @@ def add_arguments(parser: argparse.ArgumentParser):
         default=10000,
         type=int,
     )
+    parser.add_argument(
+        "-n",
+        "--show_line_numbers",
+        action="store_true",
+        help="Show line numbers from original VCFs in output",
+    )
 
 
 def main_wrapper(args: argparse.Namespace):
@@ -705,6 +726,7 @@ def main_wrapper(args: argparse.Namespace):
         Path(args.outdir) if args.outdir is not None else None,
         args.verbose,
         args.max_checked_annots,
+        args.line_number,
     )
 
 
