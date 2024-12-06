@@ -1,3 +1,7 @@
+# 1.1.1
+
+* Optional line number in outputs by "-n" or "--show_line_numbers" flag
+
 # 1.1.0
 
 * Show total number of variants in scored comparisons

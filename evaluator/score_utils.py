@@ -7,6 +7,7 @@ def get_comparison_row(
     var1: ScoredVariant,
     var2: ScoredVariant,
     show_sv_len: bool,
+    show_line_numbers: bool,
     show_sub_scores: bool,
     show_sub_score_summary: bool,
 ) -> List[str]:
@@ -24,6 +25,10 @@ def get_comparison_row(
 
     if show_sv_len:
         fields.append(str(var1.sv_length))
+
+    if show_line_numbers:
+        line_numbers = f"{var1.line_number}/{var2.line_number}"
+        fields.append(line_numbers)
 
     fields.extend([var1.get_rank_score_str(), var2.get_rank_score_str()])
 
@@ -47,12 +52,15 @@ def get_table(
     variants_r1: Dict[str, ScoredVariant],
     variants_r2: Dict[str, ScoredVariant],
     is_sv: bool,
+    show_line_numbers: bool,
 ) -> List[List[str]]:
 
     first_shared_key = list(shared_variant_keys)[0]
     header_fields = ["chr", "pos", "var"]
     if is_sv:
         header_fields.append("sv_len")
+    if show_line_numbers:
+        header_fields.append("line_numbers")
     header_fields.extend([f"score_{run_id1}", f"score_{run_id2}", "score_diff_summary"])
 
     for sub_score in variants_r1[first_shared_key].sub_scores:
@@ -66,6 +74,7 @@ def get_table(
             variant.r1,
             variant.r2,
             show_sv_len=is_sv,
+            show_line_numbers=show_line_numbers,
             show_sub_scores=True,
             show_sub_score_summary=True,
         )
