@@ -77,9 +77,9 @@ class CsvEntry:
         self.assay = assay
         self.group = group
         self.clarity_pool_id = "NA"
-        self.diagnosis = "NA"
+        self.diagnosis = diagnosis
         self.platform = "illumina"
-        self.analysis = "NA"
+        self.analysis = analysis
         self.priority = priority or "grace-lowest"
 
     def header_str(self) -> str:
