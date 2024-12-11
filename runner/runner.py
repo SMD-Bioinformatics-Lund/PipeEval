@@ -259,7 +259,9 @@ def get_single_csv(
     if not Path(case.read1).exists() or not Path(case.read2).exists():
         raise FileNotFoundError(f"One or both files missing: {case.read1} {case.read2}")
 
-    run_csv = CsvEntry(run_label, [case], queue, ASSAY_PLACEHOLDER)
+    analysis = run_type_settings["profile"]
+    default_panel = run_type_settings["default_panel"]
+    run_csv = CsvEntry(run_label, [case], queue, ASSAY_PLACEHOLDER, analysis, default_panel)
     return run_csv
 
 
@@ -295,7 +297,9 @@ def get_trio_csv(
 
         cases.append(case)
 
-    run_csv = CsvEntry(run_label, cases, queue, ASSAY_PLACEHOLDER)
+    analysis = run_type_settings["profile"]
+    default_panel = run_type_settings["default_panel"]
+    run_csv = CsvEntry(run_label, cases, queue, ASSAY_PLACEHOLDER, analysis, default_panel)
     return run_csv
 
 
