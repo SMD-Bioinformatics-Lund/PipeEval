@@ -58,7 +58,7 @@ def main(
     datestamp: bool,
     verbose: bool,
 ):
-    LOG.info(f"Preparing run, type: {start_data}, data: {start_data}")
+    LOG.info(f"Preparing run, type: {run_type}, data: {start_data}")
 
     check_valid_config_arguments(config, run_type, start_data, base_dir, repo)
     base_dir = (
