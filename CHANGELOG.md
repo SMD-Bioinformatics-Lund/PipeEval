@@ -1,3 +1,7 @@
+# 1.1.2
+
+* Include assay and diagnosis in config and generated CSV
+
 # 1.1.1
 
 * Optional line number in outputs by "-n" or "--show_line_numbers" flag
