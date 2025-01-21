@@ -4,8 +4,8 @@ from collections import defaultdict
 
 from shared.compare import do_comparison, parse_var_key_for_sort
 from shared.constants import MAX_STR_LEN, RUN_ID_PLACEHOLDER
-from shared.shared_utils import prettify_rows, truncate_string
-from shared.vcf import ScoredVariant
+from shared.util import prettify_rows, truncate_string
+from shared.vcf.vcf import ScoredVariant
 
 
 class AnnotComp:

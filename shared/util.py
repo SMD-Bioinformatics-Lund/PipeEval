@@ -1,13 +1,15 @@
 from configparser import ConfigParser
+import logging
 from pathlib import Path
 from typing import Any, List, Optional
 
 
-def load_config(parent_path: str, config_path: Optional[str]) -> ConfigParser:
+def load_config(logger: logging.Logger, parent_path: str, config_path: Optional[str]) -> ConfigParser:
     config = ConfigParser()
     if config_path is None:
         script_dir = Path(parent_path)
         config_path = str(script_dir / "default.config")
+        logger.info(f"No config path supplied, attempting to read from: {str(config_path)}")
     config.read(config_path)
     return config
 

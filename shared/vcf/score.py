@@ -1,6 +1,6 @@
 from typing import Set, List, Dict
 
-from shared.vcf import DiffScoredVariant, ScoredVariant
+from shared.vcf.vcf import DiffScoredVariant, ScoredVariant
 
 
 def get_comparison_row(

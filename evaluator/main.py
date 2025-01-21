@@ -17,8 +17,9 @@ import logging
 from shared.compare import do_comparison
 from shared.constants import RUN_ID_PLACEHOLDER
 from shared.file import check_valid_file, get_filehandle
-from shared.shared_utils import load_config
-from shared.vcf import count_variants, variant_comparisons
+from shared.util import load_config
+from shared.vcf.main_functions import variant_comparisons
+from shared.vcf.vcf import count_variants
 
 from .util import (
     PathObj,
@@ -82,7 +83,7 @@ def main(
 ):
 
     curr_dir = os.path.dirname(os.path.abspath(__file__))
-    config = load_config(curr_dir, config_path)
+    config = load_config(logger, curr_dir, config_path)
 
     if comparisons is not None and len(comparisons & VALID_COMPARISONS) == 0:
         raise ValueError(
@@ -314,72 +315,6 @@ def check_same_files(
         out_fh.close()
 
 
-
-
-
-# def variant_comparisons(
-#     run_id1: str,
-#     run_id2: str,
-#     r1_scored_vcf: PathObj,
-#     r2_scored_vcf: PathObj,
-#     is_sv: bool,
-#     score_threshold: int,
-#     max_display: int,
-#     max_checked_annots: int,
-#     out_path_presence: Optional[Path],
-#     out_path_score_above_thres: Optional[Path],
-#     out_path_score_all: Optional[Path],
-#     do_score_check: bool,
-#     do_annot_check: bool,
-#     show_line_numbers: bool,
-# ):
-#     variants_r1 = parse_vcf(r1_scored_vcf, is_sv)
-#     variants_r2 = parse_vcf(r2_scored_vcf, is_sv)
-#     comparison_results = do_comparison(
-#         set(variants_r1.keys()),
-#         set(variants_r2.keys()),
-#     )
-#     compare_variant_presence(
-#         run_id1,
-#         run_id2,
-#         variants_r1,
-#         variants_r2,
-#         comparison_results,
-#         max_display,
-#         out_path_presence,
-#         show_line_numbers,
-#     )
-#     shared_variants = comparison_results.shared
-#     if do_annot_check:
-#         logger.info("")
-#         logger.info("--- Comparing annotations ---")
-#         compare_variant_annotation(
-#             logger,
-#             run_id1,
-#             run_id2,
-#             shared_variants,
-#             variants_r1,
-#             variants_r2,
-#             max_checked_annots,
-#         )
-#     if do_score_check:
-#         logger.info("")
-#         logger.info("--- Comparing score ---")
-#         compare_variant_score(
-#             run_id1,
-#             run_id2,
-#             shared_variants,
-#             variants_r1,
-#             variants_r2,
-#             score_threshold,
-#             max_display,
-#             out_path_score_above_thres,
-#             out_path_score_all,
-#             is_sv,
-#             show_line_numbers,
-#         )
-
-
 def compare_all_vcfs(
     r1_vcfs: List[Path],
     r2_vcfs: List[Path],
@@ -389,7 +324,6 @@ def compare_all_vcfs(
     r2_base: str,
     out_path: Optional[Path],
 ):
-
     r1_counts: Dict[str, int] = {}
     for vcf in r1_vcfs:
         if check_valid_file(vcf):
