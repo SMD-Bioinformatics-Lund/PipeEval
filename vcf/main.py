@@ -1,9 +1,10 @@
 import argparse
 from pathlib import Path
+import gzip
 
 
 def main(vcf1: Path, vcf2: Path):
-    pass
+    vcf1_path = 
 
 def main_wrapper(args: argparse.Namespace):
     main(args.vcf1, args.vcf2)

@@ -1,6 +1,5 @@
-import gzip
 from pathlib import Path
-from typing import Dict, Optional, TextIO, List
+from typing import Dict, Optional, List
 
 TRUNC_LENGTH = 30
 
@@ -75,7 +74,7 @@ class ScoredVariant:
         return f"{self.chr}:{self.pos} {self.get_trunc_ref()}/{self.get_trunc_alt()}"
 
     def get_row(self, show_line_numbers: bool) -> List[str]:
-        row = [self.chr, self.pos, self.get_trunc_ref(), self.get_trunc_alt()]
+        row = [self.chr, str(self.pos), self.get_trunc_ref(), self.get_trunc_alt()]
         if show_line_numbers:
             row.append(str(self.line_number))
         if self.sv_length is not None:
@@ -84,17 +83,20 @@ class ScoredVariant:
             row.append(str(self.rank_score))
         return row
 
-    def __eq__(self, other) -> bool:
-        return (
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, ScoredVariant):
+            return False
+        is_same = (
             self.chr == other.chr
             and self.pos == other.pos
             and self.ref == other.ref
             and self.alt == other.alt
             and self.sv_length == other.sv_length
         )
+        return is_same
 
 
-class PathObj:
+class PathObj():
     """
     Extended Path object to make comparison between results dir more convenient.
 
@@ -124,25 +126,6 @@ class PathObj:
 
     def exists(self) -> bool:
         return self.real_path.exists()
-
-    def check_valid_file(self) -> bool:
-        try:
-            if self.is_gzipped:
-                with gzip.open(str(self.real_path), "rt") as fh:
-                    fh.read(1)
-            else:
-                with open(str(self.real_path), "r") as fh:
-                    fh.read(1)
-        except:
-            return False
-        return True
-
-    def get_filehandle(self) -> TextIO:
-        if self.is_gzipped:
-            in_fh = gzip.open(str(self.real_path), "rt")
-        else:
-            in_fh = open(str(self.real_path), "r")
-        return in_fh
 
     def __str__(self) -> str:
         return str(self.relative_path)

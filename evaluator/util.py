@@ -3,6 +3,8 @@ from pathlib import Path
 import re
 from typing import Dict, Generic, List, Optional, Set, Tuple, TypeVar, Union
 
+from util.file import get_filehandle
+
 from .classes import PathObj, ScoredVariant
 
 T = TypeVar("T")
@@ -65,7 +67,7 @@ def parse_vcf(vcf: PathObj, is_sv: bool) -> Dict[str, ScoredVariant]:
     rank_sub_score_names = None
 
     variants: Dict[str, ScoredVariant] = {}
-    with vcf.get_filehandle() as in_fh:
+    with get_filehandle(vcf.real_path) as in_fh:
         line_nbr = 0
         for line in in_fh:
             line = line.rstrip()
@@ -138,18 +140,6 @@ def parse_vcf(vcf: PathObj, is_sv: bool) -> Dict[str, ScoredVariant]:
             variants[key] = variant
     return variants
 
-
-def count_variants(vcf: PathObj) -> int:
-
-    nbr_entries = 0
-    with vcf.get_filehandle() as in_fh:
-        for line in in_fh:
-            line = line.rstrip()
-            if line.startswith("#"):
-                continue
-            nbr_entries += 1
-
-    return nbr_entries
 
 
 def get_files_in_dir(

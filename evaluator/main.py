@@ -16,7 +16,9 @@ import logging
 
 from evaluator.annotation_utils import compare_variant_annotation
 from util.constants import RUN_ID_PLACEHOLDER
+from util.file import check_valid_file, get_filehandle
 from util.shared_utils import load_config, prettify_rows
+from util.vcf import count_variants
 
 from .score_utils import get_table
 from .classes import DiffScoredVariant
@@ -25,7 +27,6 @@ from .util import (
     ScoredVariant,
     PathObj,
     any_is_parent,
-    count_variants,
     detect_run_id,
     do_comparison,
     get_files_in_dir,
@@ -137,8 +138,8 @@ def main(
         if len(r1_vcfs) > 0 or len(r2_vcfs) > 0:
             out_path = outdir / "all_vcf_compare.txt" if outdir else None
             compare_all_vcfs(
-                r1_vcfs,
-                r2_vcfs,
+                [path_obj.real_path for path_obj in r1_vcfs],
+                [path_obj.real_path for path_obj in r2_vcfs],
                 run_id1,
                 run_id2,
                 str(results1_dir),
@@ -246,7 +247,7 @@ def main(
             verbose,
         )
         out_path = outdir / "yaml_diff.txt" if outdir else None
-        diff_compare_files(run_id1, run_id2, r1_yaml, r2_yaml, out_path)
+        diff_compare_files(run_id1, run_id2, r1_yaml.real_path, r2_yaml.real_path, out_path)
 
     if comparisons is None or "versions" in comparisons:
         logger.info("")
@@ -262,7 +263,7 @@ def main(
             verbose,
         )
         out_path = outdir / "yaml_diff.txt" if outdir else None
-        diff_compare_files(run_id1, run_id2, r1_versions, r2_versions, out_path)
+        diff_compare_files(run_id1, run_id2, r1_versions.real_path, r2_versions.real_path, out_path)
 
 
 def check_same_files(
@@ -282,14 +283,14 @@ def check_same_files(
 
     out_fh = open(out_path, "w") if out_path else None
 
-    r1_non_ignored = set()
+    r1_non_ignored: Set[Path] = set()
     for path in sorted(comparison.r1):
         if any_is_parent(path, ignore_files):
             ignored[str(path.parent)] += 1
         else:
             r1_non_ignored.add(path)
 
-    r2_non_ignored = set()
+    r2_non_ignored: Set[Path] = set()
     for path in sorted(comparison.r2):
         if any_is_parent(path, ignore_files):
             ignored[str(path.parent)] += 1
@@ -375,7 +376,7 @@ def get_variant_presence_summary(
     show_line_numbers: bool,
     max_display: Optional[int],
 ) -> List[str]:
-    output = []
+    output: List[str] = []
     output.append(f"In common: {len(common)}")
     output.append(f"Only in {label_r1}: {len(r1_only)}")
     output.append(f"Only in {label_r2}: {len(r2_only)}")
@@ -388,7 +389,7 @@ def get_variant_presence_summary(
         else:
             output.append(f"Only found in {label_r1}")
 
-        r1_table = []
+        r1_table: List[List[str]] = []
         for key in sorted(list(r1_only), key=parse_var_key_for_sort)[0:max_display]:
             row_fields = variants_r1[key].get_row(show_line_numbers)
             r1_table.append(row_fields)
@@ -404,7 +405,7 @@ def get_variant_presence_summary(
         else:
             output.append(f"Only found in {label_r2}")
 
-        r2_table = []
+        r2_table: List[List[str]] = []
         for key in sorted(list(r2_only), key=parse_var_key_for_sort)[0:max_display]:
             row_fields = variants_r2[key].get_row(show_line_numbers)
             r2_table.append(row_fields)
@@ -479,8 +480,8 @@ def variant_comparisons(
 
 
 def compare_all_vcfs(
-    r1_vcfs: List[PathObj],
-    r2_vcfs: List[PathObj],
+    r1_vcfs: List[Path],
+    r2_vcfs: List[Path],
     run_id1: str,
     run_id2: str,
     r1_base: str,
@@ -490,7 +491,7 @@ def compare_all_vcfs(
 
     r1_counts: Dict[str, int] = {}
     for vcf in r1_vcfs:
-        if vcf.check_valid_file():
+        if check_valid_file(vcf):
             n_variants = count_variants(vcf)
         else:
             n_variants = 0
@@ -498,7 +499,7 @@ def compare_all_vcfs(
 
     r2_counts: Dict[str, int] = {}
     for vcf in r2_vcfs:
-        if vcf.check_valid_file():
+        if check_valid_file(vcf):
             n_variants = count_variants(vcf)
         else:
             n_variants = 0
@@ -649,12 +650,12 @@ def print_diff_score_info(
 def diff_compare_files(
     run_id1: str,
     run_id2: str,
-    file1: PathObj,
-    file2: PathObj,
+    file1: Path,
+    file2: Path,
     out_path: Optional[Path],
 ):
 
-    with file1.get_filehandle() as r1_fh, file2.get_filehandle() as r2_fh:
+    with get_filehandle(file1) as r1_fh, get_filehandle(file2) as r2_fh:
         r1_lines = [
             line.replace(run_id1, RUN_ID_PLACEHOLDER) for line in r1_fh.readlines()
         ]

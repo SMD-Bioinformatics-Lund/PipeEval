@@ -13,7 +13,7 @@ def load_config(parent_path: str, config_path: Optional[str]) -> ConfigParser:
 
 
 def prettify_rows(rows: List[List[Any]], padding: int = 4) -> List[str]:
-    column_widths = []
+    column_widths: List[int] = []
     for col_i in range(len(rows[0])):
         max_len = 0
         for row in rows:
@@ -22,7 +22,7 @@ def prettify_rows(rows: List[List[Any]], padding: int = 4) -> List[str]:
                 max_len = cell_length
         column_widths.append(max_len + padding)
 
-    pretty_rows = []
+    pretty_rows: List[str] = []
     for row in rows:
         adjusted_cells = [
             str(cell).ljust(column_widths[i]) for (i, cell) in enumerate(row)
