@@ -2,10 +2,10 @@ from logging import Logger
 from typing import Dict, Set, List, Tuple
 from collections import defaultdict
 
-from evaluator.classes import ScoredVariant
-from evaluator.util import do_comparison, parse_var_key_for_sort
-from util.constants import MAX_STR_LEN, RUN_ID_PLACEHOLDER
-from util.shared_utils import prettify_rows, truncate_string
+from shared.compare import do_comparison, parse_var_key_for_sort
+from shared.constants import MAX_STR_LEN, RUN_ID_PLACEHOLDER
+from shared.shared_utils import prettify_rows, truncate_string
+from shared.vcf import ScoredVariant
 
 
 class AnnotComp:
@@ -88,8 +88,8 @@ def calculate_annotation_diffs(
     run_id1: str,
     run_id2: str,
 ) -> Tuple[Dict[str, List[AnnotComp]], Dict[str, int], Dict[str, int]]:
-    r1_only_annots = defaultdict(int)
-    r2_only_annots = defaultdict(int)
+    r1_only_annots: Dict[str, int] = defaultdict(int)
+    r2_only_annots: Dict[str, int] = defaultdict(int)
 
     diffs_per_annot_key: defaultdict[str, List[AnnotComp]] = defaultdict(list)
     nbr_checked = 0
@@ -146,7 +146,7 @@ def get_annot_value_diff_summary(
         example_r2 = truncate_string(r2_val, MAX_STR_LEN)
         row = [
             info_key,
-            len(annot_value_diffs),
+            str(len(annot_value_diffs)),
             variant_pos,
             variant_ref_alt,
             f"{example_r1} / {example_r2}",

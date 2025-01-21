@@ -1,13 +1,11 @@
 from logging import Logger
 from pathlib import Path
 import re
-from typing import Dict, Generic, List, Optional, Set, Tuple, TypeVar, Union
+from typing import List, Optional, Tuple, Union
 
-from util.file import get_filehandle
 
-from .classes import PathObj, ScoredVariant
+from .classes import PathObj
 
-T = TypeVar("T")
 
 
 def get_files_ending_with(pattern: str, paths: List[PathObj]) -> List[PathObj]:
@@ -40,106 +38,6 @@ def any_is_parent(path: Path, names: List[str]) -> bool:
         if parent.name in names:
             return True
     return False
-
-
-class Comparison(Generic[T]):
-
-    # After Python 3.7 a @dataclass can be used instead
-    def __init__(self, r1: Set[T], r2: Set[T], shared: Set[T]):
-        self.r1 = r1
-        self.r2 = r2
-        self.shared = shared
-
-
-def do_comparison(set_1: Set[T], set_2: Set[T]) -> Comparison[T]:
-    """Can compare both str and Path objects, thus the generics"""
-    common = set_1 & set_2
-    s1_only = set_1 - set_2
-    s2_only = set_2 - set_1
-
-    return Comparison(s1_only, s2_only, common)
-
-
-def parse_vcf(vcf: PathObj, is_sv: bool) -> Dict[str, ScoredVariant]:
-
-    sub_score_name_pattern = re.compile('ID=RankResult,.*Description="(.*)">')
-
-    rank_sub_score_names = None
-
-    variants: Dict[str, ScoredVariant] = {}
-    with get_filehandle(vcf.real_path) as in_fh:
-        line_nbr = 0
-        for line in in_fh:
-            line = line.rstrip()
-            line_nbr += 1
-            if line.startswith("#"):
-
-                if rank_sub_score_names is None and line.startswith(
-                    "##INFO=<ID=RankResult,"
-                ):
-                    match = sub_score_name_pattern.search(line)
-                    if match is None:
-                        raise ValueError(
-                            f"Rankscore categories expected but not found in: ${line}"
-                        )
-                    match_string = match.group(1)
-                    rank_sub_score_names = match_string.split("|")
-
-                continue
-            fields = line.split("\t")
-            chr = fields[0]
-            pos = int(fields[1])
-            ref = fields[3]
-            alt = fields[4]
-            info = fields[7]
-
-            # Some INFO fields are not in the expected format key=value
-            info_fields = [
-                field.split("=") if field.find("=") != -1 else [field, "<MISSING>"]
-                for field in info.split(";")
-            ]
-            info_dict = dict(info_fields)
-
-            rank_score = (
-                int(info_dict["RankScore"].split(":")[1].replace(".0", ""))
-                if info_dict.get("RankScore") is not None
-                else None
-            )
-            rank_sub_scores = (
-                [int(sub_sc) for sub_sc in info_dict["RankResult"].split("|")]
-                if info_dict.get("RankResult") is not None
-                else None
-            )
-            if info_dict.get("END") is not None:
-                sv_end = int(info_dict["END"])
-                sv_length = sv_end - pos + 1
-            else:
-                sv_length = None
-
-            sub_scores_dict: Dict[str, int] = {}
-            if rank_sub_scores is not None:
-                if rank_sub_score_names is None:
-                    raise ValueError("Found rank sub scores, but not header")
-                assert len(rank_sub_score_names) == len(
-                    rank_sub_scores
-                ), f"Length of sub score names and values should match, found {rank_sub_score_names} and {rank_sub_scores} in line: {line}"
-                sub_scores_dict = dict(zip(rank_sub_score_names, rank_sub_scores))
-            variant = ScoredVariant(
-                chr,
-                pos,
-                ref,
-                alt,
-                rank_score,
-                sub_scores_dict,
-                is_sv,
-                sv_length,
-                info_dict,
-                line_nbr,
-            )
-            key = variant.get_simple_key()
-            variants[key] = variant
-    return variants
-
 
 
 def get_files_in_dir(
@@ -188,7 +86,7 @@ def get_pair_match(
     r1_base_dir: Path,
     r2_base_dir: Path,
     verbose: bool,
-) -> Tuple[PathObj, PathObj]:
+) -> Tuple[Path, Path]:
     r1_matching = get_single_file_ending_with(valid_patterns, r1_paths)
     r2_matching = get_single_file_ending_with(valid_patterns, r2_paths)
     if verbose:
@@ -215,7 +113,7 @@ def get_pair_match(
         raise ValueError(
             "Missing files (should have been captured by verification call?)"
         )
-    return (r1_matching, r2_matching)
+    return (r1_matching.real_path, r2_matching.real_path)
 
 
 def detect_run_id(logger: Logger, base_dir_name: str, verbose: bool) -> str:
@@ -235,17 +133,3 @@ def detect_run_id(logger: Logger, base_dir_name: str, verbose: bool) -> str:
         return dir_name
 
 
-def parse_var_key_for_sort(entry: str) -> Tuple[int, int]:
-    chrom, pos = entry.split("_")[0:2]
-    # If prefixed with chr, remove it
-    if chrom.startswith("chr"):
-        chrom = chrom.replace("chr", "")
-    chrom_map = {"X": 24, "Y": 25, "M": 26, "MT": 26}
-    if chrom in chrom_map:
-        chrom_numeric = chrom_map[chrom]
-    else:
-        try:
-            chrom_numeric = int(chrom)
-        except ValueError:
-            raise ValueError(f"Unexpected chromosome format: {chrom}")
-    return chrom_numeric, int(pos)

@@ -14,25 +14,18 @@ from collections import defaultdict
 import difflib
 import logging
 
-from evaluator.annotation_utils import compare_variant_annotation
-from util.constants import RUN_ID_PLACEHOLDER
-from util.file import check_valid_file, get_filehandle
-from util.shared_utils import load_config, prettify_rows
-from util.vcf import count_variants
+from shared.compare import do_comparison
+from shared.constants import RUN_ID_PLACEHOLDER
+from shared.file import check_valid_file, get_filehandle
+from shared.shared_utils import load_config
+from shared.vcf import count_variants, variant_comparisons
 
-from .score_utils import get_table
-from .classes import DiffScoredVariant
 from .util import (
-    Comparison,
-    ScoredVariant,
     PathObj,
     any_is_parent,
     detect_run_id,
-    do_comparison,
     get_files_in_dir,
     get_pair_match,
-    parse_var_key_for_sort,
-    parse_vcf,
     get_files_ending_with,
     verify_pair_exists,
 )
@@ -175,6 +168,7 @@ def main(
         out_path_score_all = outdir / "scored_snv_score_all.txt" if outdir else None
         is_sv = False
         variant_comparisons(
+            logger,
             run_id1,
             run_id2,
             r1_scored_snv_vcf,
@@ -217,6 +211,7 @@ def main(
         out_path_score_all = outdir / "scored_sv_score.txt" if outdir else None
         is_sv = True
         variant_comparisons(
+            logger,
             run_id1,
             run_id2,
             r1_scored_sv_vcf,
@@ -247,7 +242,7 @@ def main(
             verbose,
         )
         out_path = outdir / "yaml_diff.txt" if outdir else None
-        diff_compare_files(run_id1, run_id2, r1_yaml.real_path, r2_yaml.real_path, out_path)
+        diff_compare_files(run_id1, run_id2, r1_yaml, r2_yaml, out_path)
 
     if comparisons is None or "versions" in comparisons:
         logger.info("")
@@ -263,7 +258,7 @@ def main(
             verbose,
         )
         out_path = outdir / "yaml_diff.txt" if outdir else None
-        diff_compare_files(run_id1, run_id2, r1_versions.real_path, r2_versions.real_path, out_path)
+        diff_compare_files(run_id1, run_id2, r1_versions, r2_versions, out_path)
 
 
 def check_same_files(
@@ -319,164 +314,70 @@ def check_same_files(
         out_fh.close()
 
 
-def compare_variant_presence(
-    label_r1: str,
-    label_r2: str,
-    variants_r1: Dict[str, ScoredVariant],
-    variants_r2: Dict[str, ScoredVariant],
-    comparison_results: Comparison[str],
-    max_display: int,
-    out_path: Optional[Path],
-    show_line_numbers: bool,
-):
-
-    common = comparison_results.shared
-    r1_only = comparison_results.r1
-    r2_only = comparison_results.r2
-
-    summary_lines = get_variant_presence_summary(
-        label_r1,
-        label_r2,
-        common,
-        r1_only,
-        r2_only,
-        variants_r1,
-        variants_r2,
-        show_line_numbers,
-        max_display,
-    )
-    for line in summary_lines:
-        logger.info(line)
-
-    if out_path is not None:
-        full_summary_lines = get_variant_presence_summary(
-            label_r1,
-            label_r2,
-            common,
-            r1_only,
-            r2_only,
-            variants_r1,
-            variants_r2,
-            show_line_numbers,
-            max_display=None,
-        )
-        with out_path.open("w") as out_fh:
-            for line in full_summary_lines:
-                print(line, file=out_fh)
 
 
-def get_variant_presence_summary(
-    label_r1: str,
-    label_r2: str,
-    common: Set[str],
-    r1_only: Set[str],
-    r2_only: Set[str],
-    variants_r1: Dict[str, ScoredVariant],
-    variants_r2: Dict[str, ScoredVariant],
-    show_line_numbers: bool,
-    max_display: Optional[int],
-) -> List[str]:
-    output: List[str] = []
-    output.append(f"In common: {len(common)}")
-    output.append(f"Only in {label_r1}: {len(r1_only)}")
-    output.append(f"Only in {label_r2}: {len(r2_only)}")
 
-    if len(r1_only) > 0:
-        if max_display is not None:
-            output.append(
-                f"First {min(len(r1_only), max_display)} only found in {label_r1}"
-            )
-        else:
-            output.append(f"Only found in {label_r1}")
-
-        r1_table: List[List[str]] = []
-        for key in sorted(list(r1_only), key=parse_var_key_for_sort)[0:max_display]:
-            row_fields = variants_r1[key].get_row(show_line_numbers)
-            r1_table.append(row_fields)
-        pretty_rows = prettify_rows(r1_table)
-        for row in pretty_rows:
-            output.append(row)
-
-    if len(r2_only) > 0:
-        if max_display is not None:
-            output.append(
-                f"First {min(len(r2_only), max_display)} only found in {label_r2}"
-            )
-        else:
-            output.append(f"Only found in {label_r2}")
-
-        r2_table: List[List[str]] = []
-        for key in sorted(list(r2_only), key=parse_var_key_for_sort)[0:max_display]:
-            row_fields = variants_r2[key].get_row(show_line_numbers)
-            r2_table.append(row_fields)
-        pretty_rows = prettify_rows(r2_table)
-        for row in pretty_rows:
-            output.append(row)
-
-    return output
-
-
-def variant_comparisons(
-    run_id1: str,
-    run_id2: str,
-    r1_scored_vcf: PathObj,
-    r2_scored_vcf: PathObj,
-    is_sv: bool,
-    score_threshold: int,
-    max_display: int,
-    max_checked_annots: int,
-    out_path_presence: Optional[Path],
-    out_path_score_above_thres: Optional[Path],
-    out_path_score_all: Optional[Path],
-    do_score_check: bool,
-    do_annot_check: bool,
-    show_line_numbers: bool,
-):
-    variants_r1 = parse_vcf(r1_scored_vcf, is_sv)
-    variants_r2 = parse_vcf(r2_scored_vcf, is_sv)
-    comparison_results = do_comparison(
-        set(variants_r1.keys()),
-        set(variants_r2.keys()),
-    )
-    compare_variant_presence(
-        run_id1,
-        run_id2,
-        variants_r1,
-        variants_r2,
-        comparison_results,
-        max_display,
-        out_path_presence,
-        show_line_numbers,
-    )
-    shared_variants = comparison_results.shared
-    if do_annot_check:
-        logger.info("")
-        logger.info("--- Comparing annotations ---")
-        compare_variant_annotation(
-            logger,
-            run_id1,
-            run_id2,
-            shared_variants,
-            variants_r1,
-            variants_r2,
-            max_checked_annots,
-        )
-    if do_score_check:
-        logger.info("")
-        logger.info("--- Comparing score ---")
-        compare_variant_score(
-            run_id1,
-            run_id2,
-            shared_variants,
-            variants_r1,
-            variants_r2,
-            score_threshold,
-            max_display,
-            out_path_score_above_thres,
-            out_path_score_all,
-            is_sv,
-            show_line_numbers,
-        )
+# def variant_comparisons(
+#     run_id1: str,
+#     run_id2: str,
+#     r1_scored_vcf: PathObj,
+#     r2_scored_vcf: PathObj,
+#     is_sv: bool,
+#     score_threshold: int,
+#     max_display: int,
+#     max_checked_annots: int,
+#     out_path_presence: Optional[Path],
+#     out_path_score_above_thres: Optional[Path],
+#     out_path_score_all: Optional[Path],
+#     do_score_check: bool,
+#     do_annot_check: bool,
+#     show_line_numbers: bool,
+# ):
+#     variants_r1 = parse_vcf(r1_scored_vcf, is_sv)
+#     variants_r2 = parse_vcf(r2_scored_vcf, is_sv)
+#     comparison_results = do_comparison(
+#         set(variants_r1.keys()),
+#         set(variants_r2.keys()),
+#     )
+#     compare_variant_presence(
+#         run_id1,
+#         run_id2,
+#         variants_r1,
+#         variants_r2,
+#         comparison_results,
+#         max_display,
+#         out_path_presence,
+#         show_line_numbers,
+#     )
+#     shared_variants = comparison_results.shared
+#     if do_annot_check:
+#         logger.info("")
+#         logger.info("--- Comparing annotations ---")
+#         compare_variant_annotation(
+#             logger,
+#             run_id1,
+#             run_id2,
+#             shared_variants,
+#             variants_r1,
+#             variants_r2,
+#             max_checked_annots,
+#         )
+#     if do_score_check:
+#         logger.info("")
+#         logger.info("--- Comparing score ---")
+#         compare_variant_score(
+#             run_id1,
+#             run_id2,
+#             shared_variants,
+#             variants_r1,
+#             variants_r2,
+#             score_threshold,
+#             max_display,
+#             out_path_score_above_thres,
+#             out_path_score_all,
+#             is_sv,
+#             show_line_numbers,
+#         )
 
 
 def compare_all_vcfs(
@@ -521,131 +422,6 @@ def compare_all_vcfs(
 
     if out_fh:
         out_fh.close()
-
-
-def compare_variant_score(
-    run_id1: str,
-    run_id2: str,
-    shared_variants: Set[str],
-    variants_r1: Dict[str, ScoredVariant],
-    variants_r2: Dict[str, ScoredVariant],
-    score_threshold: int,
-    max_count: int,
-    out_path_above_thres: Optional[Path],
-    out_path_all: Optional[Path],
-    is_sv: bool,
-    show_line_numbers: bool,
-):
-
-    diff_scored_variants: List[DiffScoredVariant] = []
-
-    for var_key in shared_variants:
-        r1_variant = variants_r1[var_key]
-        r2_variant = variants_r2[var_key]
-        if r1_variant.rank_score != r2_variant.rank_score:
-            diff_scored_variant = DiffScoredVariant(r1_variant, r2_variant)
-            diff_scored_variants.append(diff_scored_variant)
-
-    if len(diff_scored_variants) > 0:
-        print_diff_score_info(
-            run_id1,
-            run_id2,
-            diff_scored_variants,
-            shared_variants,
-            variants_r1,
-            variants_r2,
-            out_path_all,
-            out_path_above_thres,
-            max_count,
-            score_threshold,
-            is_sv,
-            show_line_numbers,
-        )
-    else:
-        logger.info("No differently scored variant found")
-
-
-def print_diff_score_info(
-    run_id1: str,
-    run_id2: str,
-    diff_scored_variants: List[DiffScoredVariant],
-    shared_variant_keys: Set[str],
-    variants_r1: Dict[str, ScoredVariant],
-    variants_r2: Dict[str, ScoredVariant],
-    out_path_all: Optional[Path],
-    out_path_above_thres: Optional[Path],
-    max_count: int,
-    score_threshold: int,
-    is_sv: bool,
-    show_line_numbers: bool,
-):
-
-    diff_scored_variants.sort(
-        key=lambda var: var.r1.get_rank_score(),
-        reverse=True,
-    )
-
-    diff_variants_above_thres = [
-        var for var in diff_scored_variants if var.any_above_thres(score_threshold)
-    ]
-
-    logger.info(
-        f"Number differently scored total: {len(diff_scored_variants)}",
-    )
-    logger.info(
-        f"Number differently scored above {score_threshold}: {len(diff_variants_above_thres)}",
-    )
-    logger.info(
-        f"Total number shared variants: {len(shared_variant_keys)} (r1: {len(variants_r1)}, r2: {len(variants_r2)})",
-    )
-
-    # FIXME: Merge with variant.get_row() ? To use just one method
-    full_comparison_table = get_table(
-        run_id1,
-        run_id2,
-        diff_scored_variants,
-        shared_variant_keys,
-        variants_r1,
-        variants_r2,
-        is_sv,
-        show_line_numbers,
-    )
-    if out_path_all is not None:
-        with open(str(out_path_all), "w") as out_fh:
-            for row in full_comparison_table:
-                print("\t".join(row), file=out_fh)
-
-    if len(diff_variants_above_thres) > max_count:
-        logger.info(f"Only printing the {max_count} first")
-    # FIXME: Get rid of this uglyness. It should handle number of cols in a flexible way
-    # variant.get_row() might be part of a solution
-    nbr_out_cols = 6
-    if is_sv:
-        nbr_out_cols += 1
-    if show_line_numbers:
-        nbr_out_cols += 1
-    first_rows_and_cols = [
-        full_row[0:nbr_out_cols] for full_row in full_comparison_table[0:max_count]
-    ]
-    pretty_rows = prettify_rows(first_rows_and_cols)
-    for row in pretty_rows:
-        logger.info(row)
-
-    above_thres_comparison_table = get_table(
-        run_id1,
-        run_id2,
-        diff_variants_above_thres,
-        shared_variant_keys,
-        variants_r1,
-        variants_r2,
-        is_sv,
-        show_line_numbers,
-    )
-    if out_path_above_thres is not None:
-        with open(str(out_path_above_thres), "w") as out_fh:
-            for row in above_thres_comparison_table:
-                print("\t".join(row), file=out_fh)
-
 
 def diff_compare_files(
     run_id1: str,

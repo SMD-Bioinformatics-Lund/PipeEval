@@ -1,6 +1,6 @@
 from typing import Set, List, Dict
 
-from .classes import DiffScoredVariant, ScoredVariant
+from shared.vcf import DiffScoredVariant, ScoredVariant
 
 
 def get_comparison_row(
@@ -93,7 +93,7 @@ def sub_score_summary(subscores1: Dict[str, int], subscores2: Dict[str, int]) ->
         subscores2
     ), f"Number of categories must be same as subscores. Found: {len(subscores1)} and {len(subscores2)}"
 
-    sub_score_diff_info = []
+    sub_score_diff_info: List[str] = []
     for category in subscores1:
         sc1 = subscores1[category]
         sc2 = subscores2[category]
