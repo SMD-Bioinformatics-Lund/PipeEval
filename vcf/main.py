@@ -1,6 +1,7 @@
 import argparse
 from pathlib import Path
 import logging
+from typing import Optional
 
 from shared.compare import do_comparison
 from shared.vcf.annotation import compare_variant_annotation
@@ -13,7 +14,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
-def main(vcf1: Path, vcf2: Path, is_sv: bool, results: Path):
+def main(vcf1: Path, vcf2: Path, is_sv: bool, results: Optional[Path]):
     vcf_r1 = parse_scored_vcf(vcf1, is_sv)
     vcf_r2 = parse_scored_vcf(vcf2, is_sv)
     comparison_results = do_comparison(
@@ -23,21 +24,21 @@ def main(vcf1: Path, vcf2: Path, is_sv: bool, results: Path):
 
     max_display = 10
     show_line_numbers = True
-    out_path_presence = results / "presence.txt"
+    out_path_presence = results / "presence.txt" if results else None
 
     run_id1 = "label 1"
     run_id2 = "label 2"
 
     compare_variant_presence(
-        logger, 
-        run_id1, 
-        run_id2, 
-        vcf_r1.variants, 
-        vcf_r2.variants, 
-        comparison_results, 
-        max_display, 
-        out_path_presence, 
-        show_line_numbers
+        logger,
+        run_id1,
+        run_id2,
+        vcf_r1.variants,
+        vcf_r2.variants,
+        comparison_results,
+        max_display,
+        out_path_presence,
+        show_line_numbers,
     )
 
     shared_variants = comparison_results.shared
@@ -60,8 +61,8 @@ def main(vcf1: Path, vcf2: Path, is_sv: bool, results: Path):
     # FIXME: Check automatically for score check? Allow override with flags
     do_score_check = True
     score_threshold = 17
-    out_path_score_above_thres = results / "above_thres.txt"
-    out_path_score_all = results / "score_all.txt"
+    out_path_score_above_thres = results / "above_thres.txt" if results else None
+    out_path_score_all = results / "score_all.txt" if results else None
 
     if do_score_check:
         logger.info("")
@@ -81,8 +82,14 @@ def main(vcf1: Path, vcf2: Path, is_sv: bool, results: Path):
             show_line_numbers,
         )
 
+
 def main_wrapper(args: argparse.Namespace):
-    main(args.vcf1, args.vcf2, args.is_sv, args.results)
+    main(
+        Path(args.vcf1),
+        Path(args.vcf2),
+        args.is_sv,
+        Path(args.results) if args.results is not None else None,
+    )
 
 
 def add_arguments(parser: argparse.ArgumentParser):

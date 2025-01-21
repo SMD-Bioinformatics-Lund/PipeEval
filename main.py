@@ -22,6 +22,8 @@ def main():
         runner_main_wrapper(args)
     elif args.subcommand == "eval":
         eval_main_wrapper(args)
+    elif args.subcommand == "vcf":
+        vcf_main_wrapper(args)
     else:
         raise ValueError(f"Unknown sub command: {args.subcommand}. Check valid commands by running main.py --help")
 
@@ -35,8 +37,12 @@ def parse_arguments():
 
     run_parser = subparsers.add_parser("run", description="Runs a pipeline.")
     runner_add_arguments(run_parser)
+
     eval_parser = subparsers.add_parser("eval", description="Takes two sets of results and generates a comparison")
     eval_add_arguments(eval_parser)
+
+    vcf_parser = subparsers.add_parser("vcf", description="Compare two VCFs directly")
+    vcf_add_arguments(vcf_parser)
 
     args = parent_parser.parse_args()
 

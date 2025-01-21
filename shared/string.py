@@ -1,6 +1,6 @@
-import re
+from typing import Pattern
 
-def get_match_or_crash(regex_pattern: re.Pattern[str], line: str,  error_message: str) -> str:
+def get_match_or_crash(regex_pattern: Pattern[str], line: str,  error_message: str) -> str:
     match = regex_pattern.search(line)
     if match is None:
         raise ValueError(error_message)
