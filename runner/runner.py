@@ -206,7 +206,7 @@ def build_run_label(
 
     if run_label.find("/") != -1:
         LOG.warning(
-            f"Found '/' characters in run label: {run_label}, replacing with '-'"
+            f"# Found '/' characters in run label: {run_label}, replacing with '-'"
         )
         run_label = run_label.replace("/", "-")
 

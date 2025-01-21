@@ -108,7 +108,7 @@ def main(
 
     if comparisons is None or "file" in comparisons:
         logger.info("")
-        logger.info("--- Comparing existing files ---")
+        logger.info("### Comparing existing files ###")
         out_path = outdir / "check_sample_files.txt" if outdir else None
 
         check_same_files(
@@ -391,8 +391,8 @@ def add_arguments(parser: argparse.ArgumentParser):
         help="The group ID is used in some file names and can differ between runs. If not provided, it is set to the base folder name.",
     )
     parser.add_argument("--run_id2", "-i2", help="See --run_id1 help")
-    parser.add_argument("--results1", "-r1", required=True)
-    parser.add_argument("--results2", "-r2", required=True)
+    parser.add_argument("--results1", "-r1", "-1", required=True)
+    parser.add_argument("--results2", "-r2", "-2", required=True)
     parser.add_argument("--config", help="Additional configurations")
     parser.add_argument(
         "--comparisons",

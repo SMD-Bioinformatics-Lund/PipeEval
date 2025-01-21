@@ -41,38 +41,41 @@ def compare_variant_annotation(
 
     if max_considered < len(shared_variant_keys):
         logger.info(
-            f"Checking first {max_considered} out of {len(shared_variant_keys)} variants"
+            f"# Checking first {max_considered} out of {len(shared_variant_keys)} variants"
         )
 
     if len(r1_only_annots) == 0 and len(r2_only_annots) == 0:
         logger.info(
-            f"No annotation keys found uniquely in one VCF among first {max_considered} variants"
+            f"# No annotation keys found uniquely in one VCF among first {max_considered} variants"
         )
     else:
         if len(r1_only_annots) > 0:
+            logger.info("")
             logger.info(
-                f"Annotation keys only found in {run_id1} among {max_considered} variants"
+                f"# Annotation keys only found in {run_id1} among {max_considered} variants"
             )
-            for variant_key, val in r1_only_annots.items():
-                logger.info(f"{variant_key}: {val}")
+            for variant_key in sorted(r1_only_annots):
+                logger.info(f"{variant_key}: {r1_only_annots[variant_key]}")
         else:
             logger.info(f"No annotation keys found only in {run_id1}")
         if len(r2_only_annots) > 0:
+            logger.info("")
             logger.info(
-                f"Annotation keys only found in {run_id2} among {max_considered} variants"
+                f"# Annotation keys only found in {run_id2} among {max_considered} variants"
             )
-            for variant_key, val in r2_only_annots.items():
-                logger.info(f"{variant_key}: {val}")
+            for variant_key in sorted(r2_only_annots):
+                logger.info(f"{variant_key}: {r2_only_annots[variant_key]}")
         else:
             logger.info(f"No annotation keys found only in {run_id2}")
 
     if len(diffs_per_annot_key) == 0:
-        logger.info(f"Among shared annotation keys, all values were the same")
+        logger.info(f"# Among shared annotation keys, all values were the same")
     else:
+        logger.info("")
         logger.info(
-            f"Found {len(diffs_per_annot_key)} shared keys with differing annotation values among {max_considered} variants"
+            f"# Found {len(diffs_per_annot_key)} shared keys with differing annotation values among {max_considered} variants"
         )
-        logger.info("Showing number differing and first variant for each annotation")
+        logger.info("# Showing number differing and first variant for each annotation")
         annot_value_diff_summary_rows = get_annot_value_diff_summary(
             diffs_per_annot_key
         )

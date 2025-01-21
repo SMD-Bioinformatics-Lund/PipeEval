@@ -68,14 +68,14 @@ def get_variant_presence_summary(
     max_display: Optional[int],
 ) -> List[str]:
     output: List[str] = []
-    output.append(f"In common: {len(common)}")
-    output.append(f"Only in {label_r1}: {len(r1_only)}")
-    output.append(f"Only in {label_r2}: {len(r2_only)}")
+    output.append(f"# In common: {len(common)}")
+    output.append(f"# Only in {label_r1}: {len(r1_only)}")
+    output.append(f"# Only in {label_r2}: {len(r2_only)}")
 
     if len(r1_only) > 0:
         if max_display is not None:
             output.append(
-                f"First {min(len(r1_only), max_display)} only found in {label_r1}"
+                f"# First {min(len(r1_only), max_display)} only found in {label_r1}"
             )
         else:
             output.append(f"Only found in {label_r1}")
@@ -91,7 +91,7 @@ def get_variant_presence_summary(
     if len(r2_only) > 0:
         if max_display is not None:
             output.append(
-                f"First {min(len(r2_only), max_display)} only found in {label_r2}"
+                f"# First {min(len(r2_only), max_display)} only found in {label_r2}"
             )
         else:
             output.append(f"Only found in {label_r2}")
@@ -177,13 +177,13 @@ def print_diff_score_info(
     ]
 
     logger.info(
-        f"Number differently scored total: {len(diff_scored_variants)}",
+        f"# Number differently scored total: {len(diff_scored_variants)}",
     )
     logger.info(
-        f"Number differently scored above {score_threshold}: {len(diff_variants_above_thres)}",
+        f"# Number differently scored above {score_threshold}: {len(diff_variants_above_thres)}",
     )
     logger.info(
-        f"Total number shared variants: {len(shared_variant_keys)} (r1: {len(variants_r1)}, r2: {len(variants_r2)})",
+        f"# Total number shared variants: {len(shared_variant_keys)} ({run_id1}: {len(variants_r1)}, {run_id2}: {len(variants_r2)})",
     )
 
     # FIXME: Merge with variant.get_row() ? To use just one method
@@ -271,7 +271,7 @@ def variant_comparisons(
     shared_variants = comparison_results.shared
     if do_annot_check:
         logger.info("")
-        logger.info("--- Comparing annotations ---")
+        logger.info("### Comparing annotations ###")
         compare_variant_annotation(
             logger,
             run_id1,
@@ -283,7 +283,7 @@ def variant_comparisons(
         )
     if do_score_check:
         logger.info("")
-        logger.info("--- Comparing score ---")
+        logger.info("### Comparing score ###")
         compare_variant_score(
             logger,
             run_id1,
