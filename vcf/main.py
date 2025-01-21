@@ -3,8 +3,9 @@ from pathlib import Path
 import logging
 
 from shared.compare import do_comparison
-from shared.vcf.main_functions import compare_variant_presence
-from shared.vcf.vcf import parse_vcf
+from shared.vcf.annotation import compare_variant_annotation
+from shared.vcf.main_functions import compare_variant_presence, compare_variant_score
+from shared.vcf.vcf import parse_scored_vcf
 
 
 # logger = setup_stdout_logger()
@@ -12,39 +13,83 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
-def main(vcf1: Path, vcf2: Path, is_sv: bool, out_base: Path):
-    variants_r1 = parse_vcf(vcf1, is_sv)
-    variants_r2 = parse_vcf(vcf1, is_sv)
+def main(vcf1: Path, vcf2: Path, is_sv: bool, results: Path):
+    vcf_r1 = parse_scored_vcf(vcf1, is_sv)
+    vcf_r2 = parse_scored_vcf(vcf2, is_sv)
     comparison_results = do_comparison(
-        set(variants_r1.keys()),
-        set(variants_r2.keys()),
+        set(vcf_r1.variants.keys()),
+        set(vcf_r2.variants.keys()),
     )
 
     max_display = 10
     show_line_numbers = True
-    out_path_presence = out_base / "presence"
+    out_path_presence = results / "presence.txt"
+
+    run_id1 = "label 1"
+    run_id2 = "label 2"
 
     compare_variant_presence(
         logger, 
-        "label 1", 
-        "label 2", 
-        variants_r1, 
-        variants_r2, 
+        run_id1, 
+        run_id2, 
+        vcf_r1.variants, 
+        vcf_r2.variants, 
         comparison_results, 
         max_display, 
         out_path_presence, 
         show_line_numbers
     )
 
+    shared_variants = comparison_results.shared
+
+    # FIXME: How to handle these settings? An object?
+    max_checked_annots = 10
+
+    logger.info("")
+    logger.info("--- Comparing annotations ---")
+    compare_variant_annotation(
+        logger,
+        run_id1,
+        run_id2,
+        shared_variants,
+        vcf_r1.variants,
+        vcf_r2.variants,
+        max_checked_annots,
+    )
+
+    # FIXME: Check automatically for score check? Allow override with flags
+    do_score_check = True
+    score_threshold = 17
+    out_path_score_above_thres = results / "above_thres.txt"
+    out_path_score_all = results / "score_all.txt"
+
+    if do_score_check:
+        logger.info("")
+        logger.info("--- Comparing score ---")
+        compare_variant_score(
+            logger,
+            run_id1,
+            run_id2,
+            shared_variants,
+            vcf_r1.variants,
+            vcf_r2.variants,
+            score_threshold,
+            max_display,
+            out_path_score_above_thres,
+            out_path_score_all,
+            is_sv,
+            show_line_numbers,
+        )
 
 def main_wrapper(args: argparse.Namespace):
-    main(args.vcf1, args.vcf2)
+    main(args.vcf1, args.vcf2, args.is_sv, args.results)
 
 
 def add_arguments(parser: argparse.ArgumentParser):
     parser.add_argument("--vcf1", required=True)
     parser.add_argument("--vcf2", required=True)
     parser.add_argument("--is_sv", action="store_true")
+    parser.add_argument("--results", help="Optional results folder")
 
 
 if __name__ == "__main__":

@@ -6,7 +6,7 @@ from shared.compare import Comparison, do_comparison, parse_var_key_for_sort
 from shared.util import prettify_rows
 from shared.vcf.annotation import compare_variant_annotation
 from shared.vcf.score import get_table
-from shared.vcf.vcf import DiffScoredVariant, ScoredVariant, parse_vcf
+from shared.vcf.vcf import DiffScoredVariant, ScoredVariant, parse_scored_vcf
 
 
 def compare_variant_presence(
@@ -251,18 +251,18 @@ def variant_comparisons(
     do_annot_check: bool,
     show_line_numbers: bool,
 ):
-    variants_r1 = parse_vcf(r1_scored_vcf, is_sv)
-    variants_r2 = parse_vcf(r2_scored_vcf, is_sv)
+    vcf_r1 = parse_scored_vcf(r1_scored_vcf, is_sv)
+    vcf_r2 = parse_scored_vcf(r2_scored_vcf, is_sv)
     comparison_results = do_comparison(
-        set(variants_r1.keys()),
-        set(variants_r2.keys()),
+        set(vcf_r1.variants.keys()),
+        set(vcf_r2.variants.keys()),
     )
     compare_variant_presence(
         logger,
         run_id1,
         run_id2,
-        variants_r1,
-        variants_r2,
+        vcf_r1.variants,
+        vcf_r2.variants,
         comparison_results,
         max_display,
         out_path_presence,
@@ -277,8 +277,8 @@ def variant_comparisons(
             run_id1,
             run_id2,
             shared_variants,
-            variants_r1,
-            variants_r2,
+            vcf_r1.variants,
+            vcf_r2.variants,
             max_checked_annots,
         )
     if do_score_check:
@@ -289,8 +289,8 @@ def variant_comparisons(
             run_id1,
             run_id2,
             shared_variants,
-            variants_r1,
-            variants_r2,
+            vcf_r1.variants,
+            vcf_r2.variants,
             score_threshold,
             max_display,
             out_path_score_above_thres,

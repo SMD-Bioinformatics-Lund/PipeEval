@@ -3,7 +3,9 @@ from typing import Dict, List, Optional
 import re
 
 from shared.file import get_filehandle
+from shared.string import get_match_or_crash
 
+# FIXME: Move to a config
 TRUNC_LENGTH = 30
 
 
@@ -35,27 +37,17 @@ class ScoredVariant:
         self.line_number = line_number
 
     def get_trunc_ref(self) -> str:
-        trunc_ref = (
-            self.ref[0:TRUNC_LENGTH] + "..."
-            if len(self.ref) > TRUNC_LENGTH
-            else self.ref
-        )
+        trunc_ref = self.ref[0:TRUNC_LENGTH] + "..." if len(self.ref) > TRUNC_LENGTH else self.ref
         return trunc_ref
 
     def get_trunc_alt(self) -> str:
-        trunc_alt = (
-            self.alt[0:TRUNC_LENGTH] + "..."
-            if len(self.alt) > TRUNC_LENGTH
-            else self.alt
-        )
+        trunc_alt = self.alt[0:TRUNC_LENGTH] + "..." if len(self.alt) > TRUNC_LENGTH else self.alt
         return trunc_alt
 
     def __str__(self) -> str:
         trunc_ref = self.get_trunc_ref()
         trunc_alt = self.get_trunc_alt()
-        return (
-            f"{self.chr}:{self.pos} {trunc_ref}/{trunc_alt} (Score: {self.rank_score})"
-        )
+        return f"{self.chr}:{self.pos} {trunc_ref}/{trunc_alt} (Score: {self.rank_score})"
 
     def get_simple_key(self) -> str:
         if not self.is_sv:
@@ -108,23 +100,31 @@ class DiffScoredVariant:
         self.r2 = r2_variant
 
     def any_above_thres(self, score_threshold: int) -> bool:
-        r1_above_thres = (
-            self.r1.rank_score is not None and self.r1.rank_score >= score_threshold
-        )
-        r2_above_thres = (
-            self.r2.rank_score is not None and self.r2.rank_score >= score_threshold
-        )
+        r1_above_thres = self.r1.rank_score is not None and self.r1.rank_score >= score_threshold
+        r2_above_thres = self.r2.rank_score is not None and self.r2.rank_score >= score_threshold
         any_above_thres = r1_above_thres or r2_above_thres
         return any_above_thres
 
 
+# FIXME: Should I use the htseq lib here instead? Probably
+class ScoredVCF:
+    def __init__(
+        self, path: Path, is_sv: bool, info: Dict[str, str], variants: Dict[str, ScoredVariant]
+    ):
+        self.path = path
+        self.is_sv = is_sv
+        self.info = info
+        self.variants = variants
 
-def parse_vcf(vcf: Path, is_sv: bool) -> Dict[str, ScoredVariant]:
+
+def parse_scored_vcf(vcf: Path, is_sv: bool) -> ScoredVCF:
 
     sub_score_name_pattern = re.compile('ID=RankResult,.*Description="(.*)">')
+    info_id_pattern = re.compile("ID=(.*),")
 
     rank_sub_score_names = None
 
+    info_rows: Dict[str, str] = {}
     variants: Dict[str, ScoredVariant] = {}
     with get_filehandle(vcf) as in_fh:
         line_nbr = 0
@@ -133,16 +133,20 @@ def parse_vcf(vcf: Path, is_sv: bool) -> Dict[str, ScoredVariant]:
             line_nbr += 1
             if line.startswith("#"):
 
-                if rank_sub_score_names is None and line.startswith(
-                    "##INFO=<ID=RankResult,"
-                ):
-                    match = sub_score_name_pattern.search(line)
-                    if match is None:
-                        raise ValueError(
-                            f"Rankscore categories expected but not found in: ${line}"
-                        )
-                    match_string = match.group(1)
-                    rank_sub_score_names = match_string.split("|")
+                if line.startswith("##INFO="):
+                    info_id = get_match_or_crash(
+                        info_id_pattern, line, f"Expected ID match in line: {line}"
+                    )
+                    info_rows[info_id] = line
+
+                if rank_sub_score_names is None and line.startswith("##INFO=<ID=RankResult,"):
+                    sub_scores_names = get_match_or_crash(
+                        sub_score_name_pattern,
+                        line,
+                        f"Rankscore categories expected but not found in: ${line}",
+                    )
+
+                    rank_sub_score_names = sub_scores_names.split("|")
 
                 continue
             fields = line.split("\t")
@@ -197,7 +201,11 @@ def parse_vcf(vcf: Path, is_sv: bool) -> Dict[str, ScoredVariant]:
             )
             key = variant.get_simple_key()
             variants[key] = variant
-    return variants
+
+    scored_vcf = ScoredVCF(vcf, is_sv, info_rows, variants)
+
+    return scored_vcf
+
 
 def count_variants(vcf: Path) -> int:
 
@@ -210,5 +218,3 @@ def count_variants(vcf: Path) -> int:
             nbr_entries += 1
 
     return nbr_entries
-
-
