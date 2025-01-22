@@ -97,11 +97,11 @@ def main(
 
     if run_id1 is None:
         run_id1 = detect_run_id(logger, results1_dir.name, verbose)
-        logger.info(f"--run_id1 not set, assigned: {run_id1}")
+        logger.info(f"# --run_id1 not set, assigned: {run_id1}")
 
     if run_id2 is None:
         run_id2 = detect_run_id(logger, results2_dir.name, verbose)
-        logger.info(f"--run_id2 not set, assigned: {run_id2}")
+        logger.info(f"# --run_id2 not set, assigned: {run_id2}")
 
     r1_paths = get_files_in_dir(results1_dir, run_id1, RUN_ID_PLACEHOLDER, results1_dir)
     r2_paths = get_files_in_dir(results2_dir, run_id2, RUN_ID_PLACEHOLDER, results2_dir)
