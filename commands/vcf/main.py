@@ -8,7 +8,6 @@ from shared.vcf.main_functions import (
 )
 
 
-# logger = setup_stdout_logger()
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 

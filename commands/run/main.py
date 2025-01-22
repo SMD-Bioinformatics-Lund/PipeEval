@@ -27,6 +27,7 @@ from commands.run.gittools import (
     check_valid_checkout,
     check_valid_repo,
     checkout_repo,
+    fetch_repo,
     get_git_commit_hash_and_log,
     pull_branch,
 )
@@ -66,6 +67,8 @@ def main(
     datestamp = datestamp or config.getboolean("settings", "datestamp")
 
     check_valid_repo(repo)
+    logger.info(f"Fetching latest changes for repo")
+    fetch_repo(logger, repo, verbose)
     check_valid_checkout(logger, repo, checkout, verbose)
     logger.info(f"Checking out: {checkout} in {str(repo)}")
     checkout_repo(logger, repo, checkout, verbose)
@@ -148,9 +151,7 @@ def main(
 
     write_resume_script(
         results_dir,
-        config["settings"]["start_nextflow_analysis"],
-        out_csv,
-        stub_run,
+        start_nextflow_command,
         dry_run,
     )
 
@@ -391,19 +392,12 @@ def start_run(start_nextflow_command: List[str], dry_run: bool, skip_confirmatio
 
 
 def write_resume_script(
-    results_dir: Path, run_command: str, csv: Path, stub_run: bool, dry_run: bool
+    results_dir: Path, run_command: List[str], dry_run: bool
 ):
-    resume_command_parts = [
-        run_command,
-        str(csv.absolute()),
-    ]
-    if stub_run:
-        resume_command_parts.append("--custom_flags")
-        resume_command_parts.append("'-stub-run'")
-    resume_command = " ".join(resume_command_parts)
+    resume_command = run_command + ["--resume"]
     resume_script = results_dir / "resume.sh"
     if not dry_run:
-        resume_script.write_text(resume_command)
+        resume_script.write_text(" ".join(resume_command))
     else:
         logging.info(f"(dry) Writing {resume_command} to {resume_script}")
 
