@@ -68,9 +68,6 @@ def get_variant_presence_summary(
     max_display: Optional[int],
 ) -> List[str]:
     output: List[str] = []
-    output.append(f"# In common: {len(common)}")
-    output.append(f"# Only in {label_r1}: {len(r1_only)}")
-    output.append(f"# Only in {label_r2}: {len(r2_only)}")
 
     if len(r1_only) > 0:
         if max_display is not None:
@@ -251,24 +248,31 @@ def variant_comparisons(
     do_annot_check: bool,
     show_line_numbers: bool,
 ):
+    logger.info(f"# Parsing VCFs ...")
     vcf_r1 = parse_scored_vcf(r1_scored_vcf, is_sv)
+    logger.info(f"# {run_id1} number variants: {len(vcf_r1.variants)}")
     vcf_r2 = parse_scored_vcf(r2_scored_vcf, is_sv)
-    comparison_results = do_comparison(
+    logger.info(f"# {run_id2} number variants: {len(vcf_r2.variants)}")
+    comp_res = do_comparison(
         set(vcf_r1.variants.keys()),
         set(vcf_r2.variants.keys()),
     )
+    logger.info(f"# In common: {len(comp_res.shared)}")
+    logger.info(f"# Only in {run_id1}: {len(comp_res.r1)}")
+    logger.info(f"# Only in {run_id2}: {len(comp_res.r2)}")
+
     compare_variant_presence(
         logger,
         run_id1,
         run_id2,
         vcf_r1.variants,
         vcf_r2.variants,
-        comparison_results,
+        comp_res,
         max_display,
         out_path_presence,
         show_line_numbers,
     )
-    shared_variants = comparison_results.shared
+    shared_variants = comp_res.shared
     if do_annot_check:
         logger.info("")
         logger.info("### Comparing annotations ###")
