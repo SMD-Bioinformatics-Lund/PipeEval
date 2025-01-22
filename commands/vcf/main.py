@@ -75,15 +75,34 @@ def main_wrapper(args: argparse.Namespace):
 
 
 def add_arguments(parser: argparse.ArgumentParser):
-    parser.add_argument("--vcf1", "-1", required=True)
-    parser.add_argument("--vcf2", "-2", required=True)
-    parser.add_argument("--id1", help="Optional run ID for vcf 1")
-    parser.add_argument("--id2", help="Optional run ID for vcf 2")
-    parser.add_argument("--is_sv", action="store_true")
+    parser.add_argument(
+        "--vcf1", "-1", required=True, help="VCF to compare in .vcf or .vcf.gz format"
+    )
+    parser.add_argument(
+        "--vcf2", "-2", required=True, help="VCF to compare in .vcf or .vcf.gz format"
+    )
+    parser.add_argument("--id1", help="Optional run ID for first vcf")
+    parser.add_argument("--id2", help="Optional run ID for second vcf")
+    parser.add_argument("--is_sv", action="store_true", help="Process VCF in SV mode")
     parser.add_argument("--results", help="Optional results folder")
-    parser.add_argument("--score_threshold", type=int, default=17)
-    parser.add_argument("--max_checked_annots", type=int, default=10000)
-    parser.add_argument("--max_display", type=int, default=10)
+    parser.add_argument(
+        "--score_threshold",
+        type=int,
+        default=17,
+        help="Variants with higher rank score get extra attention",
+    )
+    parser.add_argument(
+        "--max_checked_annots",
+        type=int,
+        default=10000,
+        help="Limit the number of annotations to check (for performance)",
+    )
+    parser.add_argument(
+        "--max_display",
+        type=int,
+        default=10,
+        help="Limit the number of entries printed to STDOUT (all entries are written to results folder)",
+    )
 
 
 if __name__ == "__main__":
