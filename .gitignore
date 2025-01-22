@@ -6,3 +6,4 @@
 data/
 repos/
 __pycache__/
+.pytest_cache/
