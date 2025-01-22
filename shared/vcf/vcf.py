@@ -5,7 +5,6 @@ import re
 from shared.file import get_filehandle
 from shared.string import get_match_or_crash
 
-# FIXME: Move to a config
 TRUNC_LENGTH = 30
 
 
@@ -106,7 +105,6 @@ class DiffScoredVariant:
         return any_above_thres
 
 
-# FIXME: Should I use the htseq lib here instead? Probably
 class ScoredVCF:
     def __init__(
         self, path: Path, is_sv: bool, info: Dict[str, str], variants: Dict[str, ScoredVariant]

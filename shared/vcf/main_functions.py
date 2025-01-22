@@ -183,7 +183,6 @@ def print_diff_score_info(
         f"# Total number shared variants: {len(shared_variant_keys)} ({run_id1}: {len(variants_r1)}, {run_id2}: {len(variants_r2)})",
     )
 
-    # FIXME: Merge with variant.get_row() ? To use just one method
     full_comparison_table = get_table(
         run_id1,
         run_id2,
