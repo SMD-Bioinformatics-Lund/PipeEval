@@ -185,7 +185,6 @@ def check_valid_config_arguments(
     if start_data not in valid_start_data:
         raise ValueError(f"Valid start_data types are: {', '.join(valid_start_data)}")
 
-    # FIXME: Look over the logic here. Not nice with repeated config.get at the moment
     if base_dir is None:
         if not check_valid_config_path(config, "settings", "base"):
             found = config.get("settings", "base")

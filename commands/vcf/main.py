@@ -82,7 +82,7 @@ def add_arguments(parser: argparse.ArgumentParser):
     parser.add_argument("--is_sv", action="store_true")
     parser.add_argument("--results", help="Optional results folder")
     parser.add_argument("--score_threshold", type=int, default=17)
-    parser.add_argument("--max_checked_annots", type=int, default=1000)
+    parser.add_argument("--max_checked_annots", type=int, default=10000)
     parser.add_argument("--max_display", type=int, default=10)
 
 
