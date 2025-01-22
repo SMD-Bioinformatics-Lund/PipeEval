@@ -22,7 +22,7 @@ from configparser import ConfigParser
 from datetime import datetime
 from typing import Any, List, Dict, Optional
 
-from runner.gittools import (
+from commands.run.gittools import (
     check_if_on_branchhead,
     check_valid_checkout,
     check_valid_repo,
@@ -34,12 +34,10 @@ from shared.util import check_valid_config_path, load_config
 
 from .help_classes import Case, CsvEntry
 
-
-logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
-
-ASSAY_PLACEHOLDER = "dev"
+ASSAY_PLACEHOLDER = "pipeeval"
 
 
 def main(
@@ -61,7 +59,9 @@ def main(
     logger.info(f"Preparing run, type: {run_type}, data: {start_data}")
 
     check_valid_config_arguments(config, run_type, start_data, base_dir, repo)
-    base_dir = base_dir if base_dir is not None else Path(config.get("settings", "base"))
+    base_dir = (
+        base_dir if base_dir is not None else Path(config.get("settings", "base"))
+    )
     repo = repo if repo is not None else Path(config.get("settings", "repo"))
     datestamp = datestamp or config.getboolean("settings", "datestamp")
 
@@ -119,9 +119,13 @@ def main(
     run_type_settings = dict(config[run_type])
 
     if not config.getboolean(run_type, "trio"):
-        csv = get_single_csv(config, run_type_settings, run_label, start_data, queue, stub_run)
+        csv = get_single_csv(
+            config, run_type_settings, run_label, start_data, queue, stub_run
+        )
     else:
-        csv = get_trio_csv(config, run_type_settings, run_label, start_data, queue, stub_run)
+        csv = get_trio_csv(
+            config, run_type_settings, run_label, start_data, queue, stub_run
+        )
     out_csv = results_dir / "run.csv"
     if dry_run:
         logging.info(f"(dry) Writing CSV to {out_csv}")
@@ -199,7 +203,9 @@ def build_run_label(
     run_label = "-".join(label_parts)
 
     if run_label.find("/") != -1:
-        logger.warning(f"Found '/' characters in run label: {run_label}, replacing with '-'")
+        logger.warning(
+            f"# Found '/' characters in run label: {run_label}, replacing with '-'"
+        )
         run_label = run_label.replace("/", "-")
 
     return run_label
@@ -268,7 +274,9 @@ def get_trio_csv(
 ):
 
     case_ids = run_type_settings["cases"].split(",")
-    assert len(case_ids) == 3, f"For a trio, three fields are expected, found: {case_ids}"
+    assert (
+        len(case_ids) == 3
+    ), f"For a trio, three fields are expected, found: {case_ids}"
     cases: List[Case] = []
     for case_id in case_ids:
         case_dict = config[case_id]
@@ -282,7 +290,9 @@ def get_trio_csv(
         case = parse_case(dict(case_dict), start_data, is_trio=True)
 
         if not Path(case.read1).exists() or not Path(case.read2).exists():
-            raise FileNotFoundError(f"One or both files missing: {case.read1} {case.read2}")
+            raise FileNotFoundError(
+                f"One or both files missing: {case.read1} {case.read2}"
+            )
 
         cases.append(case)
 
@@ -303,7 +313,9 @@ def parse_case(case_dict: Dict[str, str], start_data: str, is_trio: bool) -> Cas
         fw = case_dict["fq_fw"]
         rv = case_dict["fq_rv"]
     else:
-        raise ValueError(f"Unknown start_data, found: {start_data}, valid are vcf, bam, fq")
+        raise ValueError(
+            f"Unknown start_data, found: {start_data}, valid are vcf, bam, fq"
+        )
 
     case = Case(
         case_dict["id"],
@@ -371,7 +383,9 @@ def build_start_nextflow_analysis_cmd(
     return start_nextflow_command
 
 
-def start_run(start_nextflow_command: List[str], dry_run: bool, skip_confirmation: bool):
+def start_run(
+    start_nextflow_command: List[str], dry_run: bool, skip_confirmation: bool
+):
     if not dry_run:
         if not skip_confirmation:
             pretty_command = " \\\n    ".join(start_nextflow_command)
@@ -408,7 +422,9 @@ def write_resume_script(
         logging.info(f"(dry) Writing {resume_command} to {resume_script}")
 
 
-def setup_results_links(config: ConfigParser, results_dir: Path, run_label: str, dry: bool):
+def setup_results_links(
+    config: ConfigParser, results_dir: Path, run_label: str, dry: bool
+):
 
     log_base_dir = config["settings"]["log_base_dir"]
     trace_base_dir = config["settings"]["trace_base_dir"]
@@ -421,8 +437,12 @@ def setup_results_links(config: ConfigParser, results_dir: Path, run_label: str,
     trace_link = results_dir / "trace.txt"
     work_link = results_dir / "work"
 
-    log_link_target = Path(f"{log_base_dir}/{run_label}.{ASSAY_PLACEHOLDER}.{date_stamp}.log")
-    trace_link_target = Path(f"{trace_base_dir}/{run_label}.{ASSAY_PLACEHOLDER}.trace.txt")
+    log_link_target = Path(
+        f"{log_base_dir}/{run_label}.{ASSAY_PLACEHOLDER}.{date_stamp}.log"
+    )
+    trace_link_target = Path(
+        f"{trace_base_dir}/{run_label}.{ASSAY_PLACEHOLDER}.trace.txt"
+    )
     work_link_target = Path(f"{work_base_dir}/{run_label}.{ASSAY_PLACEHOLDER}")
 
     if log_link.exists():
@@ -456,7 +476,9 @@ def main_wrapper(args: argparse.Namespace):
     config = load_config(logger, curr_dir, args.config)
 
     if args.baseline is not None:
-        logging.info("Performing additional baseline run as specified by --baseline flag")
+        logging.info(
+            "Performing additional baseline run as specified by --baseline flag"
+        )
 
         if args.baseline_repo is not None:
             baseline_repo = str(args.baseline_repo)
@@ -559,8 +581,12 @@ def add_arguments(parser: argparse.ArgumentParser):
         action="store_true",
         help="Run start_nextflow_analysis.pl with nostart, printing the path to the SLURM job only",
     )
-    parser.add_argument("--baseline", help="Start a second baseline run and specified checkout")
-    parser.add_argument("--verbose", action="store_true", help="Print additional debug output")
+    parser.add_argument(
+        "--baseline", help="Start a second baseline run and specified checkout"
+    )
+    parser.add_argument(
+        "--verbose", action="store_true", help="Print additional debug output"
+    )
 
 
 if __name__ == "__main__":

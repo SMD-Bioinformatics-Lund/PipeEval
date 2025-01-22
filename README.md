@@ -35,7 +35,7 @@ python3 main.py run --help
 python3 main.py eval \
     --results1 /path/results1 \
     --results2 /path/results2 \
-    --config runner/default.config \
+    --config run/default.config \
     --outdir /path/eval_out \
     --comparisons default
 ```

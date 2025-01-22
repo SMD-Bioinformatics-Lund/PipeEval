@@ -3,12 +3,12 @@
 import argparse
 import sys
 
-from runner.main import add_arguments as runner_add_arguments
-from runner.main import main_wrapper as runner_main_wrapper
-from evaluator.main import add_arguments as eval_add_arguments
-from evaluator.main import main_wrapper as eval_main_wrapper
-from vcf.main import add_arguments as vcf_add_arguments
-from vcf.main import main_wrapper as vcf_main_wrapper
+from commands.run.main import add_arguments as runner_add_arguments
+from commands.run.main import main_wrapper as runner_main_wrapper
+from commands.eval.main import add_arguments as eval_add_arguments
+from commands.eval.main import main_wrapper as eval_main_wrapper
+from commands.vcf.main import add_arguments as vcf_add_arguments
+from commands.vcf.main import main_wrapper as vcf_main_wrapper
 
 
 __version_info__ = ("1", "0", "1")

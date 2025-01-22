@@ -203,7 +203,7 @@ def print_diff_score_info(
                 print("\t".join(row), file=out_fh)
 
     if len(diff_variants_above_thres) > max_count:
-        logger.info(f"Only printing the {max_count} first")
+        logger.info(f"# Only printing the {max_count} first")
     # FIXME: Get rid of this uglyness. It should handle number of cols in a flexible way
     # variant.get_row() might be part of a solution
     nbr_out_cols = 6
