@@ -1,3 +1,8 @@
+# 1.2.0
+
+* Reorganizing code with "commands" folder and "shared" for shared code
+* Adding command "vcf" for direct comparison of VCF files
+
 # 1.1.2
 
 * Include assay and diagnosis in config and generated CSV
