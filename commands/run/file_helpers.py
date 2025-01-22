@@ -5,7 +5,7 @@ from typing import Any, Dict, List, Optional
 from logging import Logger
 
 from commands.run.help_classes import Case, CsvEntry
-from commands.run.main import ASSAY_PLACEHOLDER
+from shared.constants import ASSAY_PLACEHOLDER
 
 
 def write_resume_script(logging: Logger, results_dir: Path, run_command: List[str], dry_run: bool):
