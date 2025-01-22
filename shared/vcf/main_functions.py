@@ -145,7 +145,7 @@ def compare_variant_score(
             show_line_numbers,
         )
     else:
-        logger.info("No differently scored variant found")
+        logger.info("# No differently scored variants found")
 
 
 def print_diff_score_info(
