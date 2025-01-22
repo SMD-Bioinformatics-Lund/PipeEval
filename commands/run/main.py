@@ -129,8 +129,6 @@ def main(
         no_start,
     )
 
-    start_run(start_nextflow_command, dry_run, skip_confirmation)
-
     # Setup results files
     write_resume_script(
         logger,
@@ -140,6 +138,8 @@ def main(
     )
     copy_nextflow_config(logger, repo, results_dir)
     setup_results_links(logger, config, results_dir, run_label, dry_run)
+
+    start_run(start_nextflow_command, dry_run, skip_confirmation)
 
 
 def confirm_run_if_results_exists(results_dir: Path, skip_confirmation: bool):
