@@ -3,8 +3,14 @@ from pathlib import Path
 import subprocess
 from typing import List, Tuple
 
+class CompletedProcess:
+    def __init__(self, returncode: int, stdout: str, stderr: str):
+        self.returncode = returncode
+        self.stdout = stdout
+        self.stderr = stderr
 
-def run_command(command: List[str], repo: Path) -> subprocess.CompletedProcess[str]:
+
+def run_command(command: List[str], repo: Path) -> CompletedProcess:
     results = subprocess.run(
         command,
         cwd=str(repo),
@@ -14,7 +20,10 @@ def run_command(command: List[str], repo: Path) -> subprocess.CompletedProcess[s
         stderr=subprocess.PIPE,
         check=True,
     )
-    return results
+
+    # Temporary fix to get the type hintings running on Python3.6
+    results_local = CompletedProcess(results.returncode, results.stdout, results.stderr)
+    return results_local
 
 
 def fetch_repo(logger: Logger, repo: Path, verbose: bool) -> Tuple[int, str]:
