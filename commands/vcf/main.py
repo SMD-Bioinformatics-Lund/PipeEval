@@ -27,11 +27,11 @@ def main(
     out_path_presence = results / "presence.txt" if results else None
 
     if run_id1 is None:
-        run_id1 = str(vcf1).split("/")[-1]
+        run_id1 = str(vcf1).split("/")[-1].split(".")[0]
         logger.info(f"# --run_id1 not set, assigned: {run_id1}")
 
     if run_id2 is None:
-        run_id2 = str(vcf2).split("/")[-1]
+        run_id2 = str(vcf2).split("/")[-1].split(".")[0]
         if run_id1 == run_id2:
             run_id2 = run_id2 + "_2"
         logger.info(f"# --run_id2 not set, assigned: {run_id2}")
