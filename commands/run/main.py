@@ -136,7 +136,7 @@ def main(
         start_nextflow_command,
         dry_run,
     )
-    copy_nextflow_config(logger, repo, results_dir)
+    copy_nextflow_config(repo, results_dir)
     setup_results_links(logger, config, results_dir, run_label, dry_run)
 
     start_run(start_nextflow_command, dry_run, skip_confirmation)

@@ -17,8 +17,7 @@ def write_resume_script(logging: Logger, results_dir: Path, run_command: List[st
         logging.info(f"(dry) Writing {resume_command} to {resume_script}")
 
 
-def copy_nextflow_config(logging: Logger, repo: Path, results_dir: Path):
-    logging.info(f"Copying nextflow.config ")
+def copy_nextflow_config(repo: Path, results_dir: Path):
     config_path = repo / "nextflow.config"
     dest_path = results_dir / "nextflow.config"
     dest_path.write_text(config_path.read_text())
