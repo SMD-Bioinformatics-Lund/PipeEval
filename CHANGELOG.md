@@ -2,6 +2,7 @@
 
 * Reorganizing code with "commands" folder and "shared" for shared code
 * Adding command "vcf" for direct comparison of VCF files
+* Added first minimal regression test for main.py vcf subcommand (to be expanded on later)
 
 # 1.1.2
 
