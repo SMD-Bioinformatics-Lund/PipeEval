@@ -250,16 +250,16 @@ def variant_comparisons(
 ):
     logger.info(f"# Parsing VCFs ...")
     vcf_r1 = parse_scored_vcf(r1_scored_vcf, is_sv)
-    logger.info(f"# {run_id1} number variants: {len(vcf_r1.variants)}")
+    logger.info(f"{run_id1} number variants: {len(vcf_r1.variants)}")
     vcf_r2 = parse_scored_vcf(r2_scored_vcf, is_sv)
-    logger.info(f"# {run_id2} number variants: {len(vcf_r2.variants)}")
+    logger.info(f"{run_id2} number variants: {len(vcf_r2.variants)}")
     comp_res = do_comparison(
         set(vcf_r1.variants.keys()),
         set(vcf_r2.variants.keys()),
     )
-    logger.info(f"# In common: {len(comp_res.shared)}")
-    logger.info(f"# Only in {run_id1}: {len(comp_res.r1)}")
-    logger.info(f"# Only in {run_id2}: {len(comp_res.r2)}")
+    logger.info(f"In common: {len(comp_res.shared)}")
+    logger.info(f"Only in {run_id1}: {len(comp_res.r1)}")
+    logger.info(f"Only in {run_id2}: {len(comp_res.r2)}")
 
     compare_variant_presence(
         logger,
