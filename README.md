@@ -16,7 +16,6 @@ Only standard libs are currently used.
 python3 main.py run \
     --checkout jw_update_genmod \
     --base out/genmod \
-    --config default.config \
     --run_type giab_single \
     --start_data bam \
     --repo /path/to/repo \
@@ -35,7 +34,6 @@ python3 main.py run --help
 python3 main.py eval \
     --results1 /path/results1 \
     --results2 /path/results2 \
-    --config run/default.config \
     --outdir /path/eval_out \
     --comparisons default
 ```
