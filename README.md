@@ -41,3 +41,11 @@ python3 main.py eval \
 ```
 python3 main.py eval --help
 ```
+
+### Compare VCFs directly
+
+```{python}
+python3 main.py vcf \
+    -1 /path/first.vcf.gz \
+    -2 /path/second.vcf.gz
+```
