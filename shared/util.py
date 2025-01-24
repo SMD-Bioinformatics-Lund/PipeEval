@@ -10,6 +10,10 @@ def load_config(logger: logging.Logger, parent_path: str, config_path: Optional[
         script_dir = Path(parent_path)
         config_path = str(script_dir / "default.config")
         logger.info(f"No config path supplied, attempting to read from: {str(config_path)}")
+
+    if not Path(config_path).exists():
+        raise ValueError(f"A valid config must be provided. No config file found in path: {config_path}.")
+
     config.read(config_path)
     return config
 
