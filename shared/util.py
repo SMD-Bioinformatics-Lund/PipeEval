@@ -1,19 +1,21 @@
 from configparser import ConfigParser
+import logging
 from pathlib import Path
 from typing import Any, List, Optional
 
 
-def load_config(parent_path: str, config_path: Optional[str]) -> ConfigParser:
+def load_config(logger: logging.Logger, parent_path: str, config_path: Optional[str]) -> ConfigParser:
     config = ConfigParser()
     if config_path is None:
         script_dir = Path(parent_path)
         config_path = str(script_dir / "default.config")
+        logger.info(f"No config path supplied, attempting to read from: {str(config_path)}")
     config.read(config_path)
     return config
 
 
 def prettify_rows(rows: List[List[Any]], padding: int = 4) -> List[str]:
-    column_widths = []
+    column_widths: List[int] = []
     for col_i in range(len(rows[0])):
         max_len = 0
         for row in rows:
@@ -22,7 +24,7 @@ def prettify_rows(rows: List[List[Any]], padding: int = 4) -> List[str]:
                 max_len = cell_length
         column_widths.append(max_len + padding)
 
-    pretty_rows = []
+    pretty_rows: List[str] = []
     for row in rows:
         adjusted_cells = [
             str(cell).ljust(column_widths[i]) for (i, cell) in enumerate(row)

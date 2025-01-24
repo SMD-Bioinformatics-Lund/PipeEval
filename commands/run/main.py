@@ -20,26 +20,32 @@ import sys
 import os
 from configparser import ConfigParser
 from datetime import datetime
-from typing import Any, List, Dict, Optional
+from typing import List, Optional
 
-from runner.gittools import (
+from commands.run.file_helpers import (
+    copy_nextflow_config,
+    get_single_csv,
+    get_trio_csv,
+    setup_results_links,
+    write_resume_script,
+    write_run_log,
+)
+from commands.run.gittools import (
     check_if_on_branchhead,
     check_valid_checkout,
     check_valid_repo,
     checkout_repo,
+    fetch_repo,
     get_git_commit_hash_and_log,
     pull_branch,
 )
-from util.shared_utils import check_valid_config_path, load_config
-
-from .help_classes import Case, CsvEntry
+from shared.util import check_valid_config_path, load_config
 
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
-LOG = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 
-ASSAY_PLACEHOLDER = "pipeeval"
 
 
 def main(
@@ -58,33 +64,17 @@ def main(
     datestamp: bool,
     verbose: bool,
 ):
+    logger.info(f"Preparing run, type: {run_type}, data: {start_data}")
 
     check_valid_config_arguments(config, run_type, start_data, base_dir, repo)
-    base_dir = (
-        base_dir if base_dir is not None else Path(config.get("settings", "base"))
-    )
+    base_dir = base_dir if base_dir is not None else Path(config.get("settings", "base"))
     repo = repo if repo is not None else Path(config.get("settings", "repo"))
     datestamp = datestamp or config.getboolean("settings", "datestamp")
 
     check_valid_repo(repo)
-    check_valid_checkout(LOG, repo, checkout, verbose)
-    LOG.info(f"Checking out: {checkout} in {str(repo)}")
-    checkout_repo(LOG, repo, checkout, verbose)
-    on_branch_head = check_if_on_branchhead(LOG, repo, verbose)
-    if on_branch_head:
-        branch = checkout
-        if skip_confirmation:
-            confirmation = "y"
-        else:
-            confirmation = input(
-                f"You have checked out the branch {branch} in {repo}. Do you want to pull? (y/n) "
-            )
-        if confirmation == "y":
-            LOG.info("Pulling from origin")
-            pull_branch(LOG, repo, branch, verbose)
-    (commit_hash, last_log) = get_git_commit_hash_and_log(LOG, repo, verbose)
-    LOG.info(last_log)
-
+    do_repo_checkout(repo, checkout, verbose, skip_confirmation)
+    (commit_hash, last_log) = get_git_commit_hash_and_log(logger, repo, verbose)
+    logger.info(last_log)
     run_label = build_run_label(run_type, checkout, label, stub_run, start_data)
 
     if not datestamp:
@@ -92,14 +82,8 @@ def main(
     else:
         ds = datetime.now().strftime("%y%m%d-%H%M")
         results_dir = base_dir / f"{ds}_{run_label}"
-    if results_dir.exists() and not skip_confirmation:
-        confirmation = input(
-            f"The results dir {results_dir} already exists. Do you want to proceed? (y/n) "
-        )
 
-        if confirmation != "y":
-            LOG.info("Exiting ...")
-            sys.exit(1)
+    confirm_run_if_results_exists(results_dir, skip_confirmation)
 
     if not dry_run:
         results_dir.mkdir(exist_ok=True, parents=True)
@@ -120,13 +104,9 @@ def main(
     run_type_settings = dict(config[run_type])
 
     if not config.getboolean(run_type, "trio"):
-        csv = get_single_csv(
-            config, run_type_settings, run_label, start_data, queue, stub_run
-        )
+        csv = get_single_csv(config, run_type_settings, run_label, start_data, queue, stub_run)
     else:
-        csv = get_trio_csv(
-            config, run_type_settings, run_label, start_data, queue, stub_run
-        )
+        csv = get_trio_csv(config, run_type_settings, run_label, start_data, queue, stub_run)
     out_csv = results_dir / "run.csv"
     if dry_run:
         logging.info(f"(dry) Writing CSV to {out_csv}")
@@ -149,18 +129,48 @@ def main(
         no_start,
     )
 
-    start_run(start_nextflow_command, dry_run, skip_confirmation)
-
+    # Setup results files
     write_resume_script(
+        logger,
         results_dir,
-        config["settings"]["start_nextflow_analysis"],
-        out_csv,
-        stub_run,
+        start_nextflow_command,
         dry_run,
     )
+    copy_nextflow_config(repo, results_dir)
+    setup_results_links(logger, config, results_dir, run_label, dry_run)
 
-    setup_results_links(config, results_dir, run_label, dry_run)
+    start_run(start_nextflow_command, dry_run, skip_confirmation)
 
+
+def confirm_run_if_results_exists(results_dir: Path, skip_confirmation: bool):
+    if results_dir.exists() and not skip_confirmation:
+        confirmation = input(
+            f"The results dir {results_dir} already exists. Do you want to proceed? (y/n) "
+        )
+
+        if confirmation != "y":
+            logger.info("Exiting ...")
+            sys.exit(1)
+
+
+def do_repo_checkout(repo: Path, checkout: str, verbose: bool, skip_confirmation: bool):
+    logger.info(f"Fetching latest changes for repo")
+    fetch_repo(logger, repo, verbose)
+    check_valid_checkout(logger, repo, checkout, verbose)
+    logger.info(f"Checking out: {checkout} in {str(repo)}")
+    checkout_repo(logger, repo, checkout, verbose)
+    on_branch_head = check_if_on_branchhead(logger, repo, verbose)
+    if on_branch_head:
+        branch = checkout
+        if skip_confirmation:
+            confirmation = "y"
+        else:
+            confirmation = input(
+                f"You have checked out the branch {branch} in {repo}. Do you want to pull? (y/n) "
+            )
+        if confirmation == "y":
+            logger.info("Pulling from origin")
+            pull_branch(logger, repo, branch, verbose)
 
 def check_valid_config_arguments(
     config: ConfigParser,
@@ -175,7 +185,6 @@ def check_valid_config_arguments(
     if start_data not in valid_start_data:
         raise ValueError(f"Valid start_data types are: {', '.join(valid_start_data)}")
 
-    # FIXME: Look over the logic here. Not nice with repeated config.get at the moment
     if base_dir is None:
         if not check_valid_config_path(config, "settings", "base"):
             found = config.get("settings", "base")
@@ -204,128 +213,10 @@ def build_run_label(
     run_label = "-".join(label_parts)
 
     if run_label.find("/") != -1:
-        LOG.warning(
-            f"Found '/' characters in run label: {run_label}, replacing with '-'"
-        )
+        logger.warning(f"Found '/' characters in run label: {run_label}, replacing with '-'")
         run_label = run_label.replace("/", "-")
 
     return run_label
-
-
-def write_run_log(
-    run_log_path: Path,
-    run_type: str,
-    label: str,
-    checkout_str: str,
-    config: ConfigParser,
-    commit_hash: str,
-):
-    with run_log_path.open("w") as out_fh:
-        print("# Settings", file=out_fh)
-        print(f"output dir: {run_log_path.parent}", file=out_fh)
-        print(f"run type: {run_type}", file=out_fh)
-        print(f"run label: {label}", file=out_fh)
-        print(f"checkout: {checkout_str}", file=out_fh)
-        print(f"commit hash: {commit_hash}", file=out_fh)
-        print("", file=out_fh)
-        print("# Config file - settings", file=out_fh)
-        for key, val in config["settings"].items():
-            print(f"{key}: {val}", file=out_fh)
-
-        print(f"# Config file - {run_type}", file=out_fh)
-        for key, val in config[run_type].items():
-            print(f"{key}: {val}", file=out_fh)
-
-
-def get_single_csv(
-    config: ConfigParser,
-    run_type_settings: Dict[str, Any],
-    run_label: str,
-    start_data: str,
-    queue: Optional[str],
-    stub_run: bool,
-):
-    case_id = run_type_settings["case"]
-    case = config[case_id]
-
-    # Replace real data with dummy files in stub run to avoid scratching
-    if stub_run:
-        stub_case = config["settings"]
-        for key in stub_case:
-            case[key] = stub_case[key]
-
-    case = parse_case(dict(case), start_data, is_trio=False)
-
-    if not Path(case.read1).exists() or not Path(case.read2).exists():
-        raise FileNotFoundError(f"One or both files missing: {case.read1} {case.read2}")
-
-    run_csv = CsvEntry(run_label, [case], queue, ASSAY_PLACEHOLDER)
-    return run_csv
-
-
-def get_trio_csv(
-    config: ConfigParser,
-    run_type_settings: Dict[str, Any],
-    run_label: str,
-    start_data: str,
-    queue: Optional[str],
-    stub_run: bool,
-):
-
-    case_ids = run_type_settings["cases"].split(",")
-    assert (
-        len(case_ids) == 3
-    ), f"For a trio, three fields are expected, found: {case_ids}"
-    cases: List[Case] = []
-    for case_id in case_ids:
-        case_dict = config[case_id]
-
-        # Replace real data with dummy files in stub run to avoid scratching
-        if stub_run:
-            stub_case = config["settings"]
-            for key in stub_case:
-                case_dict[key] = stub_case[key]
-
-        case = parse_case(dict(case_dict), start_data, is_trio=True)
-
-        if not Path(case.read1).exists() or not Path(case.read2).exists():
-            raise FileNotFoundError(
-                f"One or both files missing: {case.read1} {case.read2}"
-            )
-
-        cases.append(case)
-
-    run_csv = CsvEntry(run_label, cases, queue, ASSAY_PLACEHOLDER)
-    return run_csv
-
-
-def parse_case(case_dict: Dict[str, str], start_data: str, is_trio: bool) -> Case:
-    if start_data == "vcf":
-        fw = case_dict["vcf"]
-        rv = f"{fw}.tbi"
-    elif start_data == "bam":
-        fw = case_dict["bam"]
-        rv = f"{fw}.bai"
-    elif start_data == "fq":
-        fw = case_dict["fq_fw"]
-        rv = case_dict["fq_rv"]
-    else:
-        raise ValueError(
-            f"Unknown start_data, found: {start_data}, valid are vcf, bam, fq"
-        )
-
-    case = Case(
-        case_dict["id"],
-        case_dict["clarity_pool_id"],
-        case_dict["clarity_sample_id"],
-        case_dict["sex"],
-        case_dict["type"],
-        fw,
-        rv,
-        mother=case_dict.get("mother") if is_trio else None,
-        father=case_dict.get("father") if is_trio else None,
-    )
-    return case
 
 
 def build_start_nextflow_analysis_cmd(
@@ -380,9 +271,7 @@ def build_start_nextflow_analysis_cmd(
     return start_nextflow_command
 
 
-def start_run(
-    start_nextflow_command: List[str], dry_run: bool, skip_confirmation: bool
-):
+def start_run(start_nextflow_command: List[str], dry_run: bool, skip_confirmation: bool):
     if not dry_run:
         if not skip_confirmation:
             pretty_command = " \\\n    ".join(start_nextflow_command)
@@ -393,89 +282,21 @@ def start_run(
             if confirmation == "y":
                 subprocess.run(start_nextflow_command, check=True)
             else:
-                LOG.info("Exiting ...")
+                logger.info("Exiting ...")
         else:
             subprocess.run(start_nextflow_command, check=True)
     else:
         joined_command = " ".join(start_nextflow_command)
-        LOG.info("(dry) " + joined_command)
-
-
-def write_resume_script(
-    results_dir: Path, run_command: str, csv: Path, stub_run: bool, dry_run: bool
-):
-    resume_command_parts = [
-        run_command,
-        str(csv.absolute()),
-    ]
-    if stub_run:
-        resume_command_parts.append("--custom_flags")
-        resume_command_parts.append("'-stub-run'")
-    resume_command = " ".join(resume_command_parts)
-    resume_script = results_dir / "resume.sh"
-    if not dry_run:
-        resume_script.write_text(resume_command)
-    else:
-        logging.info(f"(dry) Writing {resume_command} to {resume_script}")
-
-
-def setup_results_links(
-    config: ConfigParser, results_dir: Path, run_label: str, dry: bool
-):
-
-    log_base_dir = config["settings"]["log_base_dir"]
-    trace_base_dir = config["settings"]["trace_base_dir"]
-    work_base_dir = config["settings"]["work_base_dir"]
-
-    current_date = datetime.now()
-    date_stamp = current_date.strftime("%Y-%m-%d")
-
-    log_link = results_dir / "nextflow.log"
-    trace_link = results_dir / "trace.txt"
-    work_link = results_dir / "work"
-
-    log_link_target = Path(
-        f"{log_base_dir}/{run_label}.{ASSAY_PLACEHOLDER}.{date_stamp}.log"
-    )
-    trace_link_target = Path(
-        f"{trace_base_dir}/{run_label}.{ASSAY_PLACEHOLDER}.trace.txt"
-    )
-    work_link_target = Path(f"{work_base_dir}/{run_label}.{ASSAY_PLACEHOLDER}")
-
-    if log_link.exists():
-        LOG.warning(f"{log_link} already exists, removing previous link")
-        if not dry:
-            log_link.unlink()
-
-    if trace_link.exists():
-        LOG.warning(f"{trace_link} already exists, removing previous link")
-        if not dry:
-            trace_link.unlink()
-
-    if work_link.exists():
-        LOG.warning(f"{work_link} already exists, removing previous link")
-        if not dry:
-            work_link.unlink()
-
-    if not dry:
-        log_link.symlink_to(log_link_target)
-        trace_link.symlink_to(trace_link_target)
-        work_link.symlink_to(work_link_target)
-    else:
-        LOG.info(f"(dry) Linking log from {log_link_target} to {log_link}")
-        LOG.info(f"(dry) Linking trace from {trace_link_target} to {trace_link}")
-        LOG.info(f"(dry) Linking work from {work_link_target} to {work_link}")
+        logger.info("(dry) " + joined_command)
 
 
 def main_wrapper(args: argparse.Namespace):
 
     curr_dir = os.path.dirname(os.path.abspath(__file__))
-    config = load_config(curr_dir, args.config)
+    config = load_config(logger, curr_dir, args.config)
 
     if args.baseline is not None:
-        logging.info(
-            "Performing additional baseline run as specified by --baseline flag"
-        )
+        logging.info("Performing additional baseline run as specified by --baseline flag")
 
         if args.baseline_repo is not None:
             baseline_repo = str(args.baseline_repo)
@@ -578,12 +399,8 @@ def add_arguments(parser: argparse.ArgumentParser):
         action="store_true",
         help="Run start_nextflow_analysis.pl with nostart, printing the path to the SLURM job only",
     )
-    parser.add_argument(
-        "--baseline", help="Start a second baseline run and specified checkout"
-    )
-    parser.add_argument(
-        "--verbose", action="store_true", help="Print additional debug output"
-    )
+    parser.add_argument("--baseline", help="Start a second baseline run and specified checkout")
+    parser.add_argument("--verbose", action="store_true", help="Print additional debug output")
 
 
 if __name__ == "__main__":

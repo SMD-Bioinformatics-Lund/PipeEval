@@ -5,5 +5,5 @@
 # Dirs
 data/
 repos/
-testdata/
 __pycache__/
+.pytest_cache/

@@ -3,10 +3,12 @@
 import argparse
 import sys
 
-from runner.runner import add_arguments as runner_add_arguments
-from runner.runner import main_wrapper as runner_main_wrapper
-from evaluator.evaluator import add_arguments as eval_add_arguments
-from evaluator.evaluator import main_wrapper as eval_main_wrapper
+from commands.run.main import add_arguments as runner_add_arguments
+from commands.run.main import main_wrapper as runner_main_wrapper
+from commands.eval.main import add_arguments as eval_add_arguments
+from commands.eval.main import main_wrapper as eval_main_wrapper
+from commands.vcf.main import add_arguments as vcf_add_arguments
+from commands.vcf.main import main_wrapper as vcf_main_wrapper
 
 
 __version_info__ = ("1", "0", "1")
@@ -20,6 +22,8 @@ def main():
         runner_main_wrapper(args)
     elif args.subcommand == "eval":
         eval_main_wrapper(args)
+    elif args.subcommand == "vcf":
+        vcf_main_wrapper(args)
     else:
         raise ValueError(f"Unknown sub command: {args.subcommand}. Check valid commands by running main.py --help")
 
@@ -33,8 +37,12 @@ def parse_arguments():
 
     run_parser = subparsers.add_parser("run", description="Runs a pipeline.")
     runner_add_arguments(run_parser)
+
     eval_parser = subparsers.add_parser("eval", description="Takes two sets of results and generates a comparison")
     eval_add_arguments(eval_parser)
+
+    vcf_parser = subparsers.add_parser("vcf", description="Compare two VCFs directly")
+    vcf_add_arguments(vcf_parser)
 
     args = parent_parser.parse_args()
 
