@@ -82,7 +82,6 @@ def get_table_header(
     return header_fields
 
 
-# FIXME: This one needs to be addressed
 def get_table(
     variants: List[DiffScoredVariant],
     is_sv: bool,
