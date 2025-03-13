@@ -25,6 +25,11 @@ def main(
     annotations: List[str],
 ):
     show_line_numbers = True
+
+    if results is not None:
+        if not results.exists():
+            results.mkdir(parents=True)
+
     out_path_presence = results / "presence.txt" if results else None
 
     if run_id1 is None:
@@ -114,7 +119,7 @@ def add_arguments(parser: argparse.ArgumentParser):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     add_arguments(parser)
     args = parser.parse_args()
     main_wrapper(args)

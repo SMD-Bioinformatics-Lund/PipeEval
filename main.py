@@ -25,23 +25,38 @@ def main():
     elif args.subcommand == "vcf":
         vcf_main_wrapper(args)
     else:
-        raise ValueError(f"Unknown sub command: {args.subcommand}. Check valid commands by running main.py --help")
+        raise ValueError(
+            f"Unknown sub command: {args.subcommand}. Check valid commands by running main.py --help"
+        )
 
 
 def parse_arguments():
-    parent_parser = argparse.ArgumentParser(description="PipeEval provides tools to run and assess differences between runs in pipelines")
-    parent_parser.add_argument(
-        "--version", action="version", version=f"%(prog)s ({__version__})"
+    parent_parser = argparse.ArgumentParser(
+        description="PipeEval provides tools to run and assess differences between runs in pipelines",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
+    parent_parser.add_argument("--version", action="version", version=f"%(prog)s ({__version__})")
     subparsers = parent_parser.add_subparsers(dest="subcommand")
 
-    run_parser = subparsers.add_parser("run", description="Runs a pipeline.")
+    run_parser = subparsers.add_parser(
+        "run",
+        description="Runs a pipeline.",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
     runner_add_arguments(run_parser)
 
-    eval_parser = subparsers.add_parser("eval", description="Takes two sets of results and generates a comparison")
+    eval_parser = subparsers.add_parser(
+        "eval",
+        description="Takes two sets of results and generates a comparison",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
     eval_add_arguments(eval_parser)
 
-    vcf_parser = subparsers.add_parser("vcf", description="Compare two VCFs directly")
+    vcf_parser = subparsers.add_parser(
+        "vcf",
+        description="Compare two VCFs directly",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
     vcf_add_arguments(vcf_parser)
 
     args = parent_parser.parse_args()

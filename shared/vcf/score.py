@@ -8,6 +8,7 @@ def get_comparison_row(
     var2: ScoredVariant,
     show_sv_len: bool,
     show_line_numbers: bool,
+    annotation_info_keys: List[str],
     show_sub_scores: bool,
     show_sub_score_summary: bool,
 ) -> List[str]:
@@ -27,6 +28,17 @@ def get_comparison_row(
     if show_line_numbers:
         line_numbers = f"{var1.line_number}/{var2.line_number}"
         fields.append(line_numbers)
+
+    for annot_key in annotation_info_keys:
+        annot_value1 = var1.info_dict.get(annot_key) or ""
+        annot_value2 = var2.info_dict.get(annot_key) or ""
+
+        if annot_value1 == annot_value2:
+            annot = annot_value1
+        else:
+            annot = f"{annot_value1}/{annot_value2}"
+        fields.append(annot)
+
 
     fields.extend([var1.get_rank_score_str(), var2.get_rank_score_str()])
 
@@ -50,6 +62,7 @@ def get_table_header(
     variants_r2: Dict[str, ScoredVariant],
     is_sv: bool,
     show_line_numbers: bool,
+    annotation_info_keys: List[str],
     exclude_subscores: bool
 ):
     first_shared_key = list(shared_variant_keys)[0]
@@ -58,6 +71,7 @@ def get_table_header(
         header_fields.append("sv_len")
     if show_line_numbers:
         header_fields.append("line_numbers")
+    header_fields.extend(annotation_info_keys)
     header_fields.extend([f"score_{run_id1}", f"score_{run_id2}", "score_diff_summary"])
 
     if not exclude_subscores:
@@ -66,17 +80,11 @@ def get_table_header(
         for sub_score in variants_r2[first_shared_key].sub_scores:
             header_fields.append(f"r2_{sub_score}")
     return header_fields
-    # rows = [header_fields]
 
 
 # FIXME: This one needs to be addressed
 def get_table(
-    run_id1: str,
-    run_id2: str,
     variants: List[DiffScoredVariant],
-    shared_variant_keys: Set[str],
-    variants_r1: Dict[str, ScoredVariant],
-    variants_r2: Dict[str, ScoredVariant],
     is_sv: bool,
     show_line_numbers: bool,
     annotation_info_keys: List[str],
@@ -90,6 +98,7 @@ def get_table(
             variant.r2,
             show_sv_len=is_sv,
             show_line_numbers=show_line_numbers,
+            annotation_info_keys=annotation_info_keys,
             show_sub_scores=True,
             show_sub_score_summary=True,
         )

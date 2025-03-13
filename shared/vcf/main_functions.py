@@ -194,6 +194,7 @@ def print_diff_score_info(
         variants_r2,
         is_sv,
         show_line_numbers,
+        annotation_info_keys,
         exclude_subscores=True,
     )
 
@@ -205,16 +206,12 @@ def print_diff_score_info(
         variants_r2,
         is_sv,
         show_line_numbers,
+        annotation_info_keys,
         exclude_subscores=False,
     )
 
     full_body = get_table(
-        run_id1,
-        run_id2,
         diff_scored_variants,
-        shared_variant_keys,
-        variants_r1,
-        variants_r2,
         is_sv,
         show_line_numbers,
         annotation_info_keys,
@@ -236,20 +233,14 @@ def print_diff_score_info(
         logger.info(row)
 
     above_thres_comparison_rows = get_table(
-        run_id1,
-        run_id2,
         diff_variants_above_thres,
-        shared_variant_keys,
-        variants_r1,
-        variants_r2,
         is_sv,
         show_line_numbers,
         annotation_info_keys,
     )
 
-    full_table = full_header + above_thres_comparison_rows
-
     if out_path_above_thres is not None:
+        full_table = [full_header] + above_thres_comparison_rows
         with open(str(out_path_above_thres), "w") as out_fh:
             for row in full_table:
                 print("\t".join(row), file=out_fh)
