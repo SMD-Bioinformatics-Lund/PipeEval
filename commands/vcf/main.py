@@ -1,7 +1,7 @@
 import argparse
 from pathlib import Path
 import logging
-from typing import Optional
+from typing import List, Optional
 
 from shared.vcf.main_functions import (
     variant_comparisons,
@@ -22,8 +22,14 @@ def main(
     run_id1: Optional[str],
     run_id2: Optional[str],
     results: Optional[Path],
+    annotations: List[str],
 ):
     show_line_numbers = True
+
+    if results is not None:
+        if not results.exists():
+            results.mkdir(parents=True)
+
     out_path_presence = results / "presence.txt" if results else None
 
     if run_id1 is None:
@@ -57,34 +63,37 @@ def main(
         do_score_check,
         do_annot_check,
         show_line_numbers,
+        annotations,
     )
 
 
 def main_wrapper(args: argparse.Namespace):
+
     main(
-        Path(args.vcf1),
-        Path(args.vcf2),
+        args.vcf1,
+        args.vcf2,
         args.is_sv,
         args.score_threshold,
         args.max_checked_annots,
         args.max_display,
         args.id1,
         args.id2,
-        Path(args.results) if args.results is not None else None,
+        args.results if args.results is not None else None,
+        args.annotations.split(",") if args.annotations is not None else [],
     )
 
 
 def add_arguments(parser: argparse.ArgumentParser):
     parser.add_argument(
-        "--vcf1", "-1", required=True, help="VCF to compare in .vcf or .vcf.gz format"
+        "--vcf1", "-1", required=True, type=Path, help="VCF to compare in .vcf or .vcf.gz format"
     )
     parser.add_argument(
-        "--vcf2", "-2", required=True, help="VCF to compare in .vcf or .vcf.gz format"
+        "--vcf2", "-2", required=True, type=Path, help="VCF to compare in .vcf or .vcf.gz format"
     )
     parser.add_argument("--id1", help="Optional run ID for first vcf")
     parser.add_argument("--id2", help="Optional run ID for second vcf")
     parser.add_argument("--is_sv", action="store_true", help="Process VCF in SV mode")
-    parser.add_argument("--results", help="Optional results folder")
+    parser.add_argument("--results", type=Path, help="Optional results folder")
     parser.add_argument(
         "--score_threshold",
         type=int,
@@ -102,6 +111,9 @@ def add_arguments(parser: argparse.ArgumentParser):
         type=int,
         default=10,
         help="Limit the number of entries printed to STDOUT (all entries are written to results folder)",
+    )
+    parser.add_argument(
+        "--annotations", help="Comma separated additional annotations to retain in output"
     )
 
 

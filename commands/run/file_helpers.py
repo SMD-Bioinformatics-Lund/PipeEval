@@ -76,15 +76,15 @@ def get_single_csv(
     stub_run: bool,
 ):
     case_id = run_type_settings["case"]
-    case = config[case_id]
+    case_conf = config[case_id]
 
     # Replace real data with dummy files in stub run to avoid scratching
     if stub_run:
         stub_case = config["settings"]
         for key in stub_case:
-            case[key] = stub_case[key]
+            case_conf[key] = stub_case[key]
 
-    case = parse_case(dict(case), start_data, is_trio=False)
+    case = parse_case(dict(case_conf), start_data, is_trio=False)
 
     if not Path(case.read1).exists() or not Path(case.read2).exists():
         raise FileNotFoundError(f"One or both files missing: {case.read1} {case.read2}")
