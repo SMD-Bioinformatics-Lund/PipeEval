@@ -63,7 +63,7 @@ def main(
         do_score_check,
         do_annot_check,
         show_line_numbers,
-        annotations if annotations is not None else [],
+        annotations,
     )
 
 
@@ -112,7 +112,6 @@ def add_arguments(parser: argparse.ArgumentParser):
         default=10,
         help="Limit the number of entries printed to STDOUT (all entries are written to results folder)",
     )
-
     parser.add_argument(
         "--annotations", help="Comma separated additional annotations to retain in output"
     )
