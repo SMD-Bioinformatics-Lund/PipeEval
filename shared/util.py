@@ -2,7 +2,7 @@ from configparser import ConfigParser
 import logging
 from pathlib import Path
 from typing import Any, List, Optional
-
+	
 
 def load_config(logger: logging.Logger, parent_path: str, config_path: Optional[str]) -> ConfigParser:
     config = ConfigParser()
