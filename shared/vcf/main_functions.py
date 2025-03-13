@@ -5,7 +5,7 @@ from typing import Dict, List, Optional, Set
 from shared.compare import Comparison, do_comparison, parse_var_key_for_sort
 from shared.util import prettify_rows
 from shared.vcf.annotation import compare_variant_annotation
-from shared.vcf.score import get_table
+from shared.vcf.score import get_table, get_table_header
 from shared.vcf.vcf import DiffScoredVariant, ScoredVariant, parse_scored_vcf
 
 
@@ -19,6 +19,7 @@ def compare_variant_presence(
     max_display: int,
     out_path: Optional[Path],
     show_line_numbers: bool,
+    additional_annotations: List[str],
 ):
 
     common = comparison_results.shared
@@ -35,6 +36,7 @@ def compare_variant_presence(
         variants_r2,
         show_line_numbers,
         max_display,
+        additional_annotations,
     )
     for line in summary_lines:
         logger.info(line)
@@ -50,6 +52,7 @@ def compare_variant_presence(
             variants_r2,
             show_line_numbers,
             max_display=None,
+            additional_annotations=additional_annotations,
         )
         with out_path.open("w") as out_fh:
             for line in full_summary_lines:
@@ -66,20 +69,19 @@ def get_variant_presence_summary(
     variants_r2: Dict[str, ScoredVariant],
     show_line_numbers: bool,
     max_display: Optional[int],
+    additional_annotations: List[str],
 ) -> List[str]:
     output: List[str] = []
 
     if len(r1_only) > 0:
         if max_display is not None:
-            output.append(
-                f"# First {min(len(r1_only), max_display)} only found in {label_r1}"
-            )
+            output.append(f"# First {min(len(r1_only), max_display)} only found in {label_r1}")
         else:
             output.append(f"Only found in {label_r1}")
 
         r1_table: List[List[str]] = []
         for key in sorted(list(r1_only), key=parse_var_key_for_sort)[0:max_display]:
-            row_fields = variants_r1[key].get_row(show_line_numbers)
+            row_fields = variants_r1[key].get_row(show_line_numbers, additional_annotations)
             r1_table.append(row_fields)
         pretty_rows = prettify_rows(r1_table)
         for row in pretty_rows:
@@ -87,15 +89,13 @@ def get_variant_presence_summary(
 
     if len(r2_only) > 0:
         if max_display is not None:
-            output.append(
-                f"# First {min(len(r2_only), max_display)} only found in {label_r2}"
-            )
+            output.append(f"# First {min(len(r2_only), max_display)} only found in {label_r2}")
         else:
             output.append(f"Only found in {label_r2}")
 
         r2_table: List[List[str]] = []
         for key in sorted(list(r2_only), key=parse_var_key_for_sort)[0:max_display]:
-            row_fields = variants_r2[key].get_row(show_line_numbers)
+            row_fields = variants_r2[key].get_row(show_line_numbers, additional_annotations)
             r2_table.append(row_fields)
         pretty_rows = prettify_rows(r2_table)
         for row in pretty_rows:
@@ -117,6 +117,7 @@ def compare_variant_score(
     out_path_all: Optional[Path],
     is_sv: bool,
     show_line_numbers: bool,
+    annotation_info_keys: List[str],
 ):
 
     diff_scored_variants: List[DiffScoredVariant] = []
@@ -143,6 +144,7 @@ def compare_variant_score(
             score_threshold,
             is_sv,
             show_line_numbers,
+            annotation_info_keys,
         )
     else:
         logger.info("# No differently scored variants found")
@@ -162,7 +164,8 @@ def print_diff_score_info(
     score_threshold: int,
     is_sv: bool,
     show_line_numbers: bool,
-):
+    annotation_info_keys: List[str],
+) -> None:
 
     diff_scored_variants.sort(
         key=lambda var: var.r1.get_rank_score(),
@@ -183,7 +186,29 @@ def print_diff_score_info(
         f"# Total number shared variants: {len(shared_variant_keys)} ({run_id1}: {len(variants_r1)}, {run_id2}: {len(variants_r2)})",
     )
 
-    full_comparison_table = get_table(
+    limited_header = get_table_header(
+        run_id1,
+        run_id2,
+        shared_variant_keys,
+        variants_r1,
+        variants_r2,
+        is_sv,
+        show_line_numbers,
+        exclude_subscores=True,
+    )
+
+    full_header = get_table_header(
+        run_id1,
+        run_id2,
+        shared_variant_keys,
+        variants_r1,
+        variants_r2,
+        is_sv,
+        show_line_numbers,
+        exclude_subscores=False,
+    )
+
+    full_body = get_table(
         run_id1,
         run_id2,
         diff_scored_variants,
@@ -192,29 +217,25 @@ def print_diff_score_info(
         variants_r2,
         is_sv,
         show_line_numbers,
+        annotation_info_keys,
     )
     if out_path_all is not None:
         with open(str(out_path_all), "w") as out_fh:
-            for row in full_comparison_table:
+            out_table = [full_header] + full_body
+            for row in out_table:
                 print("\t".join(row), file=out_fh)
 
     if len(diff_variants_above_thres) > max_count:
         logger.info(f"# Only printing the {max_count} first")
-    # FIXME: Get rid of this uglyness. It should handle number of cols in a flexible way
-    # variant.get_row() might be part of a solution
-    nbr_out_cols = 6
-    if is_sv:
-        nbr_out_cols += 1
-    if show_line_numbers:
-        nbr_out_cols += 1
-    first_rows_and_cols = [
-        full_row[0:nbr_out_cols] for full_row in full_comparison_table[0:max_count]
+    first_rows_and_cols = [limited_header] + [
+        row[0 : len(limited_header)] for row in full_body[0:max_count]
     ]
+
     pretty_rows = prettify_rows(first_rows_and_cols)
     for row in pretty_rows:
         logger.info(row)
 
-    above_thres_comparison_table = get_table(
+    above_thres_comparison_rows = get_table(
         run_id1,
         run_id2,
         diff_variants_above_thres,
@@ -223,10 +244,14 @@ def print_diff_score_info(
         variants_r2,
         is_sv,
         show_line_numbers,
+        annotation_info_keys,
     )
+
+    full_table = full_header + above_thres_comparison_rows
+
     if out_path_above_thres is not None:
         with open(str(out_path_above_thres), "w") as out_fh:
-            for row in above_thres_comparison_table:
+            for row in full_table:
                 print("\t".join(row), file=out_fh)
 
 
@@ -246,8 +271,10 @@ def variant_comparisons(
     do_score_check: bool,
     do_annot_check: bool,
     show_line_numbers: bool,
+    annotation_info_keys: List[str],
 ):
     logger.info(f"# Parsing VCFs ...")
+
     vcf_r1 = parse_scored_vcf(r1_scored_vcf, is_sv)
     logger.info(f"{run_id1} number variants: {len(vcf_r1.variants)}")
     vcf_r2 = parse_scored_vcf(r2_scored_vcf, is_sv)
@@ -270,6 +297,7 @@ def variant_comparisons(
         max_display,
         out_path_presence,
         show_line_numbers,
+        annotation_info_keys,
     )
     shared_variants = comp_res.shared
     if do_annot_check:
@@ -300,4 +328,5 @@ def variant_comparisons(
             out_path_score_all,
             is_sv,
             show_line_numbers,
+            annotation_info_keys,
         )

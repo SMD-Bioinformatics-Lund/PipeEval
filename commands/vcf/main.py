@@ -22,8 +22,7 @@ def main(
     run_id1: Optional[str],
     run_id2: Optional[str],
     results: Optional[Path],
-    filter_key: str,
-    filter_list: Path,
+    annotations: List[str],
 ):
     show_line_numbers = True
     out_path_presence = results / "presence.txt" if results else None
@@ -59,6 +58,7 @@ def main(
         do_score_check,
         do_annot_check,
         show_line_numbers,
+        annotations if annotations is not None else [],
     )
 
 
@@ -74,8 +74,7 @@ def main_wrapper(args: argparse.Namespace):
         args.id1,
         args.id2,
         args.results if args.results is not None else None,
-        args.filter_key,
-        args.filter_list
+        args.annotations.split(",") if args.annotations is not None else [],
     )
 
 
@@ -109,8 +108,9 @@ def add_arguments(parser: argparse.ArgumentParser):
         help="Limit the number of entries printed to STDOUT (all entries are written to results folder)",
     )
 
-    parser.add_argument("--filter_key", help="INFO field key used for filtering")
-    parser.add_argument("--filter_list", type=Path, help="File containing entries to filter on")
+    parser.add_argument(
+        "--annotations", help="Comma separated additional annotations to retain in output"
+    )
 
 
 if __name__ == "__main__":

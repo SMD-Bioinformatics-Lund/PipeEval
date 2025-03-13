@@ -13,9 +13,7 @@ def get_comparison_row(
 ) -> List[str]:
 
     if var1 != var2:
-        raise ValueError(
-            f"Must compare the same variant. This: {str(var1)} Other: {str(var2)}"
-        )
+        raise ValueError(f"Must compare the same variant. This: {str(var1)} Other: {str(var2)}")
 
     fields = [
         var1.chr,
@@ -44,6 +42,34 @@ def get_comparison_row(
     return fields
 
 
+def get_table_header(
+    run_id1: str,
+    run_id2: str,
+    shared_variant_keys: Set[str],
+    variants_r1: Dict[str, ScoredVariant],
+    variants_r2: Dict[str, ScoredVariant],
+    is_sv: bool,
+    show_line_numbers: bool,
+    exclude_subscores: bool
+):
+    first_shared_key = list(shared_variant_keys)[0]
+    header_fields = ["chr", "pos", "var"]
+    if is_sv:
+        header_fields.append("sv_len")
+    if show_line_numbers:
+        header_fields.append("line_numbers")
+    header_fields.extend([f"score_{run_id1}", f"score_{run_id2}", "score_diff_summary"])
+
+    if not exclude_subscores:
+        for sub_score in variants_r1[first_shared_key].sub_scores:
+            header_fields.append(f"r1_{sub_score}")
+        for sub_score in variants_r2[first_shared_key].sub_scores:
+            header_fields.append(f"r2_{sub_score}")
+    return header_fields
+    # rows = [header_fields]
+
+
+# FIXME: This one needs to be addressed
 def get_table(
     run_id1: str,
     run_id2: str,
@@ -53,21 +79,10 @@ def get_table(
     variants_r2: Dict[str, ScoredVariant],
     is_sv: bool,
     show_line_numbers: bool,
+    annotation_info_keys: List[str],
 ) -> List[List[str]]:
 
-    first_shared_key = list(shared_variant_keys)[0]
-    header_fields = ["chr", "pos", "var"]
-    if is_sv:
-        header_fields.append("sv_len")
-    if show_line_numbers:
-        header_fields.append("line_numbers")
-    header_fields.extend([f"score_{run_id1}", f"score_{run_id2}", "score_diff_summary"])
-
-    for sub_score in variants_r1[first_shared_key].sub_scores:
-        header_fields.append(f"r1_{sub_score}")
-    for sub_score in variants_r2[first_shared_key].sub_scores:
-        header_fields.append(f"r2_{sub_score}")
-    rows = [header_fields]
+    rows = []
 
     for variant in variants:
         comparison_fields = get_comparison_row(
