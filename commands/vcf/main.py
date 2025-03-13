@@ -119,7 +119,7 @@ def add_arguments(parser: argparse.ArgumentParser):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser = argparse.ArgumentParser()
     add_arguments(parser)
     args = parser.parse_args()
     main_wrapper(args)
