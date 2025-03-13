@@ -30,8 +30,8 @@ def get_comparison_row(
         fields.append(line_numbers)
 
     for annot_key in annotation_info_keys:
-        annot_value1 = var1.info_dict.get(annot_key) or ""
-        annot_value2 = var2.info_dict.get(annot_key) or ""
+        annot_value1 = var1.info_dict.get(annot_key) or "-"
+        annot_value2 = var2.info_dict.get(annot_key) or "-"
 
         if annot_value1 == annot_value2:
             annot = annot_value1
