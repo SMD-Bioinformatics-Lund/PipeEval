@@ -449,7 +449,7 @@ def main_wrapper(args: argparse.Namespace):
         args.verbose,
         args.max_checked_annots,
         args.show_line_numbers,
-        args.annotations.split(",")
+        args.annotations.split(",") if args.annotations is not None else [],
     )
 
 
