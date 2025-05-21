@@ -1,5 +1,6 @@
 import logging
 from pathlib import Path
+from typing import List
 from commands.vcf.main import main
 from pytest import LogCaptureFixture
 
@@ -17,6 +18,7 @@ def test_main(caplog: LogCaptureFixture, tmp_path: Path):
     run_id2 = "Run ID2"
     results = tmp_path / "results"
     results.mkdir()
+    annotations: List[str] = []
 
     with caplog.at_level(logging.INFO):
 
@@ -30,6 +32,7 @@ def test_main(caplog: LogCaptureFixture, tmp_path: Path):
             run_id1,
             run_id2,
             results,
+            annotations
         )
 
     assert len(caplog.records) > 0, "No logs were captured"

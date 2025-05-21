@@ -80,6 +80,7 @@ def main(
     verbose: bool,
     max_checked_annots: int,
     show_line_numbers: bool,
+    annotation_info_keys: List[str],
 ):
 
     curr_dir = os.path.dirname(os.path.abspath(__file__))
@@ -184,6 +185,7 @@ def main(
             comparisons is None or "score_snv" in comparisons,
             comparisons is None or "annotation_snv" in comparisons,
             show_line_numbers,
+            annotation_info_keys,
         )
 
     if (
@@ -227,6 +229,7 @@ def main(
             comparisons is None or "score_sv" in comparisons,
             comparisons is None or "annotation_sv" in comparisons,
             show_line_numbers,
+            annotation_info_keys,
         )
 
     if comparisons is None or "yaml" in comparisons:
@@ -429,6 +432,7 @@ def add_arguments(parser: argparse.ArgumentParser):
         action="store_true",
         help="Show line numbers from original VCFs in output",
     )
+    parser.add_argument("--annotations", help="INFO keys to include in output tables")
 
 
 def main_wrapper(args: argparse.Namespace):
@@ -445,6 +449,7 @@ def main_wrapper(args: argparse.Namespace):
         args.verbose,
         args.max_checked_annots,
         args.show_line_numbers,
+        args.annotations.split(",")
     )
 
 

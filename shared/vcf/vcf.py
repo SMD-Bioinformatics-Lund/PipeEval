@@ -67,7 +67,7 @@ class ScoredVariant:
     def get_basic_info(self) -> str:
         return f"{self.chr}:{self.pos} {self.get_trunc_ref()}/{self.get_trunc_alt()}"
 
-    def get_row(self, show_line_numbers: bool) -> List[str]:
+    def get_row(self, show_line_numbers: bool, additional_annotations: List[str]) -> List[str]:
         row = [self.chr, str(self.pos), self.get_trunc_ref(), self.get_trunc_alt()]
         if show_line_numbers:
             row.append(str(self.line_number))
@@ -75,6 +75,10 @@ class ScoredVariant:
             row.append(str(self.sv_length))
         if self.rank_score is not None:
             row.append(str(self.rank_score))
+        if len(additional_annotations):
+            for annot_key in additional_annotations:
+                annot_val = self.info_dict.get(annot_key)
+                row.append(annot_val if annot_val is not None else "")
         return row
 
     def __eq__(self, other: object) -> bool:
