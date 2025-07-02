@@ -1,22 +1,15 @@
-name: CI
-
+name: "Changelog Reminder"
 on:
-  push:
-    branches: [ "main" ]
   pull_request:
-    branches: [ "main" ]
+      types: [opened, synchronize, reopened, ready_for_review, labeled, unlabeled]
 
 jobs:
-  build:
+  # Enforces the update of a changelog file on every pull request
+  changelog:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
-    - uses: actions/setup-python@v4
+    - uses: actions/checkout@v4
+    - uses: dangoslen/changelog-enforcer@v3
       with:
-        python-version: '3.x'
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install pytest
-    - name: Run tests
-      run: pytest -q
+        changeLogPath: 'CHANGELOG.md'
+        skipLabels: 'Skip-Changelog'
