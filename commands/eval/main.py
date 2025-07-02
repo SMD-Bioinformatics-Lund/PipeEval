@@ -67,7 +67,7 @@ def main(
     run_id2: Optional[str],
     results1_dir: Path,
     results2_dir: Path,
-    config_path: str,
+    config_path: Optional[str],
     comparisons: Optional[Set[str]],
     score_threshold: int,
     max_display: int,
@@ -112,7 +112,7 @@ def main(
             run_id2,
             r1_paths,
             r2_paths,
-            config.get("settings", "ignore").split(","),
+            config.get("settings", "ignore", fallback="").split(","),
             out_path,
         )
 

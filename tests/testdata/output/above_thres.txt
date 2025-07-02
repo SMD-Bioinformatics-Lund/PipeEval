@@ -1,0 +1,13 @@
+chr	pos	var	line_numbers	score_hg002_chr21	score_hg004_chr21	score_diff_summary	r1_allele_frequency	r1_Protein_prediction	r1_Gene_intolerance_prediction	r1_Inheritance_Models	r1_Consequence	r1_Conservation	r1_Variant_call_quality_filter	r1_Deleteriousness	r1_Clinical_significance	r1_HmtVarPrediction	r1_Splicing	r2_allele_frequency	r2_Protein_prediction	r2_Gene_intolerance_prediction	r2_Inheritance_Models	r2_Consequence	r2_Conservation	r2_Variant_call_quality_filter	r2_Deleteriousness	r2_Clinical_significance	r2_HmtVarPrediction	r2_Splicing
+21	44900370	C/T	1872/2189	19	20	Inheritance_Models:0/1	3	2	0	0	5	2	3	3	0	0	1	3	2	0	1	5	2	3	3	0	0	1
+21	44326731	G/A	1723/2037	17	20	Protein_prediction:0/1,Inheritance_Models:0/1,Clinical_significance:1/2	2	0	0	0	5	2	3	3	1	0	1	2	1	0	1	5	2	3	3	2	0	1
+21	25717194	A/C	555/633	13	14	Inheritance_Models:0/1	4	0	0	0	3	0	3	2	0	0	1	4	0	0	1	3	0	3	2	0	0	1
+21	33432309	A/G	821/949	12	13	Inheritance_Models:0/1	3	0	0	0	5	0	3	0	0	0	1	3	0	0	1	5	0	3	0	0	0	1
+21	37197573	T/C	1045/1222	11	12	Inheritance_Models:0/1	2	0	0	0	3	0	3	0	2	0	1	2	0	0	1	3	0	3	0	2	0	1
+21	46266123	A/C	2083/2467	11	12	Inheritance_Models:0/1	1	0	0	0	5	0	3	0	1	0	1	1	0	0	1	5	0	3	0	1	0	1
+21	29689719	G/A	654/743	10	-2	Inheritance_Models:0/-12	3	0	0	0	1	0	3	2	0	0	1	3	0	0	-12	1	0	3	2	0	0	1
+21	25606567	C/T	550/628	10	11	Inheritance_Models:0/1	2	0	0	0	2	0	3	2	0	0	1	2	0	0	1	2	0	3	2	0	0	1
+21	17567065	C/G	496/533	9	10	Inheritance_Models:0/1	1	0	0	0	1	1	3	2	0	0	1	1	0	0	1	1	1	3	2	0	0	1
+21	17567638	T/C	498/537	9	10	Inheritance_Models:0/1	1	0	0	0	1	1	3	2	0	0	1	1	0	0	1	1	1	3	2	0	0	1
+21	42142685	AC/A	1508/1749	9	10	Inheritance_Models:0/1	2	0	0	0	3	0	3	0	0	0	1	2	0	0	1	3	0	3	0	0	0	1
+21	10521739	G/GA	412/416	9	10	Inheritance_Models:0/1	4	0	0	0	1	0	3	0	0	0	1	4	0	0	1	1	0	3	0	0	0	1

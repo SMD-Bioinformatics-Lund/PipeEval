@@ -1,3 +1,8 @@
+# 1.2.1
+
+* Add GitHub actions workflows
+* Extended unit testing
+
 # 1.2.0
 
 * Reorganizing code with "commands" folder and "shared" for shared code
