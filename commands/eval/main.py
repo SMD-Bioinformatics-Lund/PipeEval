@@ -360,6 +360,7 @@ def compare_all_vcfs(
     if out_fh:
         out_fh.close()
 
+
 def diff_compare_files(
     run_id1: str,
     run_id2: str,

@@ -1,5 +1,3 @@
-
-
 from configparser import ConfigParser
 from pathlib import Path
 import textwrap
@@ -22,7 +20,6 @@ def basic_config_path(tmp_path: Path, base_dir: Path) -> Path:
     (repo_dir / ".git").mkdir()
     (repo_dir / "nextflow.config").write_text("nextflow")
 
-    
     # Dummy input files
     fastq1 = tmp_path / "r1.fq"
     fastq2 = tmp_path / "r2.fq"
@@ -33,8 +30,8 @@ def basic_config_path(tmp_path: Path, base_dir: Path) -> Path:
     vcf = tmp_path / "dummy.vcf"
     vcf.write_text("vcf")
 
-
-    config_text = textwrap.dedent(f"""
+    config_text = textwrap.dedent(
+        f"""
         [settings]
         start_nextflow_analysis = /usr/bin/env
         log_base_dir = {tmp_path}/log
@@ -71,8 +68,9 @@ def basic_config_path(tmp_path: Path, base_dir: Path) -> Path:
         fq_rv = {fastq2}
         bam = {bam}
         vcf = {vcf}
-        """)
-    
+        """
+    )
+
     config_path = tmp_path / "config.ini"
     config_path.write_text(config_text)
 

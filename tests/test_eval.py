@@ -33,8 +33,8 @@ def create_results_dir(base: Path, run_id: str, diff_scores: bool = False):
 
     snv_lines = [
         "##fileformat=VCFv4.2",
-        "##INFO=<ID=RankScore,Number=.,Type=String,Description=\"Rank score\">",
-        "##INFO=<ID=RankResult,Number=.,Type=String,Description=\"A|B\">",
+        '##INFO=<ID=RankScore,Number=.,Type=String,Description="Rank score">',
+        '##INFO=<ID=RankResult,Number=.,Type=String,Description="A|B">',
         "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO",
         f"1\t100\t.\tA\tC\t.\tPASS\tRankScore={run_id}:{score1};RankResult=1|2",
         f"1\t200\t.\tG\tT\t.\tPASS\tRankScore={run_id}:{score2};RankResult=3|4",
@@ -48,9 +48,9 @@ def create_results_dir(base: Path, run_id: str, diff_scores: bool = False):
     sv_vcf = vcf_dir / f"{run_id}.sv.scored.vcf"
     sv_lines = [
         "##fileformat=VCFv4.2",
-        "##INFO=<ID=END,Number=1,Type=Integer,Description=\"End position\">",
-        "##INFO=<ID=RankScore,Number=.,Type=String,Description=\"Rank score\">",
-        "##INFO=<ID=RankResult,Number=.,Type=String,Description=\"A|B\">",
+        '##INFO=<ID=END,Number=1,Type=Integer,Description="End position">',
+        '##INFO=<ID=RankScore,Number=.,Type=String,Description="Rank score">',
+        '##INFO=<ID=RankResult,Number=.,Type=String,Description="A|B">',
         "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO",
         f"1\t300\t.\tN\t<DEL>\t.\tPASS\tEND=310;RankScore={run_id}:{sv_score};RankResult=1|1",
     ]

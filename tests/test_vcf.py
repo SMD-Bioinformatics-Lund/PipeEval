@@ -34,7 +34,7 @@ def test_main(caplog: LogCaptureFixture, tmp_path: Path):
             run_id1,
             run_id2,
             results,
-            annotations
+            annotations,
         )
 
     assert len(caplog.records) > 0, "No logs were captured"
@@ -43,14 +43,11 @@ def test_main(caplog: LogCaptureFixture, tmp_path: Path):
         record.levelname == "ERROR" for record in caplog.records
     ), "Error logs were captured"
 
-    expected_files = [
-        "above_thres.txt",
-        "score_all.txt"
-    ]
+    expected_files = ["above_thres.txt", "score_all.txt"]
 
     for filename in expected_files:
         file_path = results / filename
-        assert file_path.exists(), f'Expected file {filename} does not exist'
+        assert file_path.exists(), f"Expected file {filename} does not exist"
 
 
 def test_parse_scored_vcf_counts():
