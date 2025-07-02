@@ -7,7 +7,6 @@ from typing import List, Optional, Tuple, Union
 from .classes import PathObj
 
 
-
 def get_files_ending_with(pattern: str, paths: List[PathObj]) -> List[PathObj]:
     re_pattern = re.compile(pattern)
     matching = [path for path in paths if re.search(re_pattern, str(path)) is not None]
@@ -131,5 +130,3 @@ def detect_run_id(logger: Logger, base_dir_name: str, verbose: bool) -> str:
         logger.info(f"Datestamp not detected, full folder name used as run ID")
         dir_name = str(base_dir_name)
         return dir_name
-
-

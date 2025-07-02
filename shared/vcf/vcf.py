@@ -36,17 +36,27 @@ class ScoredVariant:
         self.line_number = line_number
 
     def get_trunc_ref(self) -> str:
-        trunc_ref = self.ref[0:TRUNC_LENGTH] + "..." if len(self.ref) > TRUNC_LENGTH else self.ref
+        trunc_ref = (
+            self.ref[0:TRUNC_LENGTH] + "..."
+            if len(self.ref) > TRUNC_LENGTH
+            else self.ref
+        )
         return trunc_ref
 
     def get_trunc_alt(self) -> str:
-        trunc_alt = self.alt[0:TRUNC_LENGTH] + "..." if len(self.alt) > TRUNC_LENGTH else self.alt
+        trunc_alt = (
+            self.alt[0:TRUNC_LENGTH] + "..."
+            if len(self.alt) > TRUNC_LENGTH
+            else self.alt
+        )
         return trunc_alt
 
     def __str__(self) -> str:
         trunc_ref = self.get_trunc_ref()
         trunc_alt = self.get_trunc_alt()
-        return f"{self.chr}:{self.pos} {trunc_ref}/{trunc_alt} (Score: {self.rank_score})"
+        return (
+            f"{self.chr}:{self.pos} {trunc_ref}/{trunc_alt} (Score: {self.rank_score})"
+        )
 
     def get_simple_key(self) -> str:
         if not self.is_sv:
@@ -67,7 +77,9 @@ class ScoredVariant:
     def get_basic_info(self) -> str:
         return f"{self.chr}:{self.pos} {self.get_trunc_ref()}/{self.get_trunc_alt()}"
 
-    def get_row(self, show_line_numbers: bool, additional_annotations: List[str]) -> List[str]:
+    def get_row(
+        self, show_line_numbers: bool, additional_annotations: List[str]
+    ) -> List[str]:
         row = [self.chr, str(self.pos), self.get_trunc_ref(), self.get_trunc_alt()]
         if show_line_numbers:
             row.append(str(self.line_number))
@@ -103,15 +115,23 @@ class DiffScoredVariant:
         self.r2 = r2_variant
 
     def any_above_thres(self, score_threshold: int) -> bool:
-        r1_above_thres = self.r1.rank_score is not None and self.r1.rank_score >= score_threshold
-        r2_above_thres = self.r2.rank_score is not None and self.r2.rank_score >= score_threshold
+        r1_above_thres = (
+            self.r1.rank_score is not None and self.r1.rank_score >= score_threshold
+        )
+        r2_above_thres = (
+            self.r2.rank_score is not None and self.r2.rank_score >= score_threshold
+        )
         any_above_thres = r1_above_thres or r2_above_thres
         return any_above_thres
 
 
 class ScoredVCF:
     def __init__(
-        self, path: Path, is_sv: bool, info: Dict[str, str], variants: Dict[str, ScoredVariant]
+        self,
+        path: Path,
+        is_sv: bool,
+        info: Dict[str, str],
+        variants: Dict[str, ScoredVariant],
     ):
         self.path = path
         self.is_sv = is_sv
@@ -141,7 +161,9 @@ def parse_scored_vcf(vcf: Path, is_sv: bool) -> ScoredVCF:
                     )
                     info_rows[info_id] = line
 
-                if rank_sub_score_names is None and line.startswith("##INFO=<ID=RankResult,"):
+                if rank_sub_score_names is None and line.startswith(
+                    "##INFO=<ID=RankResult,"
+                ):
                     sub_scores_names = get_match_or_crash(
                         sub_score_name_pattern,
                         line,

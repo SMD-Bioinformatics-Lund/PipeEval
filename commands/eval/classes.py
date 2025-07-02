@@ -1,7 +1,7 @@
 from pathlib import Path
 
 
-class PathObj():
+class PathObj:
     """
     Extended Path object to make comparison between results dir more convenient.
 
@@ -34,5 +34,3 @@ class PathObj():
 
     def __str__(self) -> str:
         return str(self.relative_path)
-
-

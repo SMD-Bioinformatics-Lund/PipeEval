@@ -35,7 +35,9 @@ def parse_arguments():
         description="PipeEval provides tools to run and assess differences between runs in pipelines",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
-    parent_parser.add_argument("--version", action="version", version=f"%(prog)s ({__version__})")
+    parent_parser.add_argument(
+        "--version", action="version", version=f"%(prog)s ({__version__})"
+    )
     subparsers = parent_parser.add_subparsers(dest="subcommand")
 
     run_parser = subparsers.add_parser(
