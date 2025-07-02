@@ -117,7 +117,7 @@ def main(
             run_id2,
             r1_paths,
             r2_paths,
-            config.get("settings", "ignore").split(","),
+            config.get("settings", "ignore", fallback="").split(","),
             out_path,
         )
 

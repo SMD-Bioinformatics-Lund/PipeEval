@@ -8,12 +8,15 @@ from commands.run import main as run_main
 
 LOG = logging.getLogger()
 
-def test_basic_run(monkeypatch: MonkeyPatch, base_dir: Path, basic_config: ConfigParser):
+def test_basic_run(monkeypatch: MonkeyPatch, base_dir: Path, basic_config_path: Path):
 
-    # Patch external interactions
     monkeypatch.setattr(run_main, "do_repo_checkout", lambda *a, **k: None)
     monkeypatch.setattr(run_main, "start_run", lambda *a, **k: None)
     monkeypatch.setattr(run_main, "get_git_commit_hash_and_log", lambda *a, **k: ("abcd", "abcd"))
+
+    basic_config = ConfigParser()
+    with open(basic_config_path, "r") as in_fh: 
+        basic_config.read_file(in_fh)
 
     run_main.main(
         basic_config,

@@ -2,6 +2,7 @@
 
 from configparser import ConfigParser
 from pathlib import Path
+import textwrap
 import pytest
 
 
@@ -13,7 +14,7 @@ def base_dir(tmp_path: Path) -> Path:
 
 
 @pytest.fixture()
-def basic_config(tmp_path: Path, base_dir: Path) -> ConfigParser:
+def basic_config_path(tmp_path: Path, base_dir: Path) -> Path:
 
     # Setup dummy repository
     repo_dir = tmp_path / "repo"
@@ -33,45 +34,46 @@ def basic_config(tmp_path: Path, base_dir: Path) -> ConfigParser:
     vcf.write_text("vcf")
 
 
-    config_text = f"""
-    [settings]
-    start_nextflow_analysis = /usr/bin/env
-    log_base_dir = {tmp_path}/log
-    trace_base_dir = {tmp_path}/trace
-    work_base_dir = {tmp_path}/work
-    base = {base_dir}
-    repo = {repo_dir}
-    runscript = main.nf
-    datestamp = false
-    singularity_version = 3.8.0
-    nextflow_version = 21.10.6
-    queue = test
-    executor = local
-    cluster = local
-    container = container.sif
-    fq_fw = {fastq1}
-    fq_rv = {fastq2}
-    bam = {bam}
-    vcf = {vcf}
+    config_text = textwrap.dedent(f"""
+        [settings]
+        start_nextflow_analysis = /usr/bin/env
+        log_base_dir = {tmp_path}/log
+        trace_base_dir = {tmp_path}/trace
+        work_base_dir = {tmp_path}/work
+        base = {base_dir}
+        repo = {repo_dir}
+        runscript = main.nf
+        datestamp = false
+        singularity_version = 3.8.0
+        nextflow_version = 21.10.6
+        queue = test
+        executor = local
+        cluster = local
+        container = container.sif
+        fq_fw = {fastq1}
+        fq_rv = {fastq2}
+        bam = {bam}
+        vcf = {vcf}
 
-    [test]
-    profile = wgs
-    trio = false
-    case = samplecase
-    default_panel = OMIM
+        [test]
+        profile = wgs
+        trio = false
+        case = samplecase
+        default_panel = OMIM
 
-    [samplecase]
-    id = caseid
-    clarity_pool_id = 0
-    clarity_sample_id = sample0
-    sex = M
-    type = proband
-    fq_fw = {fastq1}
-    fq_rv = {fastq2}
-    bam = {bam}
-    vcf = {vcf}
-    """
+        [samplecase]
+        id = caseid
+        clarity_pool_id = 0
+        clarity_sample_id = sample0
+        sex = M
+        type = proband
+        fq_fw = {fastq1}
+        fq_rv = {fastq2}
+        bam = {bam}
+        vcf = {vcf}
+        """)
+    
+    config_path = tmp_path / "config.ini"
+    config_path.write_text(config_text)
 
-    config = ConfigParser()
-    config.read_string(config_text)
-    return config
+    return config_path

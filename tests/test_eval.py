@@ -7,7 +7,7 @@ from commands.eval.main import main
 from pytest import LogCaptureFixture
 
 
-def _write_vcf(path: Path, lines: List[str]):
+def write_vcf(path: Path, lines: List[str]):
     if path.suffix == ".gz":
         with gzip.open(path, "wt") as fh:
             fh.write("\n".join(lines))
@@ -16,7 +16,7 @@ def _write_vcf(path: Path, lines: List[str]):
             fh.write("\n".join(lines))
 
 
-def _create_results_dir(base: Path, run_id: str, diff_scores: bool = False):
+def create_results_dir(base: Path, run_id: str, diff_scores: bool = False):
     vcf_dir = base / "vcf"
     yaml_dir = base / "yaml"
     version_dir = base / "versions"
@@ -39,7 +39,7 @@ def _create_results_dir(base: Path, run_id: str, diff_scores: bool = False):
         f"1\t100\t.\tA\tC\t.\tPASS\tRankScore={run_id}:{score1};RankResult=1|2",
         f"1\t200\t.\tG\tT\t.\tPASS\tRankScore={run_id}:{score2};RankResult=3|4",
     ]
-    _write_vcf(snv_vcf, snv_lines)
+    write_vcf(snv_vcf, snv_lines)
 
     sv_score = 8
     if diff_scores:
@@ -54,7 +54,7 @@ def _create_results_dir(base: Path, run_id: str, diff_scores: bool = False):
         "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO",
         f"1\t300\t.\tN\t<DEL>\t.\tPASS\tEND=310;RankScore={run_id}:{sv_score};RankResult=1|1",
     ]
-    _write_vcf(sv_vcf, sv_lines)
+    write_vcf(sv_vcf, sv_lines)
 
     with open(yaml_dir / f"{run_id}.yaml", "w") as fh:
         fh.write(f"sample: {run_id}\n")
@@ -63,13 +63,11 @@ def _create_results_dir(base: Path, run_id: str, diff_scores: bool = False):
         fh.write(f"version: {run_id}\n")
 
 
-# Actual test
-
-def test_eval_main(caplog: LogCaptureFixture, tmp_path: Path):
+def test_eval_main(caplog: LogCaptureFixture, tmp_path: Path, basic_config_path: Path):
     results1 = tmp_path / "results1"
     results2 = tmp_path / "results2"
-    _create_results_dir(results1, "r1")
-    _create_results_dir(results2, "r2", diff_scores=True)
+    create_results_dir(results1, "r1")
+    create_results_dir(results2, "r2", diff_scores=True)
 
     outdir = tmp_path / "out"
     outdir.mkdir()
@@ -80,7 +78,7 @@ def test_eval_main(caplog: LogCaptureFixture, tmp_path: Path):
             "r2",
             results1,
             results2,
-            None,
+            str(basic_config_path),
             None,
             17,
             15,
