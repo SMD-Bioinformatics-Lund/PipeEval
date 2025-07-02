@@ -1,8 +1,10 @@
 import logging
 from pathlib import Path
 from typing import List
-from commands.vcf.main import main
+
 from pytest import LogCaptureFixture
+
+from commands.vcf.main import main
 
 
 def test_main(caplog: LogCaptureFixture, tmp_path: Path):

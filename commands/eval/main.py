@@ -1,18 +1,13 @@
 #!/usr/bin/env python3
 
 import argparse
-from io import TextIOWrapper
-from pathlib import Path
-import os
-from typing import (
-    List,
-    Optional,
-    Dict,
-    Set,
-)
-from collections import defaultdict
 import difflib
 import logging
+import os
+from collections import defaultdict
+from io import TextIOWrapper
+from pathlib import Path
+from typing import Dict, List, Optional, Set
 
 from shared.compare import do_comparison
 from shared.constants import RUN_ID_PLACEHOLDER
@@ -21,15 +16,9 @@ from shared.util import load_config
 from shared.vcf.main_functions import variant_comparisons
 from shared.vcf.vcf import count_variants
 
-from .util import (
-    PathObj,
-    any_is_parent,
-    detect_run_id,
-    get_files_in_dir,
-    get_pair_match,
-    get_files_ending_with,
-    verify_pair_exists,
-)
+from .util import (PathObj, any_is_parent, detect_run_id,
+                   get_files_ending_with, get_files_in_dir, get_pair_match,
+                   verify_pair_exists)
 
 # logger = setup_stdout_logger()
 logger = logging.getLogger(__name__)

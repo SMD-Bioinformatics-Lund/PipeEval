@@ -1,6 +1,6 @@
+import re
 from pathlib import Path
 from typing import Dict, List, Optional
-import re
 
 from shared.file import get_filehandle
 from shared.string import get_match_or_crash

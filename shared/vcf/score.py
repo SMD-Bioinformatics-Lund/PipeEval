@@ -1,4 +1,4 @@
-from typing import Set, List, Dict
+from typing import Dict, List, Set
 
 from shared.vcf.vcf import DiffScoredVariant, ScoredVariant
 

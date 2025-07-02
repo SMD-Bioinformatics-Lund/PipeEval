@@ -1,8 +1,7 @@
+import re
 from logging import Logger
 from pathlib import Path
-import re
 from typing import List, Optional, Tuple, Union
-
 
 from .classes import PathObj
 

@@ -1,12 +1,9 @@
 import argparse
-from pathlib import Path
 import logging
+from pathlib import Path
 from typing import List, Optional
 
-from shared.vcf.main_functions import (
-    variant_comparisons,
-)
-
+from shared.vcf.main_functions import variant_comparisons
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
