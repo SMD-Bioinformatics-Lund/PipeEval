@@ -72,7 +72,7 @@ def main(
     run_id2: Optional[str],
     results1_dir: Path,
     results2_dir: Path,
-    config_path: str,
+    config_path: Optional[str],
     comparisons: Optional[Set[str]],
     score_threshold: int,
     max_display: int,

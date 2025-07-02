@@ -3,6 +3,8 @@ from pathlib import Path
 import gzip
 from typing import List
 
+import pytest
+
 from commands.eval.main import main
 from pytest import LogCaptureFixture
 
@@ -63,14 +65,27 @@ def create_results_dir(base: Path, run_id: str, diff_scores: bool = False):
         fh.write(f"version: {run_id}\n")
 
 
-def test_eval_main(caplog: LogCaptureFixture, tmp_path: Path, basic_config_path: Path):
+@pytest.fixture()
+def mock_results(tmp_path: Path) -> tuple[Path, Path, Path]:
+    """Create two result directories with VCFs differing in rank score"""
+
     results1 = tmp_path / "results1"
     results2 = tmp_path / "results2"
+
     create_results_dir(results1, "r1")
     create_results_dir(results2, "r2", diff_scores=True)
 
     outdir = tmp_path / "out"
     outdir.mkdir()
+
+    return results1, results2, outdir
+
+
+def test_eval_main(
+    caplog: LogCaptureFixture,
+    mock_results: tuple[Path, Path, Path],
+):
+    results1, results2, outdir = mock_results
 
     with caplog.at_level(logging.INFO):
         main(
@@ -78,7 +93,7 @@ def test_eval_main(caplog: LogCaptureFixture, tmp_path: Path, basic_config_path:
             "r2",
             results1,
             results2,
-            str(basic_config_path),
+            None,
             None,
             17,
             15,
@@ -105,3 +120,13 @@ def test_eval_main(caplog: LogCaptureFixture, tmp_path: Path, basic_config_path:
 
     for fname in expected:
         assert (outdir / fname).exists(), f"Expected file {fname} does not exist"
+
+    # Verify that differences were detected and written to the output files
+    snv_score_thres = (outdir / "scored_snv_score_thres_17.txt").read_text().splitlines()
+    assert any("G/T" in line for line in snv_score_thres), "Expected SNV difference missing"
+
+    snv_score_all = (outdir / "scored_snv_score_all.txt").read_text().splitlines()
+    assert len(snv_score_all) == 3
+
+    sv_score = (outdir / "scored_sv_score.txt").read_text().splitlines()
+    assert any("<DEL>" in line for line in sv_score)
