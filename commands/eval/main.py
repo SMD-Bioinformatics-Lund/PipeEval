@@ -16,9 +16,15 @@ from shared.util import load_config
 from shared.vcf.main_functions import variant_comparisons
 from shared.vcf.vcf import count_variants
 
-from .util import (PathObj, any_is_parent, detect_run_id,
-                   get_files_ending_with, get_files_in_dir, get_pair_match,
-                   verify_pair_exists)
+from .util import (
+    PathObj,
+    any_is_parent,
+    detect_run_id,
+    get_files_ending_with,
+    get_files_in_dir,
+    get_pair_match,
+    verify_pair_exists,
+)
 
 # logger = setup_stdout_logger()
 logger = logging.getLogger(__name__)
