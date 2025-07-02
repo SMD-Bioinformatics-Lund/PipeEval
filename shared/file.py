@@ -2,6 +2,7 @@ import gzip
 from pathlib import Path
 from typing import TextIO
 
+
 def get_filehandle(my_file: Path) -> TextIO:
     if my_file.suffix == ".gz":
         in_fh = gzip.open(str(my_file), "rt")

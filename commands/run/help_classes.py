@@ -70,7 +70,7 @@ class CsvEntry:
         priority: Optional[str],
         assay: str,
         analysis: str,
-        diagnosis: str
+        diagnosis: str,
     ):
         self.cases = cases
 

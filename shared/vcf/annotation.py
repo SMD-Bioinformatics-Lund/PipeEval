@@ -133,7 +133,7 @@ def calculate_annotation_diffs(
 
 
 def get_annot_value_diff_summary(
-    diffs_per_annot: Dict[str, List[AnnotComp]]
+    diffs_per_annot: Dict[str, List[AnnotComp]],
 ) -> List[str]:
 
     header = ["key", "number", "pos", "ref/alt", "first example"]

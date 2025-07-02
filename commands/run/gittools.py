@@ -3,6 +3,7 @@ from pathlib import Path
 import subprocess
 from typing import List, Tuple
 
+
 class CompletedProcess:
     def __init__(self, returncode: int, stdout: str, stderr: str):
         self.returncode = returncode

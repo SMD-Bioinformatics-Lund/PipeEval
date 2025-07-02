@@ -85,10 +85,18 @@ def main_wrapper(args: argparse.Namespace):
 
 def add_arguments(parser: argparse.ArgumentParser):
     parser.add_argument(
-        "--vcf1", "-1", required=True, type=Path, help="VCF to compare in .vcf or .vcf.gz format"
+        "--vcf1",
+        "-1",
+        required=True,
+        type=Path,
+        help="VCF to compare in .vcf or .vcf.gz format",
     )
     parser.add_argument(
-        "--vcf2", "-2", required=True, type=Path, help="VCF to compare in .vcf or .vcf.gz format"
+        "--vcf2",
+        "-2",
+        required=True,
+        type=Path,
+        help="VCF to compare in .vcf or .vcf.gz format",
     )
     parser.add_argument("--id1", help="Optional run ID for first vcf")
     parser.add_argument("--id2", help="Optional run ID for second vcf")
@@ -113,7 +121,8 @@ def add_arguments(parser: argparse.ArgumentParser):
         help="Limit the number of entries printed to STDOUT (all entries are written to results folder)",
     )
     parser.add_argument(
-        "--annotations", help="Comma separated additional annotations to retain in output"
+        "--annotations",
+        help="Comma separated additional annotations to retain in output",
     )
 
 

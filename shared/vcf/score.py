@@ -14,7 +14,9 @@ def get_comparison_row(
 ) -> List[str]:
 
     if var1 != var2:
-        raise ValueError(f"Must compare the same variant. This: {str(var1)} Other: {str(var2)}")
+        raise ValueError(
+            f"Must compare the same variant. This: {str(var1)} Other: {str(var2)}"
+        )
 
     fields = [
         var1.chr,
@@ -39,7 +41,6 @@ def get_comparison_row(
             annot = f"{annot_value1}/{annot_value2}"
         fields.append(annot)
 
-
     fields.extend([var1.get_rank_score_str(), var2.get_rank_score_str()])
 
     if show_sub_score_summary:
@@ -63,7 +64,7 @@ def get_table_header(
     is_sv: bool,
     show_line_numbers: bool,
     annotation_info_keys: List[str],
-    exclude_subscores: bool
+    exclude_subscores: bool,
 ):
     first_shared_key = list(shared_variant_keys)[0]
     header_fields = ["chr", "pos", "var"]
