@@ -1,8 +1,8 @@
 from configparser import ConfigParser
 from datetime import datetime
+from logging import Logger
 from pathlib import Path
 from typing import Any, Dict, List, Optional
-from logging import Logger
 
 from commands.run.help_classes import Case, CsvEntry
 from shared.constants import ASSAY_PLACEHOLDER

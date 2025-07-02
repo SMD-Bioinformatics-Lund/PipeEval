@@ -1,6 +1,5 @@
 from typing import Generic, Set, Tuple, TypeVar
 
-
 T = TypeVar("T")
 
 

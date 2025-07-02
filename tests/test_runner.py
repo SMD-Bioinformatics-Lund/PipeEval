@@ -1,6 +1,6 @@
+import logging
 from configparser import ConfigParser
 from pathlib import Path
-import logging
 
 from pytest import MonkeyPatch
 

@@ -1,6 +1,6 @@
+import subprocess
 from logging import Logger
 from pathlib import Path
-import subprocess
 from typing import List, Tuple
 
 

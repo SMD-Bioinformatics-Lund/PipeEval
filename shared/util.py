@@ -1,5 +1,5 @@
-from configparser import ConfigParser
 import logging
+from configparser import ConfigParser
 from pathlib import Path
 from typing import Any, List, Optional
 

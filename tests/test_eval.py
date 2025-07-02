@@ -1,12 +1,12 @@
+import gzip
 import logging
 from pathlib import Path
-import gzip
 from typing import List
 
 import pytest
+from pytest import LogCaptureFixture
 
 from commands.eval.main import main
-from pytest import LogCaptureFixture
 
 
 def write_vcf(path: Path, lines: List[str]):

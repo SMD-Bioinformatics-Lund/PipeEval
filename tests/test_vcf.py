@@ -5,8 +5,9 @@ from pathlib import Path
 from typing import List
 
 import pytest
-from commands.vcf.main import main
 from pytest import LogCaptureFixture
+
+from commands.vcf.main import main
 
 LOG = logging.getLogger(__name__)
 
@@ -123,7 +124,7 @@ def test_vcf_cli(
     assert completed.returncode == 0
     assert "Parsing VCFs" in completed.stdout
 
-    # Could be built on if needed
+    # Could be expanded upon
 
     above_thres = results / "above_thres.txt"
     LOG.warning(above_thres)
