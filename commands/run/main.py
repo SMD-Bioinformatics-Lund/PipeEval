@@ -22,13 +22,23 @@ from datetime import datetime
 from pathlib import Path
 from typing import List, Optional
 
-from commands.run.file_helpers import (copy_nextflow_config, get_single_csv,
-                                       get_trio_csv, setup_results_links,
-                                       write_resume_script, write_run_log)
-from commands.run.gittools import (check_if_on_branchhead,
-                                   check_valid_checkout, check_valid_repo,
-                                   checkout_repo, fetch_repo,
-                                   get_git_commit_hash_and_log, pull_branch)
+from commands.run.file_helpers import (
+    copy_nextflow_config,
+    get_single_csv,
+    get_trio_csv,
+    setup_results_links,
+    write_resume_script,
+    write_run_log,
+)
+from commands.run.gittools import (
+    check_if_on_branchhead,
+    check_valid_checkout,
+    check_valid_repo,
+    checkout_repo,
+    fetch_repo,
+    get_git_commit_hash_and_log,
+    pull_branch,
+)
 from shared.util import check_valid_config_path, load_config
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")

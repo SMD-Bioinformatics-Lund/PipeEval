@@ -76,5 +76,3 @@ def basic_config_path(tmp_path: Path, base_dir: Path) -> Path:
     config_path.write_text(config_text)
 
     return config_path
-
-
