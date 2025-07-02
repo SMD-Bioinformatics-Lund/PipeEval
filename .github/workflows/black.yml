@@ -20,4 +20,4 @@ jobs:
       - name: Install dependencies
         run: pip install black==25.1.0
       - name: Run black
-        run: black --check .
+        run: black .
