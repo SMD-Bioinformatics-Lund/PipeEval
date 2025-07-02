@@ -1,4 +1,6 @@
 import logging
+import subprocess
+import sys
 from pathlib import Path
 from typing import List
 from commands.vcf.main import main
@@ -49,3 +51,47 @@ def test_main(caplog: LogCaptureFixture, tmp_path: Path):
     for filename in expected_files:
         file_path = results / filename
         assert file_path.exists(), f'Expected file {filename} does not exist'
+
+
+def test_parse_scored_vcf_counts():
+    """Verify that the helper used for the vcf command parses files correctly."""
+
+    from shared.vcf.vcf import parse_scored_vcf
+
+    vcf1_path = Path("tests/testdata/hg002_chr21.vcf.gz")
+    vcf2_path = Path("tests/testdata/hg004_chr21.vcf.gz")
+
+    vcf1 = parse_scored_vcf(vcf1_path, False)
+    vcf2 = parse_scored_vcf(vcf2_path, False)
+
+    assert len(vcf1.variants) == 1779
+    assert len(vcf2.variants) == 2194
+
+
+def test_vcf_cli(tmp_path: Path):
+    """Run the vcf command through the main entry point."""
+
+    results = tmp_path / "results"
+
+    cmd = [
+        sys.executable,
+        "main.py",
+        "vcf",
+        "-1",
+        str(Path("tests/testdata/hg002_chr21.vcf.gz")),
+        "-2",
+        str(Path("tests/testdata/hg004_chr21.vcf.gz")),
+        "--results",
+        str(results),
+    ]
+
+    completed = subprocess.run(
+        cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True
+    )
+
+    assert completed.returncode == 0
+    assert "Parsing VCFs" in completed.stdout
+
+    for filename in ["above_thres.txt", "score_all.txt", "presence.txt"]:
+        file_path = results / filename
+        assert file_path.exists(), f"Expected file {filename} does not exist"
