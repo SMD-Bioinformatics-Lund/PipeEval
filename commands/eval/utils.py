@@ -2,7 +2,7 @@ import re
 from collections import defaultdict
 from logging import Logger
 from pathlib import Path
-from typing import List, Optional, Set, Tuple, Union
+from typing import Dict, List, Optional, Set, Tuple, Union
 
 from .classes.run_object import PathObj, RunObject
 
@@ -102,9 +102,9 @@ def get_pair_match(
 
 def get_ignored(
     result_paths: Set[Path], ignore_files: List[str]
-) -> Tuple[dict[str, int], list[Path]]:
+) -> Tuple[Dict[str, int], List[Path]]:
 
-    nbr_ignored_per_pattern: dict[str, int] = defaultdict(int)
+    nbr_ignored_per_pattern: Dict[str, int] = defaultdict(int)
 
     non_ignored: List[Path] = []
     for path in sorted(result_paths):
