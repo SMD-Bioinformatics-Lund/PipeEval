@@ -3,6 +3,7 @@ import logging
 from pathlib import Path
 from typing import List, Optional
 
+from commands.eval.util import ScorePaths
 from shared.vcf.main_functions import variant_comparisons
 
 logger = logging.getLogger(__name__)
@@ -28,8 +29,6 @@ def main(
         if not results.exists():
             results.mkdir(parents=True)
 
-    out_path_presence = results / "presence.txt" if results else None
-
     if run_id1 is None:
         run_id1 = str(vcf1).split("/")[-1].split(".")[0]
         logger.info(f"# --run_id1 not set, assigned: {run_id1}")
@@ -40,11 +39,8 @@ def main(
             run_id2 = run_id2 + "_2"
         logger.info(f"# --run_id2 not set, assigned: {run_id2}")
 
-    out_path_score_above_thres = results / "above_thres.txt" if results else None
-    out_path_score_all = results / "score_all.txt" if results else None
-    out_path_score_full = (
-        results / "score_full.txt" if results and output_all_variants else None
-    )
+    label = "sv" if is_sv else "snv"
+    score_paths = ScorePaths(label, results, score_threshold, output_all_variants)
 
     do_score_check = True
     do_annot_check = True
@@ -58,10 +54,7 @@ def main(
         score_threshold,
         max_display,
         max_checked_annots,
-        out_path_presence,
-        out_path_score_above_thres,
-        out_path_score_all,
-        out_path_score_full,
+        score_paths,
         do_score_check,
         do_annot_check,
         show_line_numbers,
