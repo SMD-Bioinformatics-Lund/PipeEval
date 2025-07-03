@@ -110,7 +110,7 @@ def main(
     else:
         csv.write_to_file(str(out_csv))
 
-    def get_start_nextflow_command(quote_profile: bool) -> list[str]:
+    def get_start_nextflow_command(quote_profile: bool) -> List[str]:
         command = build_start_nextflow_analysis_cmd(
             config["settings"]["start_nextflow_analysis"],
             out_csv,
