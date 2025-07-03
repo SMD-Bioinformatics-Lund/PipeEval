@@ -64,9 +64,7 @@ def main(
     logger.info(f"Preparing run, type: {run_type}, data: {start_data}")
 
     check_valid_config_arguments(config, run_type, start_data, base_dir, repo)
-    base_dir = (
-        base_dir if base_dir is not None else Path(config.get("settings", "base"))
-    )
+    base_dir = base_dir if base_dir is not None else Path(config.get("settings", "base"))
     repo = repo if repo is not None else Path(config.get("settings", "repo"))
     datestamp = datestamp or config.getboolean("settings", "datestamp")
 
@@ -103,46 +101,44 @@ def main(
     run_type_settings = dict(config[run_type])
 
     if not config.getboolean(run_type, "trio"):
-        csv = get_single_csv(
-            config, run_type_settings, run_label, start_data, queue, stub_run
-        )
+        csv = get_single_csv(config, run_type_settings, run_label, start_data, queue, stub_run)
     else:
-        csv = get_trio_csv(
-            config, run_type_settings, run_label, start_data, queue, stub_run
-        )
+        csv = get_trio_csv(config, run_type_settings, run_label, start_data, queue, stub_run)
     out_csv = results_dir / "run.csv"
     if dry_run:
         logging.info(f"(dry) Writing CSV to {out_csv}")
     else:
         csv.write_to_file(str(out_csv))
 
-    start_nextflow_command = build_start_nextflow_analysis_cmd(
-        config["settings"]["start_nextflow_analysis"],
-        out_csv,
-        results_dir,
-        config["settings"]["executor"],
-        config["settings"]["cluster"],
-        config["settings"]["queue"],
-        config["settings"]["singularity_version"],
-        config["settings"]["nextflow_version"],
-        config["settings"]["container"],
-        str(repo / config["settings"]["runscript"]),
-        run_type_settings["profile"],
-        stub_run,
-        no_start,
-    )
+    def get_start_nextflow_command(quote_profile: bool) -> list[str]:
+        command = build_start_nextflow_analysis_cmd(
+            config["settings"]["start_nextflow_analysis"],
+            out_csv,
+            results_dir,
+            config["settings"]["executor"],
+            config["settings"]["cluster"],
+            config["settings"]["queue"],
+            config["settings"]["singularity_version"],
+            config["settings"]["nextflow_version"],
+            config["settings"]["container"],
+            str(repo / config["settings"]["runscript"]),
+            run_type_settings["profile"],
+            stub_run,
+            no_start,
+            quote_profile
+        )
+        return command
 
-    # Setup results files
     write_resume_script(
         logger,
         results_dir,
-        start_nextflow_command,
+        get_start_nextflow_command(True),
         dry_run,
     )
     copy_nextflow_config(repo, results_dir)
     setup_results_links(logger, config, results_dir, run_label, dry_run)
 
-    start_run(start_nextflow_command, dry_run, skip_confirmation)
+    start_run(get_start_nextflow_command(False), dry_run, skip_confirmation)
 
 
 def confirm_run_if_results_exists(results_dir: Path, skip_confirmation: bool):
@@ -217,9 +213,7 @@ def build_run_label(
     run_label = "-".join(label_parts)
 
     if run_label.find("/") != -1:
-        logger.warning(
-            f"Found '/' characters in run label: {run_label}, replacing with '-'"
-        )
+        logger.warning(f"Found '/' characters in run label: {run_label}, replacing with '-'")
         run_label = run_label.replace("/", "-")
 
     return run_label
@@ -239,6 +233,7 @@ def build_start_nextflow_analysis_cmd(
     profile: str,
     stub_run: bool,
     no_start: bool,
+    quote_pipeline_arguments: bool,
 ) -> List[str]:
 
     out_dir = results_dir
@@ -263,12 +258,21 @@ def build_start_nextflow_analysis_cmd(
         nextflow_version,
         "--container",
         container,
-        f"'--pipeline {runscript} -profile {profile}'",
     ]
+    if quote_pipeline_arguments:
+        start_nextflow_command.append(
+            f'"--pipeline {runscript} -profile {profile}"',
+        )
+    else:
+        start_nextflow_command.extend(
+            [
+                "--pipeline",
+                f"{runscript} -profile {profile}",
+            ]
+        )
     if stub_run:
         start_nextflow_command.append("--custom_flags")
         start_nextflow_command.append("'-stub-run'")
-        # start_nextflow_command.append("'-stub-run --no_scratch'")
 
     if no_start:
         start_nextflow_command.append("--nostart")
@@ -276,9 +280,7 @@ def build_start_nextflow_analysis_cmd(
     return start_nextflow_command
 
 
-def start_run(
-    start_nextflow_command: List[str], dry_run: bool, skip_confirmation: bool
-):
+def start_run(start_nextflow_command: List[str], dry_run: bool, skip_confirmation: bool):
     if not dry_run:
         if not skip_confirmation:
             pretty_command = " \\\n    ".join(start_nextflow_command)
@@ -306,9 +308,7 @@ def main_wrapper(args: argparse.Namespace):
         logger.setLevel(logging.WARNING)
 
     if args.baseline is not None:
-        logging.info(
-            "Performing additional baseline run as specified by --baseline flag"
-        )
+        logging.info("Performing additional baseline run as specified by --baseline flag")
 
         if args.baseline_repo is not None:
             baseline_repo = str(args.baseline_repo)
@@ -416,12 +416,8 @@ def add_arguments(parser: argparse.ArgumentParser):
         action="store_true",
         help="Run start_nextflow_analysis.pl with nostart, printing the path to the SLURM job only",
     )
-    parser.add_argument(
-        "--baseline", help="Start a second baseline run and specified checkout"
-    )
-    parser.add_argument(
-        "--verbose", action="store_true", help="Print additional debug output"
-    )
+    parser.add_argument("--baseline", help="Start a second baseline run and specified checkout")
+    parser.add_argument("--verbose", action="store_true", help="Print additional debug output")
     parser.add_argument(
         "--silent", action="store_true", help="Run silently, produce only output files"
     )
