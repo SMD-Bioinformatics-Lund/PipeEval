@@ -1,3 +1,7 @@
+# 1.3.1
+
+* Put proper quoting on pipeline arguments in resume.sh
+
 # 1.3.0
 
 * Fix issue where ignored files were still listed as missing during evaluation
