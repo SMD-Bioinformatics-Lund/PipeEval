@@ -7,6 +7,7 @@ import pytest
 from pytest import LogCaptureFixture
 
 from commands.eval.main import main
+from commands.eval.util import RunObject, RunSettings
 
 
 def write_vcf(path: Path, lines: List[str]):
@@ -91,23 +92,11 @@ def test_eval_main(
     """
     results1, results2, outdir = mock_results
 
+    run_object = RunObject("r1", "r2", results1, results2)
+    run_settings = RunSettings(score_threshold=17)
+
     with caplog.at_level(logging.INFO):
-        main(
-            "r1",
-            "r2",
-            results1,
-            results2,
-            None,
-            None,
-            17,
-            15,
-            outdir,
-            False,
-            1000,
-            False,
-            [],
-            all_variants=False
-        )
+        main(run_object, run_settings, None, None, None)
 
     assert len(caplog.records) > 0, "No logs were captured"
     assert not any(record.levelname == "ERROR" for record in caplog.records)
@@ -127,12 +116,8 @@ def test_eval_main(
         assert (outdir / fname).exists(), f"Expected file {fname} does not exist"
 
     # Verify that differences were detected and written to the output files
-    snv_score_thres = (
-        (outdir / "scored_snv_score_thres_17.txt").read_text().splitlines()
-    )
-    assert any(
-        "G/T" in line for line in snv_score_thres
-    ), "Expected SNV difference missing"
+    snv_score_thres = (outdir / "scored_snv_score_thres_17.txt").read_text().splitlines()
+    assert any("G/T" in line for line in snv_score_thres), "Expected SNV difference missing"
 
     snv_score_all = (outdir / "scored_snv_score_all.txt").read_text().splitlines()
     assert len(snv_score_all) == 3

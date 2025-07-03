@@ -170,10 +170,10 @@ class RunObject:
         self._run_id2 = run_id2
         self.r1_results = results1_dir
         self.r2_results = results2_dir
-        self._r1_paths = None
-        self._r2_paths = None
-        self._r1_vcfs = None
-        self._r2_vcfs = None
+        self._r1_paths: Optional[List[PathObj]] = None
+        self._r2_paths: Optional[List[PathObj]] = None
+        self._r1_vcfs: Optional[List[Path]] = None
+        self._r2_vcfs: Optional[List[Path]] = None
 
     @property
     def r1_id(self) -> str:
@@ -240,13 +240,13 @@ class RunObject:
 class RunSettings:
     def __init__(
         self,
-        score_threshold: int,
-        max_display: int,
-        verbose: bool,
-        max_checked_annots: int,
-        show_line_numbers: bool,
-        extra_annot_keys: List[str],
-        output_all_variants: bool,
+        score_threshold: int = 17,
+        max_display: int = 10,
+        verbose: bool = False,
+        max_checked_annots: int = 10,
+        show_line_numbers: bool = False,
+        extra_annot_keys: List[str] = [],
+        output_all_variants: bool = False,
     ):
         self.score_threshold = score_threshold
         self.max_display = max_display

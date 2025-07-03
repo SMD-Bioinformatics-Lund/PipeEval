@@ -17,19 +17,14 @@ from shared.vcf.main_functions import variant_comparisons
 from shared.vcf.vcf import count_variants
 
 from .util import (
-    PathObj,
     RunObject,
     RunSettings,
     ScorePaths,
-    detect_run_id,
-    get_files_ending_with,
-    get_files_in_dir,
     get_ignored,
     get_pair_match,
     verify_pair_exists,
 )
 
-# logger = setup_stdout_logger()
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
@@ -71,7 +66,7 @@ def main(  # noqa: C901 (skipping complexity check)
     config_path: Optional[str],
     comparisons: Optional[Set[str]],
     outdir: Optional[Path],
-):  
+):
 
     curr_dir = os.path.dirname(os.path.abspath(__file__))
     config = load_config(logger, curr_dir, config_path)
