@@ -311,7 +311,10 @@ def main_wrapper(args: argparse.Namespace):
         if args.baseline_repo is not None:
             baseline_repo = str(args.baseline_repo)
         else:
-            baseline_repo = config["settings"]["baseline_repo"]
+            baseline_repo = config.get("settings", "baseline_repo", fallback=None)
+            if not baseline_repo:
+                logging.error("When running with --baseline a baseline repo must either be provided using --baseline_repo option or in the config")
+                sys.exit(1)
 
         main(
             config,

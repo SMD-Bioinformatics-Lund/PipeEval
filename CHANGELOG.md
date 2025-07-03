@@ -2,6 +2,8 @@
 
 * Fix issue where ignored files were still listed as missing during evaluation
 * Fix issue with automatic tagging where wrong version pattern was used
+* --silent flag to run without spitting out outputs
+* Graceful exit if running with --baseline without configuring --baseline_repo
 
 # 1.2.2
 
