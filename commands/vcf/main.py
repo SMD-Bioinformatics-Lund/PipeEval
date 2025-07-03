@@ -66,6 +66,9 @@ def main(
 
 def main_wrapper(args: argparse.Namespace):
 
+    if args.silent:
+        logger.setLevel(logging.WARNING)
+
     main(
         args.vcf1,
         args.vcf2,
@@ -121,7 +124,9 @@ def add_arguments(parser: argparse.ArgumentParser):
         "--annotations",
         help="Comma separated additional annotations to retain in output",
     )
-
+    parser.add_argument(
+        "--silent", action="store_true", help="Run silently, produce only output files"
+    )
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

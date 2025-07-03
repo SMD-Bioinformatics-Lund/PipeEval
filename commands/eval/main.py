@@ -429,9 +429,14 @@ def add_arguments(parser: argparse.ArgumentParser):
         help="Show line numbers from original VCFs in output",
     )
     parser.add_argument("--annotations", help="INFO keys to include in output tables")
+    parser.add_argument("--silent", action="store_true", help="Run silently, produce only output files")
 
 
 def main_wrapper(args: argparse.Namespace):
+
+    if args.silent:
+        logger.setLevel(logging.WARNING)
+
     main(
         args.run_id1,
         args.run_id2,

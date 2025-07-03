@@ -2,7 +2,7 @@
 
 * Fix issue where ignored files were still listed as missing during evaluation
 * Fix issue with automatic tagging where wrong version pattern was used
-* --silent flag to run without spitting out outputs
+* --silent flag to only log warning or higher level logs
 * Graceful exit if running with --baseline without configuring --baseline_repo
 * Pytest check that Python version matches latest CHANGELOG version
 * Add agents instructions to not change formatting of the code

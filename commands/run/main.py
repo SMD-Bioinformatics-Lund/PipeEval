@@ -303,6 +303,9 @@ def main_wrapper(args: argparse.Namespace):
     curr_dir = os.path.dirname(os.path.abspath(__file__))
     config = load_config(logger, curr_dir, args.config)
 
+    if args.silent:
+        logger.setLevel(logging.WARNING)
+
     if args.baseline is not None:
         logging.info(
             "Performing additional baseline run as specified by --baseline flag"
@@ -417,6 +420,9 @@ def add_arguments(parser: argparse.ArgumentParser):
     )
     parser.add_argument(
         "--verbose", action="store_true", help="Print additional debug output"
+    )
+    parser.add_argument(
+        "--silent", action="store_true", help="Run silently, produce only output files"
     )
 
 
