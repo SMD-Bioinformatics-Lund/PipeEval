@@ -2,6 +2,7 @@ from logging import Logger
 from pathlib import Path
 from typing import Dict, List, Optional, Set
 
+from commands.eval.util import ScorePaths
 from shared.compare import Comparison, do_comparison, parse_var_key_for_sort
 from shared.util import prettify_rows
 from shared.vcf.annotation import compare_variant_annotation
@@ -301,10 +302,7 @@ def variant_comparisons(
     score_threshold: int,
     max_display: int,
     max_checked_annots: int,
-    out_path_presence: Optional[Path],
-    out_path_score_above_thres: Optional[Path],
-    out_path_score_all: Optional[Path],
-    out_path_score_full: Optional[Path],
+    paths: ScorePaths,
     do_score_check: bool,
     do_annot_check: bool,
     show_line_numbers: bool,
@@ -332,7 +330,7 @@ def variant_comparisons(
         vcf_r2.variants,
         comp_res,
         max_display,
-        out_path_presence,
+        paths.presence,
         show_line_numbers,
         annotation_info_keys,
     )
@@ -361,20 +359,20 @@ def variant_comparisons(
             vcf_r2.variants,
             score_threshold,
             max_display,
-            out_path_score_above_thres,
-            out_path_score_all,
+            paths.score_thres,
+            paths.all_diffing,
             is_sv,
             show_line_numbers,
             annotation_info_keys,
         )
-        if out_path_score_full is not None:
+        if paths.all is not None:
             write_full_score_table(
                 run_id1,
                 run_id2,
                 shared_variants,
                 vcf_r1.variants,
                 vcf_r2.variants,
-                out_path_score_full,
+                paths.all,
                 is_sv,
                 show_line_numbers,
                 annotation_info_keys,

@@ -12,16 +12,12 @@ def get_files_ending_with(pattern: str, paths: List[PathObj]) -> List[PathObj]:
     return matching
 
 
-def get_single_file_ending_with(
-    patterns: List[str], paths: List[PathObj]
-) -> Union[PathObj, None]:
+def get_single_file_ending_with(patterns: List[str], paths: List[PathObj]) -> Union[PathObj, None]:
     for pattern in patterns:
         matching = get_files_ending_with(pattern, paths)
         if len(matching) > 1:
             matches = [str(match) for match in matching]
-            raise ValueError(
-                f"Only one matching file allowed, found: {','.join(matches)}"
-            )
+            raise ValueError(f"Only one matching file allowed, found: {','.join(matches)}")
         elif len(matching) == 1:
             return matching[0]
     return None
@@ -84,7 +80,7 @@ def get_pair_match(
     r1_base_dir: Path,
     r2_base_dir: Path,
     verbose: bool,
-) -> Tuple[Path, Path]:
+) -> Optional[Tuple[Path, Path]]:
     r1_matching = get_single_file_ending_with(valid_patterns, r1_paths)
     r2_matching = get_single_file_ending_with(valid_patterns, r2_paths)
     if verbose:
@@ -107,10 +103,10 @@ def get_pair_match(
             )
 
     verify_pair_exists(error_label, r1_matching, r2_matching)
-    if r1_matching is None or r2_matching is None:
-        raise ValueError(
-            "Missing files (should have been captured by verification call?)"
-        )
+
+    if not r1_matching or not r2_matching:
+        return None
+
     return (r1_matching.real_path, r2_matching.real_path)
 
 
@@ -119,9 +115,7 @@ def detect_run_id(logger: Logger, base_dir_name: str, verbose: bool) -> str:
     if datestamp_start_match:
         non_date_part = datestamp_start_match.group(1)
         if verbose:
-            logger.info(
-                f"Datestamp detected, run ID assigned as remainder of base folder name"
-            )
+            logger.info(f"Datestamp detected, run ID assigned as remainder of base folder name")
             logger.info(f"Full name: {base_dir_name}")
             logger.info(f"Detected ID: {non_date_part}")
         return non_date_part
@@ -129,3 +123,15 @@ def detect_run_id(logger: Logger, base_dir_name: str, verbose: bool) -> str:
         logger.info(f"Datestamp not detected, full folder name used as run ID")
         dir_name = str(base_dir_name)
         return dir_name
+
+
+class ScorePaths:
+    def __init__(
+        self, label: str, outdir: Optional[Path], score_threshold: float, all_variants: bool
+    ):
+        self.presence = outdir / f"scored_{label}_presence.txt" if outdir else None
+        self.score_thres = (
+            outdir / f"scored_{label}_score_thres_{score_threshold}.txt" if outdir else None
+        )
+        self.all_diffing = outdir / f"scored_{label}_score_all.txt" if outdir else None
+        self.all = outdir / f"scored_{label}_score_full.txt" if outdir and all_variants else None

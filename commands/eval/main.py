@@ -18,6 +18,7 @@ from shared.vcf.vcf import count_variants
 
 from .util import (
     PathObj,
+    ScorePaths,
     any_is_parent,
     detect_run_id,
     get_files_ending_with,
@@ -142,7 +143,7 @@ def main(
         logger.info("")
         logger.info("--- Comparing scored SNV VCFs ---")
 
-        (r1_scored_snv_vcf, r2_scored_snv_vcf) = get_pair_match(
+        scored_snv_pair = get_pair_match(
             logger,
             "scored SNVs",
             config["settings"]["scored_snv"].split(","),
@@ -153,40 +154,37 @@ def main(
             verbose,
         )
 
-        out_path_presence = outdir / "scored_snv_presence.txt" if outdir else None
-        out_path_score_thres = (
-            outdir / f"scored_snv_score_thres_{score_threshold}.txt" if outdir else None
-        )
-        out_path_score_all_diffing = outdir / "scored_snv_score_all.txt" if outdir else None
-        out_path_score_full = (
-            outdir / "scored_sv_score_full.txt" if outdir and all_variants else None
-        )
-        is_sv = False
-        variant_comparisons(
-            logger,
-            run_id1,
-            run_id2,
-            r1_scored_snv_vcf,
-            r2_scored_snv_vcf,
-            is_sv,
-            score_threshold,
-            max_display,
-            max_checked_annots,
-            out_path_presence,
-            out_path_score_thres,
-            out_path_score_all_diffing,
-            out_path_score_full,
-            comparisons is None or "score_snv" in comparisons,
-            comparisons is None or "annotation_snv" in comparisons,
-            show_line_numbers,
-            annotation_info_keys,
-        )
+        if scored_snv_pair is None:
+            logger.warning(
+                f"Skipping scored SNV comparison due to missing files ({scored_snv_pair})"
+            )
+        else:
+
+            snv_score_paths = ScorePaths("snv", outdir, score_threshold, all_variants)
+
+            is_sv = False
+            variant_comparisons(
+                logger,
+                run_id1,
+                run_id2,
+                scored_snv_pair[0],
+                scored_snv_pair[1],
+                is_sv,
+                score_threshold,
+                max_display,
+                max_checked_annots,
+                snv_score_paths,
+                comparisons is None or "score_snv" in comparisons,
+                comparisons is None or "annotation_snv" in comparisons,
+                show_line_numbers,
+                annotation_info_keys,
+            )
 
     if comparisons is None or "score_sv" in comparisons or "annotation_sv" in comparisons:
         logger.info("")
         logger.info("--- Comparing scored SV VCFs ---")
 
-        (r1_scored_sv_vcf, r2_scored_sv_vcf) = get_pair_match(
+        scored_sv_pair = get_pair_match(
             logger,
             "scored SVs",
             config["settings"]["scored_sv"].split(","),
@@ -197,39 +195,34 @@ def main(
             verbose,
         )
 
-        out_path_presence = outdir / "scored_sv_presence.txt" if outdir else None
-        out_path_score_thres = (
-            outdir / f"scored_sv_score_thres_{score_threshold}.txt" if outdir else None
-        )
-        out_path_score_all_diffing = outdir / "scored_sv_score.txt" if outdir else None
-        out_path_score_full = (
-            outdir / "scored_sv_score_full.txt" if outdir and all_variants else None
-        )
-        is_sv = True
-        variant_comparisons(
-            logger,
-            run_id1,
-            run_id2,
-            r1_scored_sv_vcf,
-            r2_scored_sv_vcf,
-            is_sv,
-            score_threshold,
-            max_display,
-            max_checked_annots,
-            out_path_presence,
-            out_path_score_thres,
-            out_path_score_all_diffing,
-            out_path_score_full,
-            comparisons is None or "score_sv" in comparisons,
-            comparisons is None or "annotation_sv" in comparisons,
-            show_line_numbers,
-            annotation_info_keys,
-        )
+        if scored_sv_pair is None:
+            logger.warning(f"Skipping scored SV comparison due to missing files {scored_sv_pair}")
+        else:
+
+            sv_score_paths = ScorePaths("sv", outdir, score_threshold, all_variants)
+
+            is_sv = True
+            variant_comparisons(
+                logger,
+                run_id1,
+                run_id2,
+                scored_sv_pair[0],
+                scored_sv_pair[1],
+                is_sv,
+                score_threshold,
+                max_display,
+                max_checked_annots,
+                sv_score_paths,
+                comparisons is None or "score_sv" in comparisons,
+                comparisons is None or "annotation_sv" in comparisons,
+                show_line_numbers,
+                annotation_info_keys,
+            )
 
     if comparisons is None or "yaml" in comparisons:
         logger.info("")
         logger.info("--- Comparing YAML ---")
-        (r1_yaml, r2_yaml) = get_pair_match(
+        yaml_pair = get_pair_match(
             logger,
             "Scout YAMLs",
             config["settings"]["yaml"].split(","),
@@ -239,13 +232,16 @@ def main(
             results2_dir,
             verbose,
         )
-        out_path = outdir / "yaml_diff.txt" if outdir else None
-        diff_compare_files(run_id1, run_id2, r1_yaml, r2_yaml, out_path)
+        if not yaml_pair:
+            logging.warning(f"Skipping yaml comparison, at least one missing ({yaml_pair})")
+        else:
+            out_path = outdir / "yaml_diff.txt" if outdir else None
+            diff_compare_files(run_id1, run_id2, yaml_pair[0], yaml_pair[1], out_path)
 
     if comparisons is None or "versions" in comparisons:
         logger.info("")
         logger.info("--- Comparing version files ---")
-        (r1_versions, r2_versions) = get_pair_match(
+        version_pair = get_pair_match(
             logger,
             "versions",
             config["settings"]["versions"].split(","),
@@ -255,8 +251,11 @@ def main(
             results2_dir,
             verbose,
         )
-        out_path = outdir / "yaml_diff.txt" if outdir else None
-        diff_compare_files(run_id1, run_id2, r1_versions, r2_versions, out_path)
+        if not version_pair:
+            logging.warning(f"At least one version file missing ({version_pair})")
+        else:
+            out_path = outdir / "yaml_diff.txt" if outdir else None
+            diff_compare_files(run_id1, run_id2, version_pair[0], version_pair[1], out_path)
 
 
 def check_same_files(
