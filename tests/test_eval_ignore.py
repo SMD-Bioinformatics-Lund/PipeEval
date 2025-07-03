@@ -7,6 +7,7 @@ from commands.eval.classes import PathObj
 from commands.eval.util import RunObject
 from shared.constants import RUN_ID_PLACEHOLDER
 
+
 def _collect_paths(base: Path, run_id: str):
     return [
         PathObj(p, run_id, RUN_ID_PLACEHOLDER, base)

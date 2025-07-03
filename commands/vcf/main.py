@@ -129,8 +129,9 @@ def add_arguments(parser: argparse.ArgumentParser):
     parser.add_argument(
         "--all_variants",
         action="store_true",
-        help="Write a comparison file including non-differing variants"
+        help="Write a comparison file including non-differing variants",
     )
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

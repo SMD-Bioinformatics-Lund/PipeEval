@@ -120,7 +120,9 @@ def test_vcf_cli(
         str(results),
     ]
 
-    completed = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
+    completed = subprocess.run(
+        cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True
+    )
 
     assert completed.returncode == 0
     assert "Parsing VCFs" in completed.stdout

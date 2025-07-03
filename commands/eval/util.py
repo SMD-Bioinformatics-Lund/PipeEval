@@ -16,12 +16,16 @@ def get_files_ending_with(pattern: str, paths: List[PathObj]) -> List[PathObj]:
     return matching
 
 
-def get_single_file_ending_with(patterns: List[str], paths: List[PathObj]) -> Union[PathObj, None]:
+def get_single_file_ending_with(
+    patterns: List[str], paths: List[PathObj]
+) -> Union[PathObj, None]:
     for pattern in patterns:
         matching = get_files_ending_with(pattern, paths)
         if len(matching) > 1:
             matches = [str(match) for match in matching]
-            raise ValueError(f"Only one matching file allowed, found: {','.join(matches)}")
+            raise ValueError(
+                f"Only one matching file allowed, found: {','.join(matches)}"
+            )
         elif len(matching) == 1:
             return matching[0]
     return None
@@ -120,7 +124,9 @@ def detect_run_id(logger: Logger, base_dir_name: str, verbose: bool) -> str:
     if datestamp_start_match:
         non_date_part = datestamp_start_match.group(1)
         if verbose:
-            logger.info("Datestamp detected, run ID assigned as remainder of base folder name")
+            logger.info(
+                "Datestamp detected, run ID assigned as remainder of base folder name"
+            )
             logger.info(f"Full name: {base_dir_name}")
             logger.info(f"Detected ID: {non_date_part}")
         return non_date_part
@@ -132,14 +138,24 @@ def detect_run_id(logger: Logger, base_dir_name: str, verbose: bool) -> str:
 
 class ScorePaths:
     def __init__(
-        self, label: str, outdir: Optional[Path], score_threshold: float, all_variants: bool
+        self,
+        label: str,
+        outdir: Optional[Path],
+        score_threshold: float,
+        all_variants: bool,
     ):
         self.presence = outdir / f"scored_{label}_presence.txt" if outdir else None
         self.score_thres = (
-            outdir / f"scored_{label}_score_thres_{score_threshold}.txt" if outdir else None
+            outdir / f"scored_{label}_score_thres_{score_threshold}.txt"
+            if outdir
+            else None
         )
         self.all_diffing = outdir / f"scored_{label}_score_all.txt" if outdir else None
-        self.all = outdir / f"scored_{label}_score_full.txt" if outdir and all_variants else None
+        self.all = (
+            outdir / f"scored_{label}_score_full.txt"
+            if outdir and all_variants
+            else None
+        )
 
 
 def get_ignored(
@@ -211,8 +227,6 @@ class RunObject:
             return self._r2_vcfs
         raise ValueError("Trying to access run id before init")
 
-
-
     def init(self, logger: Logger, verbose: bool):
 
         if self._run_id1 is None:
@@ -230,11 +244,14 @@ class RunObject:
             self.r2_results, self.r2_id, RUN_ID_PLACEHOLDER, self.r2_results
         )
 
-        self._r1_vcfs = [p.real_path for p in get_files_ending_with(IS_VCF_PATTERN, self.r1_paths)]
-        self._r2_vcfs = [p.real_path for p in get_files_ending_with(IS_VCF_PATTERN, self.r2_paths)]
+        self._r1_vcfs = [
+            p.real_path for p in get_files_ending_with(IS_VCF_PATTERN, self.r1_paths)
+        ]
+        self._r2_vcfs = [
+            p.real_path for p in get_files_ending_with(IS_VCF_PATTERN, self.r2_paths)
+        ]
         logger.info(f"Looking for paths: {self.r1_paths} found: {self._r1_vcfs}")
         logger.info(f"Looking for paths: {self.r2_paths} found: {self._r2_vcfs}")
-
 
 
 class RunSettings:

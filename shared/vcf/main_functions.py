@@ -283,7 +283,7 @@ def write_full_score_table(
         is_sv,
         show_line_numbers,
         annotation_info_keys,
-        exclude_subscores=False
+        exclude_subscores=False,
     )
 
     body = get_table(all_variants, is_sv, show_line_numbers, annotation_info_keys)
