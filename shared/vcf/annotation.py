@@ -69,7 +69,7 @@ def compare_variant_annotation(
             logger.info(f"No annotation keys found only in {run_id2}")
 
     if len(diffs_per_annot_key) == 0:
-        logger.info(f"# Among shared annotation keys, all values were the same")
+        logger.info("# Among shared annotation keys, all values were the same")
     else:
         logger.info("")
         logger.info(

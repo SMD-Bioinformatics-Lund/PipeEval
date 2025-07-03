@@ -115,12 +115,12 @@ def detect_run_id(logger: Logger, base_dir_name: str, verbose: bool) -> str:
     if datestamp_start_match:
         non_date_part = datestamp_start_match.group(1)
         if verbose:
-            logger.info(f"Datestamp detected, run ID assigned as remainder of base folder name")
+            logger.info("Datestamp detected, run ID assigned as remainder of base folder name")
             logger.info(f"Full name: {base_dir_name}")
             logger.info(f"Detected ID: {non_date_part}")
         return non_date_part
     else:
-        logger.info(f"Datestamp not detected, full folder name used as run ID")
+        logger.info("Datestamp not detected, full folder name used as run ID")
         dir_name = str(base_dir_name)
         return dir_name
 

@@ -1,5 +1,4 @@
 import textwrap
-from configparser import ConfigParser
 from pathlib import Path
 
 import pytest

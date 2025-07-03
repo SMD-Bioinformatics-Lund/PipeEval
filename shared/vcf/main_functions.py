@@ -266,7 +266,7 @@ def write_full_score_table(
     show_line_numbers: bool,
     annotation_info_keys: List[str],
 ) -> None:
-    
+
     all_variants: list[DiffScoredVariant] = [
         DiffScoredVariant(variants_r1[key], variants_r2[key])
         for key in shared_variant_keys
@@ -308,7 +308,7 @@ def variant_comparisons(
     show_line_numbers: bool,
     annotation_info_keys: List[str],
 ):
-    logger.info(f"# Parsing VCFs ...")
+    logger.info("# Parsing VCFs ...")
 
     vcf_r1 = parse_scored_vcf(r1_scored_vcf, is_sv)
     logger.info(f"{run_id1} number variants: {len(vcf_r1.variants)}")
