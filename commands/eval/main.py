@@ -65,13 +65,13 @@ def log_and_write(text: str, fh: Optional[TextIOWrapper]):
         print(text, file=fh)
 
 
-def main(
+def main(  # noqa: C901 (skipping complexity check)
     ro: RunObject,
     rs: RunSettings,
     config_path: Optional[str],
     comparisons: Optional[Set[str]],
     outdir: Optional[Path],
-):
+):  
 
     curr_dir = os.path.dirname(os.path.abspath(__file__))
     config = load_config(logger, curr_dir, config_path)
@@ -120,10 +120,6 @@ def main(
             "scored SNVs",
             config["settings"]["scored_snv"].split(","),
             ro,
-            # ro.r1_paths,
-            # ro.r2_paths,
-            # ro.r1_results,
-            # ro.r2_results,
             rs.verbose,
         )
 
