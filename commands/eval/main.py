@@ -9,7 +9,12 @@ from io import TextIOWrapper
 from pathlib import Path
 from typing import Dict, List, Optional, Set
 
-from commands.eval.classes.run_object import RunObject
+from commands.eval.classes.pathobj import PathObj
+from commands.eval.classes.run_object import (
+    RunObject,
+    get_files_in_dir,
+    get_run_object,
+)
 from commands.eval.classes.run_settings import RunSettings
 from commands.eval.classes.score_paths import ScorePaths
 from shared.compare import do_comparison
@@ -69,20 +74,20 @@ def main(  # noqa: C901 (skipping complexity check)
     outdir: Optional[Path],
 ):
 
+    r1_paths = get_files_in_dir(ro.r1_results, ro.r1_id, RUN_ID_PLACEHOLDER, ro.r1_results)
+    r2_paths = get_files_in_dir(ro.r2_results, ro.r2_id, RUN_ID_PLACEHOLDER, ro.r2_results)
+
+
     curr_dir = os.path.dirname(os.path.abspath(__file__))
     config = load_config(logger, curr_dir, config_path)
 
     if comparisons is not None and len(comparisons & VALID_COMPARISONS) == 0:
-        raise ValueError(
-            f"Valid comparisons are: {VALID_COMPARISONS}, found: {comparisons}"
-        )
+        raise ValueError(f"Valid comparisons are: {VALID_COMPARISONS}, found: {comparisons}")
 
     verify_pair_exists("result dirs", ro.r1_results, ro.r2_results)
 
     if outdir is not None:
         outdir.mkdir(parents=True, exist_ok=True)
-
-    ro.init(logger, rs.verbose)
 
     if comparisons is None or "file" in comparisons:
         out_path = outdir / "check_sample_files.txt" if outdir else None
@@ -93,6 +98,8 @@ def main(  # noqa: C901 (skipping complexity check)
 
         check_same_files(
             ro,
+            r1_paths,
+            r2_paths,
             ignore_files,
             out_path,
         )
@@ -101,12 +108,8 @@ def main(  # noqa: C901 (skipping complexity check)
         logger.info("")
         logger.info("--- Comparing VCF numbers ---")
 
-        r1_vcfs = [
-            p.real_path for p in get_files_ending_with(IS_VCF_PATTERN, ro.r1_paths)
-        ]
-        r2_vcfs = [
-            p.real_path for p in get_files_ending_with(IS_VCF_PATTERN, ro.r2_paths)
-        ]
+        r1_vcfs = [p.real_path for p in get_files_ending_with(IS_VCF_PATTERN, r1_paths)]
+        r2_vcfs = [p.real_path for p in get_files_ending_with(IS_VCF_PATTERN, r2_paths)]
 
         if len(r1_vcfs) > 0 or len(r2_vcfs) > 0:
             out_path = outdir / "all_vcf_compare.txt" if outdir else None
@@ -119,11 +122,7 @@ def main(  # noqa: C901 (skipping complexity check)
         else:
             logger.warning("No VCFs detected, skipping VCF comparison")
 
-    if (
-        comparisons is None
-        or "score_snv" in comparisons
-        or "annotation_snv" in comparisons
-    ):
+    if comparisons is None or "score_snv" in comparisons or "annotation_snv" in comparisons:
         logger.info("")
         logger.info("--- Comparing scored SNV VCFs ---")
 
@@ -132,6 +131,8 @@ def main(  # noqa: C901 (skipping complexity check)
             "scored SNVs",
             config["settings"]["scored_snv"].split(","),
             ro,
+            r1_paths,
+            r2_paths,
             rs.verbose,
         )
 
@@ -141,9 +142,7 @@ def main(  # noqa: C901 (skipping complexity check)
             )
         else:
 
-            snv_score_paths = ScorePaths(
-                "snv", outdir, rs.score_threshold, rs.output_all_variants
-            )
+            snv_score_paths = ScorePaths("snv", outdir, rs.score_threshold, rs.output_all_variants)
 
             is_sv = False
             variant_comparisons(
@@ -159,11 +158,7 @@ def main(  # noqa: C901 (skipping complexity check)
                 comparisons is None or "annotation_snv" in comparisons,
             )
 
-    if (
-        comparisons is None
-        or "score_sv" in comparisons
-        or "annotation_sv" in comparisons
-    ):
+    if comparisons is None or "score_sv" in comparisons or "annotation_sv" in comparisons:
         logger.info("")
         logger.info("--- Comparing scored SV VCFs ---")
 
@@ -172,18 +167,16 @@ def main(  # noqa: C901 (skipping complexity check)
             "scored SVs",
             config["settings"]["scored_sv"].split(","),
             ro,
+            r1_paths,
+            r2_paths,
             rs.verbose,
         )
 
         if scored_sv_pair is None:
-            logger.warning(
-                f"Skipping scored SV comparison due to missing files {scored_sv_pair}"
-            )
+            logger.warning(f"Skipping scored SV comparison due to missing files {scored_sv_pair}")
         else:
 
-            sv_score_paths = ScorePaths(
-                "sv", outdir, rs.score_threshold, rs.output_all_variants
-            )
+            sv_score_paths = ScorePaths("sv", outdir, rs.score_threshold, rs.output_all_variants)
 
             is_sv = True
             variant_comparisons(
@@ -207,12 +200,12 @@ def main(  # noqa: C901 (skipping complexity check)
             "Scout YAMLs",
             config["settings"]["yaml"].split(","),
             ro,
+            r1_paths,
+            r2_paths,
             rs.verbose,
         )
         if not yaml_pair:
-            logging.warning(
-                f"Skipping yaml comparison, at least one missing ({yaml_pair})"
-            )
+            logging.warning(f"Skipping yaml comparison, at least one missing ({yaml_pair})")
         else:
             out_path = outdir / "yaml_diff.txt" if outdir else None
             diff_compare_files(ro.r1_id, ro.r2_id, yaml_pair[0], yaml_pair[1], out_path)
@@ -225,36 +218,34 @@ def main(  # noqa: C901 (skipping complexity check)
             "versions",
             config["settings"]["versions"].split(","),
             ro,
+            r1_paths,
+            r2_paths,
             rs.verbose,
         )
         if not version_pair:
             logging.warning(f"At least one version file missing ({version_pair})")
         else:
             out_path = outdir / "yaml_diff.txt" if outdir else None
-            diff_compare_files(
-                ro.r1_id, ro.r2_id, version_pair[0], version_pair[1], out_path
-            )
+            diff_compare_files(ro.r1_id, ro.r2_id, version_pair[0], version_pair[1], out_path)
 
 
 def check_same_files(
     ro: RunObject,
+    r1_paths: List[PathObj],
+    r2_paths: List[PathObj],
     ignore_files: List[str],
     out_path: Optional[Path],
 ):
 
-    files_in_results1 = set(path.relative_path for path in ro.r1_paths)
-    files_in_results2 = set(path.relative_path for path in ro.r2_paths)
+    files_in_results1 = set(path.relative_path for path in r1_paths)
+    files_in_results2 = set(path.relative_path for path in r2_paths)
 
     comparison = do_comparison(files_in_results1, files_in_results2)
 
     out_fh = open(out_path, "w") if out_path else None
 
-    (r1_nbr_ignored_per_pattern, r1_non_ignored) = get_ignored(
-        comparison.r1, ignore_files
-    )
-    (r2_nbr_ignored_per_pattern, r2_non_ignored) = get_ignored(
-        comparison.r2, ignore_files
-    )
+    (r1_nbr_ignored_per_pattern, r1_non_ignored) = get_ignored(comparison.r1, ignore_files)
+    (r2_nbr_ignored_per_pattern, r2_non_ignored) = get_ignored(comparison.r2, ignore_files)
 
     ignored = Counter(r1_nbr_ignored_per_pattern) + Counter(r2_nbr_ignored_per_pattern)
 
@@ -329,12 +320,8 @@ def diff_compare_files(
 ):
 
     with get_filehandle(file1) as r1_fh, get_filehandle(file2) as r2_fh:
-        r1_lines = [
-            line.replace(run_id1, RUN_ID_PLACEHOLDER) for line in r1_fh.readlines()
-        ]
-        r2_lines = [
-            line.replace(run_id2, RUN_ID_PLACEHOLDER) for line in r2_fh.readlines()
-        ]
+        r1_lines = [line.replace(run_id1, RUN_ID_PLACEHOLDER) for line in r1_fh.readlines()]
+        r2_lines = [line.replace(run_id2, RUN_ID_PLACEHOLDER) for line in r2_fh.readlines()]
 
     out_fh = open(out_path, "w") if out_path else None
     diff = list(difflib.unified_diff(r1_lines, r2_lines))
@@ -354,8 +341,8 @@ def add_arguments(parser: argparse.ArgumentParser):
         help="The group ID is used in some file names and can differ between runs. If not provided, it is set to the base folder name.",
     )
     parser.add_argument("--run_id2", "-i2", help="See --run_id1 help")
-    parser.add_argument("--results1", "-r1", "-1", required=True)
-    parser.add_argument("--results2", "-r2", "-2", required=True)
+    parser.add_argument("--results1", "-r1", "-1", required=True, type=Path)
+    parser.add_argument("--results2", "-r2", "-2", required=True, type=Path)
     parser.add_argument("--config", help="Additional configurations")
     parser.add_argument(
         "--comparisons",
@@ -408,11 +395,8 @@ def main_wrapper(args: argparse.Namespace):
     if args.silent:
         logger.setLevel(logging.WARNING)
 
-    run_object = RunObject(
-        args.run_id1,
-        args.run_id2,
-        Path(args.results1),
-        Path(args.results2),
+    run_object = get_run_object(
+        logger, args.run_id1, args.run_id2, args.results1, args.results2, args.verbose
     )
 
     extra_annot_keys: List[str] = []

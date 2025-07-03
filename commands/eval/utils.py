@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections import defaultdict
 import re
 from logging import Logger
 from pathlib import Path
@@ -40,18 +41,6 @@ def any_is_parent(path: Path, names: List[str]) -> bool:
     return False
 
 
-def get_files_in_dir(
-    dir: Path,
-    run_id: str,
-    run_id_placeholder: str,
-    base_dir: Path,
-) -> List[PathObj]:
-    processed_files_in_dir = [
-        PathObj(path, run_id, run_id_placeholder, base_dir)
-        for path in dir.rglob("*")
-        if path.is_file()
-    ]
-    return processed_files_in_dir
 
 
 def verify_pair_exists(
@@ -82,10 +71,12 @@ def get_pair_match(
     error_label: str,
     valid_patterns: List[str],
     ro: RunObject,
+    r1_paths: List[PathObj],
+    r2_paths: List[PathObj],
     verbose: bool,
 ) -> Optional[Tuple[Path, Path]]:
-    r1_matching = get_single_file_ending_with(valid_patterns, ro.r1_paths)
-    r2_matching = get_single_file_ending_with(valid_patterns, ro.r2_paths)
+    r1_matching = get_single_file_ending_with(valid_patterns, r1_paths)
+    r2_matching = get_single_file_ending_with(valid_patterns, r2_paths)
     if verbose:
         if r1_matching is not None:
             logger.info(
@@ -117,12 +108,13 @@ def get_ignored(
     result_paths: Set[Path], ignore_files: List[str]
 ) -> Tuple[dict[str, int], list[Path]]:
 
-    nbr_ignored_per_pattern: dict[str, int] = {}
+    nbr_ignored_per_pattern: dict[str, int] = defaultdict(int)
 
     non_ignored: List[Path] = []
     for path in sorted(result_paths):
         if any_is_parent(path, ignore_files):
-            nbr_ignored_per_pattern[str(path.parent)] += 1
+            parent = str(path.parent)
+            nbr_ignored_per_pattern[parent] += 1
         else:
             non_ignored.append(path)
 

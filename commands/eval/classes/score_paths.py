@@ -12,11 +12,11 @@ class ScorePaths:
     ):
         self.presence = outdir / f"scored_{label}_presence.txt" if outdir else None
         self.score_thres = (
-            outdir / f"scored_{label}_score_thres_{score_threshold}.txt"
+            outdir / f"scored_{label}_above_thres_{score_threshold}.txt"
             if outdir
             else None
         )
-        self.all_diffing = outdir / f"scored_{label}_score_all.txt" if outdir else None
+        self.all_diffing = outdir / f"scored_{label}_all.txt" if outdir else None
         self.all = (
             outdir / f"scored_{label}_score_full.txt"
             if outdir and all_variants

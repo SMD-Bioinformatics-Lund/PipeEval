@@ -97,7 +97,7 @@ def test_eval_main(
     run_settings = RunSettings(score_threshold=17)
 
     with caplog.at_level(logging.INFO):
-        main(run_object, run_settings, None, None, None)
+        main(run_object, run_settings, None, None, outdir)
 
     assert len(caplog.records) > 0, "No logs were captured"
     assert not any(record.levelname == "ERROR" for record in caplog.records)
@@ -105,27 +105,33 @@ def test_eval_main(
     expected = [
         "check_sample_files.txt",
         "scored_snv_presence.txt",
-        "scored_snv_score_thres_17.txt",
-        "scored_snv_score_all.txt",
+        "scored_snv_above_thres_17.txt",
+        "scored_snv_all.txt",
         "scored_sv_presence.txt",
-        "scored_sv_score_thres_17.txt",
-        "scored_sv_score.txt",
+        "scored_sv_above_thres_17.txt",
+        "scored_sv_all.txt",
         "yaml_diff.txt",
     ]
+
+    logging.error(f"Out dir: {outdir}")
+
+    for fname in outdir.iterdir():
+        logging.warning(fname)
+
 
     for fname in expected:
         assert (outdir / fname).exists(), f"Expected file {fname} does not exist"
 
     # Verify that differences were detected and written to the output files
     snv_score_thres = (
-        (outdir / "scored_snv_score_thres_17.txt").read_text().splitlines()
+        (outdir / "scored_snv_above_thres_17.txt").read_text().splitlines()
     )
     assert any(
         "G/T" in line for line in snv_score_thres
     ), "Expected SNV difference missing"
 
-    snv_score_all = (outdir / "scored_snv_score_all.txt").read_text().splitlines()
+    snv_score_all = (outdir / "scored_snv_all.txt").read_text().splitlines()
     assert len(snv_score_all) == 3
 
-    sv_score = (outdir / "scored_sv_score.txt").read_text().splitlines()
+    sv_score = (outdir / "scored_sv_all.txt").read_text().splitlines()
     assert any("<DEL>" in line for line in sv_score)
