@@ -85,6 +85,10 @@ def test_eval_main(
     caplog: LogCaptureFixture,
     mock_results: tuple[Path, Path, Path],
 ):
+    """
+    Given a valid dataset, check that the command runs without errors,
+    outputs expected files, and do some sanity checking on the score comparisons
+    """
     results1, results2, outdir = mock_results
 
     with caplog.at_level(logging.INFO):
