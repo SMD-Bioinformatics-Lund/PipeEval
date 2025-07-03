@@ -1,32 +1,38 @@
 name: Tag Release from Changelog
+
 on:
-  push:
+  pull_request:
+    types: [closed]
     branches:
       - main
 
 jobs:
   tag:
     runs-on: ubuntu-latest
+    # only proceed if this PR was actually merged (not just closed)
+    if: ${{ github.event.pull_request.merged == true }}
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
         with:
-          fetch-depth: 0   # need full history to push tags
+          fetch-depth: 0   # we need full history so we can tag
 
       - name: Extract version from CHANGELOG.md
         id: extract
         run: |
-          # Grab the first header like "## [1.2.3] - 2025-07-03"
           version=$(grep -E '^## \[[0-9]+\.[0-9]+\.[0-9]+' CHANGELOG.md \
                     | head -n1 \
                     | sed -E 's/^## \[([0-9]+\.[0-9]+\.[0-9]+)\].*/\1/')
           echo "version=$version" >> $GITHUB_OUTPUT
 
       - name: Create Git tag
-        if: ${{ steps.extract.outputs.version != github.ref_name }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git tag -a "v${{ steps.extract.outputs.version }}" \
-                   -m "Release v${{ steps.extract.outputs.version }}"
-          git push origin "v${{ steps.extract.outputs.version }}"
+          TAG="v${{ steps.extract.outputs.version }}"
+          # guard against re-tagging if it already exists
+          if ! git rev-parse "$TAG" >/dev/null 2>&1; then
+            git tag -a "$TAG" -m "Release $TAG"
+            git push origin "$TAG"
+          fi
