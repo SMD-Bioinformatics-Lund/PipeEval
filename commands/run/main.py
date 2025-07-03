@@ -263,7 +263,7 @@ def build_start_nextflow_analysis_cmd(
         nextflow_version,
         "--container",
         container,
-        f'"--pipeline {runscript} -profile {profile}"',
+        f"'--pipeline {runscript} -profile {profile}'",
     ]
     if stub_run:
         start_nextflow_command.append("--custom_flags")
