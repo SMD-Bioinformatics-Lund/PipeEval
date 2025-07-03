@@ -1,9 +1,10 @@
 import logging
 from pathlib import Path
+
 from pytest import LogCaptureFixture
 
-from commands.eval.main import check_same_files
 from commands.eval.classes import PathObj
+from commands.eval.main import check_same_files
 from commands.eval.util import RunObject
 from shared.constants import RUN_ID_PLACEHOLDER
 

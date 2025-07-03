@@ -22,7 +22,6 @@ def compare_variant_presence(
     show_line_numbers: bool,
     additional_annotations: List[str],
 ):
-
     common = comparison_results.shared
     r1_only = comparison_results.r1
     r2_only = comparison_results.r2
@@ -300,14 +299,9 @@ def variant_comparisons(
     r2_scored_vcf: Path,
     is_sv: bool,
     rs: RunSettings,
-    # score_threshold: int,
-    # max_display: int,
-    # max_checked_annots: int,
     paths: ScorePaths,
     do_score_check: bool,
     do_annot_check: bool,
-    # show_line_numbers: bool,
-    # annotation_info_keys: List[str],
 ):
     logger.info("# Parsing VCFs ...")
 

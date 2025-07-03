@@ -24,17 +24,17 @@ def hg004_vcf() -> Path:
 
 @pytest.fixture
 def results_above_thres() -> Path:
-    return Path("tests/testdata/output/above_thres.txt")
+    return Path("tests/testdata/output/scored_snv_above_thres_17.txt")
 
 
 @pytest.fixture
 def results_presence() -> Path:
-    return Path("tests/testdata/output/presence.txt")
+    return Path("tests/testdata/output/scored_snv_presence.txt")
 
 
 @pytest.fixture
 def results_score_all() -> Path:
-    return Path("tests/testdata/output/score_all.txt")
+    return Path("tests/testdata/output/scored_snv_score_all.txt")
 
 
 def test_main(caplog: LogCaptureFixture, tmp_path: Path):
