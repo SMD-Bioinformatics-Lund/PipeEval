@@ -65,6 +65,7 @@ def test_main(caplog: LogCaptureFixture, tmp_path: Path):
             run_id2,
             results,
             annotations,
+            output_all_variants=True,
         )
 
     assert len(caplog.records) > 0, "No logs were captured"
@@ -73,7 +74,7 @@ def test_main(caplog: LogCaptureFixture, tmp_path: Path):
         record.levelname == "ERROR" for record in caplog.records
     ), "Error logs were captured"
 
-    expected_files = ["above_thres.txt", "score_all.txt"]
+    expected_files = ["above_thres.txt", "score_all.txt", "score_full.txt"]
 
     for filename in expected_files:
         file_path = results / filename
@@ -119,9 +120,7 @@ def test_vcf_cli(
         str(results),
     ]
 
-    completed = subprocess.run(
-        cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True
-    )
+    completed = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
 
     assert completed.returncode == 0
     assert "Parsing VCFs" in completed.stdout

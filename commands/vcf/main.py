@@ -20,6 +20,7 @@ def main(
     run_id2: Optional[str],
     results: Optional[Path],
     annotations: List[str],
+    output_all_variants: bool,
 ):
     show_line_numbers = True
 
@@ -41,6 +42,9 @@ def main(
 
     out_path_score_above_thres = results / "above_thres.txt" if results else None
     out_path_score_all = results / "score_all.txt" if results else None
+    out_path_score_full = (
+        results / "score_full.txt" if results and output_all_variants else None
+    )
 
     do_score_check = True
     do_annot_check = True
@@ -57,6 +61,7 @@ def main(
         out_path_presence,
         out_path_score_above_thres,
         out_path_score_all,
+        out_path_score_full,
         do_score_check,
         do_annot_check,
         show_line_numbers,
@@ -80,6 +85,7 @@ def main_wrapper(args: argparse.Namespace):
         args.id2,
         args.results if args.results is not None else None,
         args.annotations.split(",") if args.annotations is not None else [],
+        args.all_variants,
     )
 
 
@@ -126,6 +132,11 @@ def add_arguments(parser: argparse.ArgumentParser):
     )
     parser.add_argument(
         "--silent", action="store_true", help="Run silently, produce only output files"
+    )
+    parser.add_argument(
+        "--all_variants",
+        action="store_true",
+        help="Write a comparison file including non-differing variants"
     )
 
 if __name__ == "__main__":

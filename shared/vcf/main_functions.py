@@ -254,6 +254,43 @@ def print_diff_score_info(
                 print("\t".join(row), file=out_fh)
 
 
+def write_full_score_table(
+    run_id1: str,
+    run_id2: str,
+    shared_variant_keys: Set[str],
+    variants_r1: Dict[str, ScoredVariant],
+    variants_r2: Dict[str, ScoredVariant],
+    out_path: Path,
+    is_sv: bool,
+    show_line_numbers: bool,
+    annotation_info_keys: List[str],
+) -> None:
+    
+    all_variants: list[DiffScoredVariant] = [
+        DiffScoredVariant(variants_r1[key], variants_r2[key])
+        for key in shared_variant_keys
+    ]
+
+    all_variants.sort(key=lambda var: var.r1.get_rank_score(), reverse=True)
+
+    header = get_table_header(
+        run_id1,
+        run_id2,
+        shared_variant_keys,
+        variants_r1,
+        variants_r2,
+        is_sv,
+        show_line_numbers,
+        annotation_info_keys,
+        exclude_subscores=False
+    )
+
+    body = get_table(all_variants, is_sv, show_line_numbers, annotation_info_keys)
+    with out_path.open("w") as out_fh:
+        for row in [header] + body:
+            print("\t".join(row), file=out_fh)
+
+
 def variant_comparisons(
     logger: Logger,
     run_id1: str,
@@ -267,6 +304,7 @@ def variant_comparisons(
     out_path_presence: Optional[Path],
     out_path_score_above_thres: Optional[Path],
     out_path_score_all: Optional[Path],
+    out_path_score_full: Optional[Path],
     do_score_check: bool,
     do_annot_check: bool,
     show_line_numbers: bool,
@@ -329,3 +367,15 @@ def variant_comparisons(
             show_line_numbers,
             annotation_info_keys,
         )
+        if out_path_score_full is not None:
+            write_full_score_table(
+                run_id1,
+                run_id2,
+                shared_variants,
+                vcf_r1.variants,
+                vcf_r2.variants,
+                out_path_score_full,
+                is_sv,
+                show_line_numbers,
+                annotation_info_keys,
+            )

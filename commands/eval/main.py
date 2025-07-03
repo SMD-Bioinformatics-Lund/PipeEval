@@ -76,15 +76,14 @@ def main(
     max_checked_annots: int,
     show_line_numbers: bool,
     annotation_info_keys: List[str],
+    all_variants: bool,
 ):
 
     curr_dir = os.path.dirname(os.path.abspath(__file__))
     config = load_config(logger, curr_dir, config_path)
 
     if comparisons is not None and len(comparisons & VALID_COMPARISONS) == 0:
-        raise ValueError(
-            f"Valid comparisons are: {VALID_COMPARISONS}, found: {comparisons}"
-        )
+        raise ValueError(f"Valid comparisons are: {VALID_COMPARISONS}, found: {comparisons}")
 
     verify_pair_exists("result dirs", results1_dir, results2_dir)
 
@@ -139,11 +138,7 @@ def main(
         else:
             logger.warning("No VCFs detected, skipping VCF comparison")
 
-    if (
-        comparisons is None
-        or "score_snv" in comparisons
-        or "annotation_snv" in comparisons
-    ):
+    if comparisons is None or "score_snv" in comparisons or "annotation_snv" in comparisons:
         logger.info("")
         logger.info("--- Comparing scored SNV VCFs ---")
 
@@ -162,7 +157,10 @@ def main(
         out_path_score_thres = (
             outdir / f"scored_snv_score_thres_{score_threshold}.txt" if outdir else None
         )
-        out_path_score_all = outdir / "scored_snv_score_all.txt" if outdir else None
+        out_path_score_all_diffing = outdir / "scored_snv_score_all.txt" if outdir else None
+        out_path_score_full = (
+            outdir / "scored_sv_score_full.txt" if outdir and all_variants else None
+        )
         is_sv = False
         variant_comparisons(
             logger,
@@ -176,18 +174,15 @@ def main(
             max_checked_annots,
             out_path_presence,
             out_path_score_thres,
-            out_path_score_all,
+            out_path_score_all_diffing,
+            out_path_score_full,
             comparisons is None or "score_snv" in comparisons,
             comparisons is None or "annotation_snv" in comparisons,
             show_line_numbers,
             annotation_info_keys,
         )
 
-    if (
-        comparisons is None
-        or "score_sv" in comparisons
-        or "annotation_sv" in comparisons
-    ):
+    if comparisons is None or "score_sv" in comparisons or "annotation_sv" in comparisons:
         logger.info("")
         logger.info("--- Comparing scored SV VCFs ---")
 
@@ -206,7 +201,10 @@ def main(
         out_path_score_thres = (
             outdir / f"scored_sv_score_thres_{score_threshold}.txt" if outdir else None
         )
-        out_path_score_all = outdir / "scored_sv_score.txt" if outdir else None
+        out_path_score_all_diffing = outdir / "scored_sv_score.txt" if outdir else None
+        out_path_score_full = (
+            outdir / "scored_sv_score_full.txt" if outdir and all_variants else None
+        )
         is_sv = True
         variant_comparisons(
             logger,
@@ -220,7 +218,8 @@ def main(
             max_checked_annots,
             out_path_presence,
             out_path_score_thres,
-            out_path_score_all,
+            out_path_score_all_diffing,
+            out_path_score_full,
             comparisons is None or "score_sv" in comparisons,
             comparisons is None or "annotation_sv" in comparisons,
             show_line_numbers,
@@ -365,12 +364,8 @@ def diff_compare_files(
 ):
 
     with get_filehandle(file1) as r1_fh, get_filehandle(file2) as r2_fh:
-        r1_lines = [
-            line.replace(run_id1, RUN_ID_PLACEHOLDER) for line in r1_fh.readlines()
-        ]
-        r2_lines = [
-            line.replace(run_id2, RUN_ID_PLACEHOLDER) for line in r2_fh.readlines()
-        ]
+        r1_lines = [line.replace(run_id1, RUN_ID_PLACEHOLDER) for line in r1_fh.readlines()]
+        r2_lines = [line.replace(run_id2, RUN_ID_PLACEHOLDER) for line in r2_fh.readlines()]
 
     out_fh = open(out_path, "w") if out_path else None
     diff = list(difflib.unified_diff(r1_lines, r2_lines))
@@ -429,7 +424,14 @@ def add_arguments(parser: argparse.ArgumentParser):
         help="Show line numbers from original VCFs in output",
     )
     parser.add_argument("--annotations", help="INFO keys to include in output tables")
-    parser.add_argument("--silent", action="store_true", help="Run silently, produce only output files")
+    parser.add_argument(
+        "--silent", action="store_true", help="Run silently, produce only output files"
+    )
+    parser.add_argument(
+        "--all_variants",
+        action="store_true",
+        help="Write score comparison including non-differing variants",
+    )
 
 
 def main_wrapper(args: argparse.Namespace):
@@ -451,6 +453,7 @@ def main_wrapper(args: argparse.Namespace):
         args.max_checked_annots,
         args.show_line_numbers,
         args.annotations.split(",") if args.annotations is not None else [],
+        args.all_variants,
     )
 
 
