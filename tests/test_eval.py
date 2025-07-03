@@ -102,6 +102,7 @@ def test_eval_main(
             1000,
             False,
             [],
+            all_variants=False
         )
 
     assert len(caplog.records) > 0, "No logs were captured"
