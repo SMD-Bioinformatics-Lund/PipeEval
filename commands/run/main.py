@@ -116,33 +116,35 @@ def main(
     else:
         csv.write_to_file(str(out_csv))
 
-    start_nextflow_command = build_start_nextflow_analysis_cmd(
-        config["settings"]["start_nextflow_analysis"],
-        out_csv,
-        results_dir,
-        config["settings"]["executor"],
-        config["settings"]["cluster"],
-        config["settings"]["queue"],
-        config["settings"]["singularity_version"],
-        config["settings"]["nextflow_version"],
-        config["settings"]["container"],
-        str(repo / config["settings"]["runscript"]),
-        run_type_settings["profile"],
-        stub_run,
-        no_start,
-    )
+    def get_start_nextflow_command(quote_pipeline_arguments: bool) -> List[str]:
+        command = build_start_nextflow_analysis_cmd(
+            config["settings"]["start_nextflow_analysis"],
+            out_csv,
+            results_dir,
+            config["settings"]["executor"],
+            config["settings"]["cluster"],
+            config["settings"]["queue"],
+            config["settings"]["singularity_version"],
+            config["settings"]["nextflow_version"],
+            config["settings"]["container"],
+            str(repo / config["settings"]["runscript"]),
+            run_type_settings["profile"],
+            stub_run,
+            no_start,
+            quote_pipeline_arguments,
+        )
+        return command
 
-    # Setup results files
     write_resume_script(
         logger,
         results_dir,
-        start_nextflow_command,
+        get_start_nextflow_command(True),
         dry_run,
     )
     copy_nextflow_config(repo, results_dir)
     setup_results_links(logger, config, results_dir, run_label, dry_run)
 
-    start_run(start_nextflow_command, dry_run, skip_confirmation)
+    start_run(get_start_nextflow_command(False), dry_run, skip_confirmation)
 
 
 def confirm_run_if_results_exists(results_dir: Path, skip_confirmation: bool):
@@ -239,6 +241,7 @@ def build_start_nextflow_analysis_cmd(
     profile: str,
     stub_run: bool,
     no_start: bool,
+    quote_pipeline_arguments: bool,
 ) -> List[str]:
 
     out_dir = results_dir
@@ -263,13 +266,21 @@ def build_start_nextflow_analysis_cmd(
         nextflow_version,
         "--container",
         container,
-        "--pipeline",
-        f"{runscript} -profile {profile}",
     ]
+    if quote_pipeline_arguments:
+        start_nextflow_command.append(
+            f'--pipeline "{runscript} -profile {profile}"',
+        )
+    else:
+        start_nextflow_command.extend(
+            [
+                "--pipeline",
+                f"{runscript} -profile {profile}",
+            ]
+        )
     if stub_run:
         start_nextflow_command.append("--custom_flags")
         start_nextflow_command.append("'-stub-run'")
-        # start_nextflow_command.append("'-stub-run --no_scratch'")
 
     if no_start:
         start_nextflow_command.append("--nostart")
