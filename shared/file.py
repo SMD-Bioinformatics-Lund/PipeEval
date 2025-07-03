@@ -19,6 +19,6 @@ def check_valid_file(my_file: Path) -> bool:
         else:
             with open(str(my_file), "r") as fh:
                 fh.read(1)
-    except:
+    except (OSError, gzip.BadGzipFile):
         return False
     return True

@@ -2,6 +2,8 @@ from logging import Logger
 from pathlib import Path
 from typing import Dict, List, Optional, Set
 
+from commands.eval.classes.run_settings import RunSettings
+from commands.eval.classes.score_paths import ScorePaths
 from shared.compare import Comparison, do_comparison, parse_var_key_for_sort
 from shared.util import prettify_rows
 from shared.vcf.annotation import compare_variant_annotation
@@ -21,7 +23,6 @@ def compare_variant_presence(
     show_line_numbers: bool,
     additional_annotations: List[str],
 ):
-
     common = comparison_results.shared
     r1_only = comparison_results.r1
     r2_only = comparison_results.r2
@@ -254,6 +255,43 @@ def print_diff_score_info(
                 print("\t".join(row), file=out_fh)
 
 
+def write_full_score_table(
+    run_id1: str,
+    run_id2: str,
+    shared_variant_keys: Set[str],
+    variants_r1: Dict[str, ScoredVariant],
+    variants_r2: Dict[str, ScoredVariant],
+    out_path: Path,
+    is_sv: bool,
+    show_line_numbers: bool,
+    annotation_info_keys: List[str],
+) -> None:
+
+    all_variants: list[DiffScoredVariant] = [
+        DiffScoredVariant(variants_r1[key], variants_r2[key])
+        for key in shared_variant_keys
+    ]
+
+    all_variants.sort(key=lambda var: var.r1.get_rank_score(), reverse=True)
+
+    header = get_table_header(
+        run_id1,
+        run_id2,
+        shared_variant_keys,
+        variants_r1,
+        variants_r2,
+        is_sv,
+        show_line_numbers,
+        annotation_info_keys,
+        exclude_subscores=False,
+    )
+
+    body = get_table(all_variants, is_sv, show_line_numbers, annotation_info_keys)
+    with out_path.open("w") as out_fh:
+        for row in [header] + body:
+            print("\t".join(row), file=out_fh)
+
+
 def variant_comparisons(
     logger: Logger,
     run_id1: str,
@@ -261,18 +299,12 @@ def variant_comparisons(
     r1_scored_vcf: Path,
     r2_scored_vcf: Path,
     is_sv: bool,
-    score_threshold: int,
-    max_display: int,
-    max_checked_annots: int,
-    out_path_presence: Optional[Path],
-    out_path_score_above_thres: Optional[Path],
-    out_path_score_all: Optional[Path],
+    rs: RunSettings,
+    paths: ScorePaths,
     do_score_check: bool,
     do_annot_check: bool,
-    show_line_numbers: bool,
-    annotation_info_keys: List[str],
 ):
-    logger.info(f"# Parsing VCFs ...")
+    logger.info("# Parsing VCFs ...")
 
     vcf_r1 = parse_scored_vcf(r1_scored_vcf, is_sv)
     logger.info(f"{run_id1} number variants: {len(vcf_r1.variants)}")
@@ -293,10 +325,10 @@ def variant_comparisons(
         vcf_r1.variants,
         vcf_r2.variants,
         comp_res,
-        max_display,
-        out_path_presence,
-        show_line_numbers,
-        annotation_info_keys,
+        rs.max_display,
+        paths.presence,
+        rs.show_line_numbers,
+        rs.annotation_info_keys,
     )
     shared_variants = comp_res.shared
     if do_annot_check:
@@ -309,7 +341,7 @@ def variant_comparisons(
             shared_variants,
             vcf_r1.variants,
             vcf_r2.variants,
-            max_checked_annots,
+            rs.max_checked_annots,
         )
     if do_score_check:
         logger.info("")
@@ -321,11 +353,23 @@ def variant_comparisons(
             shared_variants,
             vcf_r1.variants,
             vcf_r2.variants,
-            score_threshold,
-            max_display,
-            out_path_score_above_thres,
-            out_path_score_all,
+            rs.score_threshold,
+            rs.max_display,
+            paths.score_thres,
+            paths.all_diffing,
             is_sv,
-            show_line_numbers,
-            annotation_info_keys,
+            rs.show_line_numbers,
+            rs.annotation_info_keys,
         )
+        if paths.all is not None:
+            write_full_score_table(
+                run_id1,
+                run_id2,
+                shared_variants,
+                vcf_r1.variants,
+                vcf_r2.variants,
+                paths.all,
+                is_sv,
+                rs.show_line_numbers,
+                rs.annotation_info_keys,
+            )

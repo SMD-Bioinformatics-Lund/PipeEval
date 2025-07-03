@@ -1,17 +1,5 @@
 #!/usr/bin/env python3
 
-description = """
-The intent of this script is to make running control samples on specific versions of pipelines easy.
-
-The steps it performs:
-
-1. Check out commit, tag or branch in target repo
-2. Prepare CSV file for the run
-3. Execute the pipeline
-
-It can be configured to run singles, trios and start with FASTQ, BAM and VCF.
-"""
-
 import argparse
 import logging
 import os
@@ -40,6 +28,18 @@ from commands.run.gittools import (
     pull_branch,
 )
 from shared.util import check_valid_config_path, load_config
+
+description = """
+The intent of this script is to make running control samples on specific versions of pipelines easy.
+
+The steps it performs:
+
+1. Check out commit, tag or branch in target repo
+2. Prepare CSV file for the run
+3. Execute the pipeline
+
+It can be configured to run singles, trios and start with FASTQ, BAM and VCF.
+"""
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 logger = logging.getLogger(__name__)
@@ -157,7 +157,7 @@ def confirm_run_if_results_exists(results_dir: Path, skip_confirmation: bool):
 
 
 def do_repo_checkout(repo: Path, checkout: str, verbose: bool, skip_confirmation: bool):
-    logger.info(f"Fetching latest changes for repo")
+    logger.info("Fetching latest changes for repo")
     fetch_repo(logger, repo, verbose)
     check_valid_checkout(logger, repo, checkout, verbose)
     logger.info(f"Checking out: {checkout} in {str(repo)}")
@@ -303,6 +303,9 @@ def main_wrapper(args: argparse.Namespace):
     curr_dir = os.path.dirname(os.path.abspath(__file__))
     config = load_config(logger, curr_dir, args.config)
 
+    if args.silent:
+        logger.setLevel(logging.WARNING)
+
     if args.baseline is not None:
         logging.info(
             "Performing additional baseline run as specified by --baseline flag"
@@ -311,7 +314,12 @@ def main_wrapper(args: argparse.Namespace):
         if args.baseline_repo is not None:
             baseline_repo = str(args.baseline_repo)
         else:
-            baseline_repo = config["settings"]["baseline_repo"]
+            baseline_repo = config.get("settings", "baseline_repo", fallback="")
+            if baseline_repo == "":
+                logging.error(
+                    "When running with --baseline a baseline repo must either be provided using --baseline_repo option or in the config"
+                )
+                sys.exit(1)
 
         main(
             config,
@@ -414,6 +422,9 @@ def add_arguments(parser: argparse.ArgumentParser):
     )
     parser.add_argument(
         "--verbose", action="store_true", help="Print additional debug output"
+    )
+    parser.add_argument(
+        "--silent", action="store_true", help="Run silently, produce only output files"
     )
 
 

@@ -1,9 +1,10 @@
 import re
+from collections import defaultdict
 from logging import Logger
 from pathlib import Path
-from typing import List, Optional, Tuple, Union
+from typing import Dict, List, Optional, Set, Tuple, Union
 
-from .classes import PathObj
+from .classes.run_object import PathObj, RunObject
 
 
 def get_files_ending_with(pattern: str, paths: List[PathObj]) -> List[PathObj]:
@@ -38,20 +39,6 @@ def any_is_parent(path: Path, names: List[str]) -> bool:
     return False
 
 
-def get_files_in_dir(
-    dir: Path,
-    run_id: str,
-    run_id_placeholder: str,
-    base_dir: Path,
-) -> List[PathObj]:
-    processed_files_in_dir = [
-        PathObj(path, run_id, run_id_placeholder, base_dir)
-        for path in dir.rglob("*")
-        if path.is_file()
-    ]
-    return processed_files_in_dir
-
-
 def verify_pair_exists(
     label: str,
     file1: Optional[Union[Path, PathObj]],
@@ -79,12 +66,11 @@ def get_pair_match(
     logger: Logger,
     error_label: str,
     valid_patterns: List[str],
+    ro: RunObject,
     r1_paths: List[PathObj],
     r2_paths: List[PathObj],
-    r1_base_dir: Path,
-    r2_base_dir: Path,
     verbose: bool,
-) -> Tuple[Path, Path]:
+) -> Optional[Tuple[Path, Path]]:
     r1_matching = get_single_file_ending_with(valid_patterns, r1_paths)
     r2_matching = get_single_file_ending_with(valid_patterns, r2_paths)
     if verbose:
@@ -94,7 +80,7 @@ def get_pair_match(
             )
         else:
             logger.info(
-                f"Looking for pattern(s) {valid_patterns}, did not match any file in {r1_base_dir}"
+                f"Looking for pattern(s) {valid_patterns}, did not match any file in {ro.r1_results}"
             )
 
         if r2_matching is not None:
@@ -103,29 +89,29 @@ def get_pair_match(
             )
         else:
             logger.info(
-                f"Looking for pattern(s) {valid_patterns}, did not match any file in {r2_base_dir}"
+                f"Looking for pattern(s) {valid_patterns}, did not match any file in {ro.r2_results}"
             )
 
     verify_pair_exists(error_label, r1_matching, r2_matching)
-    if r1_matching is None or r2_matching is None:
-        raise ValueError(
-            "Missing files (should have been captured by verification call?)"
-        )
+
+    if not r1_matching or not r2_matching:
+        return None
+
     return (r1_matching.real_path, r2_matching.real_path)
 
 
-def detect_run_id(logger: Logger, base_dir_name: str, verbose: bool) -> str:
-    datestamp_start_match = re.match(r"\d{6}-\d{4}_(.*)", base_dir_name)
-    if datestamp_start_match:
-        non_date_part = datestamp_start_match.group(1)
-        if verbose:
-            logger.info(
-                f"Datestamp detected, run ID assigned as remainder of base folder name"
-            )
-            logger.info(f"Full name: {base_dir_name}")
-            logger.info(f"Detected ID: {non_date_part}")
-        return non_date_part
-    else:
-        logger.info(f"Datestamp not detected, full folder name used as run ID")
-        dir_name = str(base_dir_name)
-        return dir_name
+def get_ignored(
+    result_paths: Set[Path], ignore_files: List[str]
+) -> Tuple[Dict[str, int], List[Path]]:
+
+    nbr_ignored_per_pattern: Dict[str, int] = defaultdict(int)
+
+    non_ignored: List[Path] = []
+    for path in sorted(result_paths):
+        if any_is_parent(path, ignore_files):
+            parent = str(path.parent)
+            nbr_ignored_per_pattern[parent] += 1
+        else:
+            non_ignored.append(path)
+
+    return (nbr_ignored_per_pattern, non_ignored)

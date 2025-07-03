@@ -1,3 +1,14 @@
+# 1.3.0
+
+* Fix issue where ignored files were still listed as missing during evaluation
+* Fix issue with automatic tagging where wrong version pattern was used
+* --silent flag to only log warning or higher level logs
+* Graceful exit if running with --baseline without configuring --baseline_repo
+* Pytest check that Python version matches latest CHANGELOG version
+* Add agents instructions to not change formatting of the code
+* Add command --all_variants to output a score comparison including shared variants with the same score
+* Refactor paths and configurations into two separate classes passed instead of individual parameters for high-level functions
+
 # 1.2.2
 
 * Add mypy CI
