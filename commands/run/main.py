@@ -110,7 +110,7 @@ def main(
     else:
         csv.write_to_file(str(out_csv))
 
-    def get_start_nextflow_command(quote_profile: bool) -> List[str]:
+    def get_start_nextflow_command(quote_pipeline_arguments: bool) -> List[str]:
         command = build_start_nextflow_analysis_cmd(
             config["settings"]["start_nextflow_analysis"],
             out_csv,
@@ -125,7 +125,7 @@ def main(
             run_type_settings["profile"],
             stub_run,
             no_start,
-            quote_profile
+            quote_pipeline_arguments
         )
         return command
 
@@ -261,7 +261,7 @@ def build_start_nextflow_analysis_cmd(
     ]
     if quote_pipeline_arguments:
         start_nextflow_command.append(
-            f'"--pipeline {runscript} -profile {profile}"',
+            f'--pipeline "{runscript} -profile {profile}"',
         )
     else:
         start_nextflow_command.extend(
