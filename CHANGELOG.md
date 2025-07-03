@@ -7,7 +7,7 @@
 * Pytest check that Python version matches latest CHANGELOG version
 * Add agents instructions to not change formatting of the code
 * Add command --all_variants to output a score comparison including shared variants with the same score
-* Refactor how score comparison paths are managed, gathering them in a class
+* Refactor paths and configurations into two separate classes passed instead of individual parameters for high-level functions
 
 # 1.2.2
 

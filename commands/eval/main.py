@@ -9,17 +9,18 @@ from io import TextIOWrapper
 from pathlib import Path
 from typing import Dict, List, Optional, Set
 
+from commands.eval.classes.run_object import RunObject
+from commands.eval.classes.run_settings import RunSettings
+from commands.eval.classes.score_paths import ScorePaths
 from shared.compare import do_comparison
-from shared.constants import RUN_ID_PLACEHOLDER
+from shared.constants import IS_VCF_PATTERN, RUN_ID_PLACEHOLDER
 from shared.file import check_valid_file, get_filehandle
 from shared.util import load_config
 from shared.vcf.main_functions import variant_comparisons
 from shared.vcf.vcf import count_variants
 
-from .util import (
-    RunObject,
-    RunSettings,
-    ScorePaths,
+from .utils import (
+    get_files_ending_with,
     get_ignored,
     get_pair_match,
     verify_pair_exists,
@@ -99,10 +100,20 @@ def main(  # noqa: C901 (skipping complexity check)
     if comparisons is not None and "vcf" in comparisons:
         logger.info("")
         logger.info("--- Comparing VCF numbers ---")
-        if len(ro.r1_vcfs) > 0 or len(ro.r2_vcfs) > 0:
+
+        r1_vcfs = [
+            p.real_path for p in get_files_ending_with(IS_VCF_PATTERN, ro.r1_paths)
+        ]
+        r2_vcfs = [
+            p.real_path for p in get_files_ending_with(IS_VCF_PATTERN, ro.r2_paths)
+        ]
+
+        if len(r1_vcfs) > 0 or len(r2_vcfs) > 0:
             out_path = outdir / "all_vcf_compare.txt" if outdir else None
             compare_all_vcfs(
                 ro,
+                r1_vcfs,
+                r2_vcfs,
                 out_path,
             )
         else:
@@ -271,10 +282,12 @@ def check_same_files(
 
 def compare_all_vcfs(
     ro: RunObject,
+    r1_vcfs: List[Path],
+    r2_vcfs: List[Path],
     out_path: Optional[Path],
 ):
     r1_counts: Dict[str, int] = {}
-    for vcf in ro.r1_vcfs:
+    for vcf in r1_vcfs:
         if check_valid_file(vcf):
             n_variants = count_variants(vcf)
         else:
@@ -282,7 +295,7 @@ def compare_all_vcfs(
         r1_counts[str(vcf).replace(str(ro.r1_results), "")] = n_variants
 
     r2_counts: Dict[str, int] = {}
-    for vcf in ro.r2_vcfs:
+    for vcf in r2_vcfs:
         if check_valid_file(vcf):
             n_variants = count_variants(vcf)
         else:

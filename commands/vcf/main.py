@@ -3,7 +3,8 @@ import logging
 from pathlib import Path
 from typing import List, Optional
 
-from commands.eval.util import RunSettings, ScorePaths
+from commands.eval.classes.run_settings import RunSettings
+from commands.eval.classes.score_paths import ScorePaths
 from shared.vcf.main_functions import variant_comparisons
 
 logger = logging.getLogger(__name__)
@@ -28,7 +29,7 @@ def main(
         max_display=max_display,
         max_checked_annots=max_checked_annots,
         show_line_numbers=True,
-        extra_annot_keys=extra_annot_keys
+        extra_annot_keys=extra_annot_keys,
     )
 
     if results is not None:
@@ -47,7 +48,6 @@ def main(
 
     label = "sv" if is_sv else "snv"
     score_paths = ScorePaths(label, results, score_threshold, output_all_variants)
-
 
     do_score_check = True
     do_annot_check = True

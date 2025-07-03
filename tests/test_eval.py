@@ -6,8 +6,9 @@ from typing import List
 import pytest
 from pytest import LogCaptureFixture
 
+from commands.eval.classes.run_object import RunObject
+from commands.eval.classes.run_settings import RunSettings
 from commands.eval.main import main
-from commands.eval.util import RunObject, RunSettings
 
 
 def write_vcf(path: Path, lines: List[str]):

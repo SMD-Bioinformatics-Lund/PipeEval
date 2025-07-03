@@ -2,7 +2,8 @@ from logging import Logger
 from pathlib import Path
 from typing import Dict, List, Optional, Set
 
-from commands.eval.util import RunSettings, ScorePaths
+from commands.eval.classes.run_settings import RunSettings
+from commands.eval.classes.score_paths import ScorePaths
 from shared.compare import Comparison, do_comparison, parse_var_key_for_sort
 from shared.util import prettify_rows
 from shared.vcf.annotation import compare_variant_annotation

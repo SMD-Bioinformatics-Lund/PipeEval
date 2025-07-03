@@ -74,7 +74,11 @@ def test_main(caplog: LogCaptureFixture, tmp_path: Path):
         record.levelname == "ERROR" for record in caplog.records
     ), "Error logs were captured"
 
-    expected_files = ["above_thres.txt", "score_all.txt", "score_full.txt"]
+    expected_files = [
+        "scored_snv_above_thres_17.txt",
+        "scored_snv_presence.txt",
+        "scored_snv_score_all.txt",
+    ]
 
     for filename in expected_files:
         file_path = results / filename
