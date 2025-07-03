@@ -102,7 +102,7 @@ def test_eval_main(
     assert len(caplog.records) > 0, "No logs were captured"
     assert not any(record.levelname == "ERROR" for record in caplog.records)
 
-    expected = [
+    expected_files: List[str] = [
         "check_sample_files.txt",
         "scored_snv_presence.txt",
         "scored_snv_above_thres_17.txt",
@@ -113,13 +113,7 @@ def test_eval_main(
         "yaml_diff.txt",
     ]
 
-    logging.error(f"Out dir: {outdir}")
-
-    for fname in outdir.iterdir():
-        logging.warning(fname)
-
-
-    for fname in expected:
+    for fname in expected_files:
         assert (outdir / fname).exists(), f"Expected file {fname} does not exist"
 
     # Verify that differences were detected and written to the output files

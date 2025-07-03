@@ -1,6 +1,4 @@
 import logging
-import subprocess
-import sys
 from pathlib import Path
 from typing import List
 
@@ -101,4 +99,3 @@ def test_parse_scored_vcf_counts():
 
     assert len(vcf1.variants) == 1779
     assert len(vcf2.variants) == 2194
-

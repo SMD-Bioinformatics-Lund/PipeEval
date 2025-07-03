@@ -1,10 +1,9 @@
+import re
 from logging import Logger
 from pathlib import Path
-import re
 from typing import List, Optional
 
 from commands.eval.classes.pathobj import PathObj
-from shared.constants import RUN_ID_PLACEHOLDER
 
 
 def get_files_in_dir(
@@ -26,7 +25,9 @@ def detect_run_id(logger: Logger, base_dir_name: str, verbose: bool) -> str:
     if datestamp_start_match:
         non_date_part = datestamp_start_match.group(1)
         if verbose:
-            logger.info("Datestamp detected, run ID assigned as remainder of base folder name")
+            logger.info(
+                "Datestamp detected, run ID assigned as remainder of base folder name"
+            )
             logger.info(f"Full name: {base_dir_name}")
             logger.info(f"Detected ID: {non_date_part}")
         return non_date_part
@@ -52,7 +53,12 @@ class RunObject:
 
 
 def get_run_object(
-    logger: Logger, id1: Optional[str], id2: Optional[str], results1: Path, results2: Path, verbose: bool
+    logger: Logger,
+    id1: Optional[str],
+    id2: Optional[str],
+    results1: Path,
+    results2: Path,
+    verbose: bool,
 ) -> RunObject:
     if id1 is None:
         id1 = detect_run_id(logger, results1.name, verbose)

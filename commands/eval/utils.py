@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from collections import defaultdict
 import re
+from collections import defaultdict
 from logging import Logger
 from pathlib import Path
 from typing import List, Optional, Set, Tuple, Union
@@ -39,8 +39,6 @@ def any_is_parent(path: Path, names: List[str]) -> bool:
         if parent.name in names:
             return True
     return False
-
-
 
 
 def verify_pair_exists(
