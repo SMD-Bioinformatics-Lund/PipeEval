@@ -1,3 +1,8 @@
+# 1.2.2
+
+* Add mypy CI
+* Auto tag using changelog
+
 # 1.2.1
 
 * Add GitHub actions workflows
