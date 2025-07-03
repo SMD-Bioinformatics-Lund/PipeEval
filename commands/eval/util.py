@@ -1,7 +1,11 @@
+from __future__ import annotations
+
 import re
 from logging import Logger
 from pathlib import Path
-from typing import List, Optional, Tuple, Union
+from typing import List, Optional, Set, Tuple, Union
+
+from shared.constants import IS_VCF_PATTERN, RUN_ID_PLACEHOLDER
 
 from .classes import PathObj
 
@@ -75,14 +79,15 @@ def get_pair_match(
     logger: Logger,
     error_label: str,
     valid_patterns: List[str],
-    r1_paths: List[PathObj],
-    r2_paths: List[PathObj],
-    r1_base_dir: Path,
-    r2_base_dir: Path,
+    ro: RunObject,
+    # r1_paths: List[PathObj],
+    # r2_paths: List[PathObj],
+    # r1_results: Path,
+    # r2_results: Path,
     verbose: bool,
 ) -> Optional[Tuple[Path, Path]]:
-    r1_matching = get_single_file_ending_with(valid_patterns, r1_paths)
-    r2_matching = get_single_file_ending_with(valid_patterns, r2_paths)
+    r1_matching = get_single_file_ending_with(valid_patterns, ro.r1_paths)
+    r2_matching = get_single_file_ending_with(valid_patterns, ro.r2_paths)
     if verbose:
         if r1_matching is not None:
             logger.info(
@@ -90,7 +95,7 @@ def get_pair_match(
             )
         else:
             logger.info(
-                f"Looking for pattern(s) {valid_patterns}, did not match any file in {r1_base_dir}"
+                f"Looking for pattern(s) {valid_patterns}, did not match any file in {ro.r1_results}"
             )
 
         if r2_matching is not None:
@@ -99,7 +104,7 @@ def get_pair_match(
             )
         else:
             logger.info(
-                f"Looking for pattern(s) {valid_patterns}, did not match any file in {r2_base_dir}"
+                f"Looking for pattern(s) {valid_patterns}, did not match any file in {ro.r2_results}"
             )
 
     verify_pair_exists(error_label, r1_matching, r2_matching)
@@ -135,3 +140,118 @@ class ScorePaths:
         )
         self.all_diffing = outdir / f"scored_{label}_score_all.txt" if outdir else None
         self.all = outdir / f"scored_{label}_score_full.txt" if outdir and all_variants else None
+
+
+def get_ignored(
+    result_paths: Set[Path], ignore_files: List[str]
+) -> Tuple[dict[str, int], list[Path]]:
+
+    nbr_ignored_per_pattern: dict[str, int] = {}
+
+    non_ignored: List[Path] = []
+    for path in sorted(result_paths):
+        if any_is_parent(path, ignore_files):
+            nbr_ignored_per_pattern[str(path.parent)] += 1
+        else:
+            non_ignored.append(path)
+
+    return (nbr_ignored_per_pattern, non_ignored)
+
+
+class RunObject:
+    def __init__(
+        self,
+        run_id1: Optional[str],
+        run_id2: Optional[str],
+        results1_dir: Path,
+        results2_dir: Path,
+    ):
+        self._run_id1 = run_id1
+        self._run_id2 = run_id2
+        self.r1_results = results1_dir
+        self.r2_results = results2_dir
+        self._r1_paths = None
+        self._r2_paths = None
+        self._r1_vcfs = None
+        self._r2_vcfs = None
+
+    @property
+    def r1_id(self) -> str:
+        if self._run_id1:
+            return self._run_id1
+        raise ValueError("Trying to access run id before init")
+
+    @property
+    def r2_id(self) -> str:
+        if self._run_id1:
+            return self._run_id1
+        raise ValueError("Trying to access run id before init")
+
+    @property
+    def r1_paths(self) -> List[PathObj]:
+        if self._r1_paths:
+            return self._r1_paths
+        raise ValueError("Trying to access run id before init")
+
+    @property
+    def r2_paths(self) -> List[PathObj]:
+        if self._r2_paths:
+            return self._r2_paths
+        raise ValueError("Trying to access run id before init")
+
+    @property
+    def r1_vcfs(self) -> List[Path]:
+        if self._r1_vcfs:
+            return self._r1_vcfs
+        raise ValueError("Trying to access run id before init")
+
+    @property
+    def r2_vcfs(self) -> List[Path]:
+        if self._r2_vcfs:
+            return self._r2_vcfs
+        raise ValueError("Trying to access run id before init")
+
+
+
+    def init(self, logger: Logger, verbose: bool):
+
+        if self._run_id1 is None:
+            self._run_id1 = detect_run_id(logger, self.r1_results.name, verbose)
+            logger.info(f"# --run_id1 not set, assigned: {self.r1_id}")
+
+        if self._run_id2 is None:
+            self._run_id2 = detect_run_id(logger, self.r2_results.name, verbose)
+            logger.info(f"# --run_id2 not set, assigned: {self._run_id2}")
+
+        self._r1_paths = get_files_in_dir(
+            self.r1_results, self.r1_id, RUN_ID_PLACEHOLDER, self.r1_results
+        )
+        self._r2_paths = get_files_in_dir(
+            self.r2_results, self.r2_id, RUN_ID_PLACEHOLDER, self.r2_results
+        )
+
+        self._r1_vcfs = [p.real_path for p in get_files_ending_with(IS_VCF_PATTERN, self.r1_paths)]
+        self._r2_vcfs = [p.real_path for p in get_files_ending_with(IS_VCF_PATTERN, self.r2_paths)]
+        logger.info(f"Looking for paths: {self.r1_paths} found: {self._r1_vcfs}")
+        logger.info(f"Looking for paths: {self.r2_paths} found: {self._r2_vcfs}")
+
+
+
+class RunSettings:
+    def __init__(
+        self,
+        score_threshold: int,
+        max_display: int,
+        verbose: bool,
+        max_checked_annots: int,
+        show_line_numbers: bool,
+        extra_annot_keys: List[str],
+        output_all_variants: bool,
+    ):
+        self.score_threshold = score_threshold
+        self.max_display = max_display
+        self.verbose = verbose
+        self.max_checked_annots = max_checked_annots
+        self.show_line_numbers = show_line_numbers
+        self.annotation_info_keys = extra_annot_keys
+        self.output_all_variants = output_all_variants
