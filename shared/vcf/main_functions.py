@@ -2,7 +2,7 @@ from logging import Logger
 from pathlib import Path
 from typing import Dict, List, Optional, Set
 
-from commands.eval.util import ScorePaths
+from commands.eval.util import RunSettings, ScorePaths
 from shared.compare import Comparison, do_comparison, parse_var_key_for_sort
 from shared.util import prettify_rows
 from shared.vcf.annotation import compare_variant_annotation
@@ -299,14 +299,15 @@ def variant_comparisons(
     r1_scored_vcf: Path,
     r2_scored_vcf: Path,
     is_sv: bool,
-    score_threshold: int,
-    max_display: int,
-    max_checked_annots: int,
+    rs: RunSettings,
+    # score_threshold: int,
+    # max_display: int,
+    # max_checked_annots: int,
     paths: ScorePaths,
     do_score_check: bool,
     do_annot_check: bool,
-    show_line_numbers: bool,
-    annotation_info_keys: List[str],
+    # show_line_numbers: bool,
+    # annotation_info_keys: List[str],
 ):
     logger.info("# Parsing VCFs ...")
 
@@ -329,10 +330,10 @@ def variant_comparisons(
         vcf_r1.variants,
         vcf_r2.variants,
         comp_res,
-        max_display,
+        rs.max_display,
         paths.presence,
-        show_line_numbers,
-        annotation_info_keys,
+        rs.show_line_numbers,
+        rs.annotation_info_keys,
     )
     shared_variants = comp_res.shared
     if do_annot_check:
@@ -345,7 +346,7 @@ def variant_comparisons(
             shared_variants,
             vcf_r1.variants,
             vcf_r2.variants,
-            max_checked_annots,
+            rs.max_checked_annots,
         )
     if do_score_check:
         logger.info("")
@@ -357,13 +358,13 @@ def variant_comparisons(
             shared_variants,
             vcf_r1.variants,
             vcf_r2.variants,
-            score_threshold,
-            max_display,
+            rs.score_threshold,
+            rs.max_display,
             paths.score_thres,
             paths.all_diffing,
             is_sv,
-            show_line_numbers,
-            annotation_info_keys,
+            rs.show_line_numbers,
+            rs.annotation_info_keys,
         )
         if paths.all is not None:
             write_full_score_table(
@@ -374,6 +375,6 @@ def variant_comparisons(
                 vcf_r2.variants,
                 paths.all,
                 is_sv,
-                show_line_numbers,
-                annotation_info_keys,
+                rs.show_line_numbers,
+                rs.annotation_info_keys,
             )

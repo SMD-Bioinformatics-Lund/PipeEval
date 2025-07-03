@@ -142,14 +142,10 @@ def main(  # noqa: C901 (skipping complexity check)
                 scored_snv_pair[0],
                 scored_snv_pair[1],
                 is_sv,
-                rs.score_threshold,
-                rs.max_display,
-                rs.max_checked_annots,
+                rs,
                 snv_score_paths,
                 comparisons is None or "score_snv" in comparisons,
                 comparisons is None or "annotation_snv" in comparisons,
-                rs.show_line_numbers,
-                rs.annotation_info_keys,
             )
 
     if (
@@ -186,14 +182,10 @@ def main(  # noqa: C901 (skipping complexity check)
                 scored_sv_pair[0],
                 scored_sv_pair[1],
                 is_sv,
-                rs.score_threshold,
-                rs.max_display,
-                rs.max_checked_annots,
+                rs,
                 sv_score_paths,
                 comparisons is None or "score_sv" in comparisons,
                 comparisons is None or "annotation_sv" in comparisons,
-                rs.show_line_numbers,
-                rs.annotation_info_keys,
             )
 
     if comparisons is None or "yaml" in comparisons:
@@ -410,7 +402,7 @@ def main_wrapper(args: argparse.Namespace):
         Path(args.results2),
     )
 
-    extra_annot_keys = []
+    extra_annot_keys: List[str] = []
     if args.annotations:
         extra_annot_keys = args.annotations.split(",")
 
