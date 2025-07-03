@@ -3,36 +3,48 @@ name: Tag Release from Changelog
 on:
   pull_request:
     types: [closed]
-    branches:
-      - main
+    branches: [main]
 
 jobs:
   tag:
+    permissions:
+      contents: write
     runs-on: ubuntu-latest
-    # only proceed if this PR was actually merged (not just closed)
     if: ${{ github.event.pull_request.merged == true }}
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
-          fetch-depth: 0   # we need full history so we can tag
+          fetch-depth: 0
 
       - name: Extract version from CHANGELOG.md
         id: extract
+        shell: bash
         run: |
-          version=$(grep -E '^# \[[0-9]+\.[0-9]+\.[0-9]+' CHANGELOG.md \
-                    | head -n1 \
-                    | sed -E 's/^# ([0-9]+\.[0-9]+\.[0-9]+)/\1/')
-          echo "version=$version" >> $GITHUB_OUTPUT
+          set -euo pipefail
+          version=$(
+            grep -m1 -Eo '^# [0-9]+\.[0-9]+\.[0-9]+' CHANGELOG.md \
+            | sed -E 's/^# ([0-9]+\.[0-9]+\.[0-9]+)/\1/'
+          )
+          if [[ -z "$version" ]]; then
+            echo "ERROR: Could not extract version" >&2
+            exit 1
+          fi
+          echo "Detected version: $version"
+          echo "version=$version" >>"$GITHUB_OUTPUT"
 
       - name: Create Git tag
+        shell: bash
         run: |
-          git config user.name "github-actions[bot]"
+          set -euo pipefail
+          git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           TAG="v${{ steps.extract.outputs.version }}"
-          # guard against re-tagging if it already exists
+
           if ! git rev-parse "$TAG" >/dev/null 2>&1; then
             git tag -a "$TAG" -m "Release $TAG"
             git push origin "$TAG"
+          else
+            echo "Tag $TAG already exists – skipping"
           fi
