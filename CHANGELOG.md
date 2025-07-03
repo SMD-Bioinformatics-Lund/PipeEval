@@ -1,3 +1,8 @@
+# 1.2.3
+
+* Fix issue where ignored files were still listed as missing during evaluation
+* Fix issue with automatic tagging where wrong version pattern was used
+
 # 1.2.2
 
 * Add mypy CI

@@ -21,9 +21,9 @@ jobs:
       - name: Extract version from CHANGELOG.md
         id: extract
         run: |
-          version=$(grep -E '^## \[[0-9]+\.[0-9]+\.[0-9]+' CHANGELOG.md \
+          version=$(grep -E '^# \[[0-9]+\.[0-9]+\.[0-9]+' CHANGELOG.md \
                     | head -n1 \
-                    | sed -E 's/^## \[([0-9]+\.[0-9]+\.[0-9]+)\].*/\1/')
+                    | sed -E 's/^# ([0-9]+\.[0-9]+\.[0-9]+)/\1/')
           echo "version=$version" >> $GITHUB_OUTPUT
 
       - name: Create Git tag

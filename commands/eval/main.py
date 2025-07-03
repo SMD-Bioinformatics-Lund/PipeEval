@@ -293,12 +293,12 @@ def check_same_files(
 
     if len(r1_non_ignored) > 0:
         log_and_write(f"Files present in {r1_label} but missing in {r2_label}:", out_fh)
-        for path in sorted(comparison.r1):
+        for path in sorted(r1_non_ignored):
             log_and_write(f"  {path}", out_fh)
 
     if len(r2_non_ignored) > 0:
         log_and_write(f"Files present in {r2_label} but missing in {r1_label}:", out_fh)
-        for path in sorted(comparison.r2):
+        for path in sorted(r2_non_ignored):
             log_and_write(f"  {path}", out_fh)
 
     if len(r1_non_ignored) == 0 and len(r2_non_ignored) == 0:
