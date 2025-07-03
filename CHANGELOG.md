@@ -4,6 +4,7 @@
 * Fix issue with automatic tagging where wrong version pattern was used
 * --silent flag to run without spitting out outputs
 * Graceful exit if running with --baseline without configuring --baseline_repo
+* Pytest check that Python version matches latest CHANGELOG version
 
 # 1.2.2
 
