@@ -7,9 +7,7 @@ from typing import Any, Dict, List, Optional
 from commands.run.help_classes import Case, CsvEntry
 
 
-def write_resume_script(
-    logging: Logger, results_dir: Path, run_command: List[str], dry_run: bool
-):
+def write_resume_script(logging: Logger, results_dir: Path, run_command: List[str], dry_run: bool):
     resume_command = run_command + ["--resume"]
     resume_script = results_dir / "resume.sh"
     if not dry_run:
@@ -25,7 +23,12 @@ def copy_nextflow_config(repo: Path, results_dir: Path):
 
 
 def setup_results_links(
-    logger: Logger, config: ConfigParser, results_dir: Path, run_label: str, dry: bool, assay: str,
+    logger: Logger,
+    config: ConfigParser,
+    results_dir: Path,
+    run_label: str,
+    dry: bool,
+    assay: str,
 ):
 
     log_base_dir = config["settings"]["log_base_dir"]
@@ -39,12 +42,8 @@ def setup_results_links(
     trace_link = results_dir / "trace.txt"
     work_link = results_dir / "work"
 
-    log_link_target = Path(
-        f"{log_base_dir}/{run_label}.{assay}.{date_stamp}.log"
-    )
-    trace_link_target = Path(
-        f"{trace_base_dir}/{run_label}.{assay}.trace.txt"
-    )
+    log_link_target = Path(f"{log_base_dir}/{run_label}.{assay}.{date_stamp}.log")
+    trace_link_target = Path(f"{trace_base_dir}/{run_label}.{assay}.trace.txt")
     work_link_target = Path(f"{work_base_dir}/{run_label}.{assay}")
 
     if log_link.exists():
@@ -96,11 +95,8 @@ def get_single_csv(
     if not Path(case.read1).exists() or not Path(case.read2).exists():
         raise FileNotFoundError(f"One or both files missing: {case.read1} {case.read2}")
 
-    # analysis = run_type_settings["profile"]
     default_panel = run_type_settings["default_panel"]
-    run_csv = CsvEntry(
-        run_label, [case], queue, assay, analysis, default_panel
-    )
+    run_csv = CsvEntry(run_label, [case], queue, assay, analysis, default_panel)
     return run_csv
 
 
@@ -116,9 +112,7 @@ def get_trio_csv(
 ):
 
     case_ids = run_type_settings["cases"].split(",")
-    assert (
-        len(case_ids) == 3
-    ), f"For a trio, three fields are expected, found: {case_ids}"
+    assert len(case_ids) == 3, f"For a trio, three fields are expected, found: {case_ids}"
     cases: List[Case] = []
     for case_id in case_ids:
         case_dict = config[case_id]
@@ -132,16 +126,12 @@ def get_trio_csv(
         case = parse_case(dict(case_dict), start_data, is_trio=True)
 
         if not Path(case.read1).exists() or not Path(case.read2).exists():
-            raise FileNotFoundError(
-                f"One or both files missing: {case.read1} {case.read2}"
-            )
+            raise FileNotFoundError(f"One or both files missing: {case.read1} {case.read2}")
 
         cases.append(case)
 
     default_panel = run_type_settings["default_panel"]
-    run_csv = CsvEntry(
-        run_label, cases, queue, assay, analysis, default_panel
-    )
+    run_csv = CsvEntry(run_label, cases, queue, assay, analysis, default_panel)
     return run_csv
 
 
@@ -156,9 +146,7 @@ def parse_case(case_dict: Dict[str, str], start_data: str, is_trio: bool) -> Cas
         fw = case_dict["fq_fw"]
         rv = case_dict["fq_rv"]
     else:
-        raise ValueError(
-            f"Unknown start_data, found: {start_data}, valid are vcf, bam, fq"
-        )
+        raise ValueError(f"Unknown start_data, found: {start_data}, valid are vcf, bam, fq")
 
     case = Case(
         case_dict["id"],
