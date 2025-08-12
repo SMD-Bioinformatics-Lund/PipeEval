@@ -27,6 +27,7 @@ from commands.run.gittools import (
     get_git_commit_hash_and_log,
     pull_branch,
 )
+from shared.constants import ASSAY_PLACEHOLDER
 from shared.util import check_valid_config_path, load_config
 
 description = """
@@ -60,6 +61,7 @@ def main(
     no_start: bool,
     datestamp: bool,
     verbose: bool,
+    override_assay: Optional[str],
 ):
     logger.info(f"Preparing run, type: {run_type}, data: {start_data}")
 
@@ -102,13 +104,15 @@ def main(
 
     run_type_settings = dict(config[run_type])
 
+    assay = override_assay or ASSAY_PLACEHOLDER
+
     if not config.getboolean(run_type, "trio"):
         csv = get_single_csv(
-            config, run_type_settings, run_label, start_data, queue, stub_run
+            config, run_type_settings, run_label, start_data, queue, stub_run, assay,
         )
     else:
         csv = get_trio_csv(
-            config, run_type_settings, run_label, start_data, queue, stub_run
+            config, run_type_settings, run_label, start_data, queue, stub_run, assay,
         )
     out_csv = results_dir / "run.csv"
     if dry_run:
@@ -142,7 +146,7 @@ def main(
         dry_run,
     )
     copy_nextflow_config(repo, results_dir)
-    setup_results_links(logger, config, results_dir, run_label, dry_run)
+    setup_results_links(logger, config, results_dir, run_label, dry_run, assay)
 
     start_run(get_start_nextflow_command(False), dry_run, skip_confirmation)
 
@@ -347,6 +351,7 @@ def main_wrapper(args: argparse.Namespace):
             args.nostart,
             args.datestamp,
             args.verbose,
+            args.override_assay,
         )
         logging.info("Now proceeding with checking out the --checkout")
     main(
@@ -364,6 +369,7 @@ def main_wrapper(args: argparse.Namespace):
         args.nostart,
         args.datestamp,
         args.verbose,
+        args.override_assay
     )
 
 
@@ -437,7 +443,10 @@ def add_arguments(parser: argparse.ArgumentParser):
     parser.add_argument(
         "--silent", action="store_true", help="Run silently, produce only output files"
     )
-
+    parser.add_argument(
+        "--override_assay",
+        help="Specify a custom assay in the CSV file (for Scout yaml generation testing, otherwise defaults to 'dev')"
+    )
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
