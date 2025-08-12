@@ -80,6 +80,7 @@ def get_single_csv(
     queue: Optional[str],
     stub_run: bool,
     assay: str,
+    analysis: str,
 ):
     case_id = run_type_settings["case"]
     case_conf = config[case_id]
@@ -95,7 +96,7 @@ def get_single_csv(
     if not Path(case.read1).exists() or not Path(case.read2).exists():
         raise FileNotFoundError(f"One or both files missing: {case.read1} {case.read2}")
 
-    analysis = run_type_settings["profile"]
+    # analysis = run_type_settings["profile"]
     default_panel = run_type_settings["default_panel"]
     run_csv = CsvEntry(
         run_label, [case], queue, assay, analysis, default_panel
@@ -111,6 +112,7 @@ def get_trio_csv(
     queue: Optional[str],
     stub_run: bool,
     assay: str,
+    analysis: str,
 ):
 
     case_ids = run_type_settings["cases"].split(",")
@@ -136,7 +138,6 @@ def get_trio_csv(
 
         cases.append(case)
 
-    analysis = run_type_settings["profile"]
     default_panel = run_type_settings["default_panel"]
     run_csv = CsvEntry(
         run_label, cases, queue, assay, analysis, default_panel

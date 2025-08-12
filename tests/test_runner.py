@@ -37,6 +37,7 @@ def test_basic_run(monkeypatch: MonkeyPatch, base_dir: Path, basic_config_path: 
         datestamp=False,
         verbose=False,
         override_assay=None,
+        override_analysis=None,
     )
 
     result_dir = base_dir / "test-label-testcheckout-stub-fq"
@@ -73,10 +74,12 @@ def test_override_assay(monkeypatch: MonkeyPatch, base_dir: Path, basic_config_p
         datestamp=False,
         verbose=False,
         override_assay="prod",
+        override_analysis="analysis_test"
     )
 
     result_dir = base_dir / "test-label-testcheckout-stub-fq"
     with open(result_dir / "run.csv", "r") as fh:
         lines = fh.read().splitlines()
     assert lines[1].split(",")[4] == "prod"
+    assert lines[1].split(",")[14] == "analysis_test"
 
