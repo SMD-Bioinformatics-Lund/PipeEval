@@ -24,9 +24,11 @@ def create_results_dir(base: Path, run_id: str, diff_scores: bool = False):
     vcf_dir = base / "vcf"
     yaml_dir = base / "yaml"
     version_dir = base / "versions"
+    qc_dir = base / "qc"
     vcf_dir.mkdir(parents=True)
     yaml_dir.mkdir()
     version_dir.mkdir()
+    qc_dir.mkdir()
 
     snv_vcf = vcf_dir / f"{run_id}.snv.rescored.sorted.vcf.gz"
     score1 = 10
@@ -65,6 +67,9 @@ def create_results_dir(base: Path, run_id: str, diff_scores: bool = False):
 
     with open(version_dir / f"{run_id}.versions.yml", "w") as fh:
         fh.write(f"version: {run_id}\n")
+    
+    with open(qc_dir / f"{run_id}.QC", "w") as fh:
+        fh.write(f"QC: {run_id}\n")
 
 
 @pytest.fixture()
@@ -111,6 +116,7 @@ def test_eval_main(
         "scored_sv_above_thres_17.txt",
         "scored_sv_all.txt",
         "yaml_diff.txt",
+        "qc_diff.txt",
     ]
 
     for fname in expected_files:
@@ -129,3 +135,6 @@ def test_eval_main(
 
     sv_score = (outdir / "scored_sv_all.txt").read_text().splitlines()
     assert any("<DEL>" in line for line in sv_score)
+
+    qc_diff = (outdir / "qc_diff.txt").read_text().splitlines()
+    assert qc_diff == ["No difference found"]
