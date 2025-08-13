@@ -36,8 +36,8 @@ def test_basic_run(monkeypatch: MonkeyPatch, base_dir: Path, basic_config_path: 
         no_start=True,
         datestamp=False,
         verbose=False,
-        override_assay=None,
-        override_analysis=None,
+        assay=None,
+        analysis=None,
     )
 
     result_dir = base_dir / "test-label-testcheckout-stub-fq"
@@ -73,8 +73,8 @@ def test_override_assay(monkeypatch: MonkeyPatch, base_dir: Path, basic_config_p
         no_start=True,
         datestamp=False,
         verbose=False,
-        override_assay="prod",
-        override_analysis="analysis_test"
+        assay="prod",
+        analysis="analysis_test"
     )
 
     result_dir = base_dir / "test-label-testcheckout-stub-fq"

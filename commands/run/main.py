@@ -61,8 +61,8 @@ def main(
     no_start: bool,
     datestamp: bool,
     verbose: bool,
-    override_assay: Optional[str],
-    override_analysis: Optional[str],
+    assay: Optional[str],
+    analysis: Optional[str],
 ):
     logger.info(f"Preparing run, type: {run_type}, data: {start_data}")
 
@@ -103,8 +103,8 @@ def main(
 
     run_type_settings = dict(config[run_type])
 
-    assay = override_assay or ASSAY_PLACEHOLDER
-    analysis = override_analysis or run_type_settings["profile"]
+    assay = assay or ASSAY_PLACEHOLDER
+    analysis = analysis or run_type_settings["profile"]
 
     if not config.getboolean(run_type, "trio"):
         csv = get_single_csv(
@@ -352,8 +352,8 @@ def main_wrapper(args: argparse.Namespace):
             args.nostart,
             args.datestamp,
             args.verbose,
-            args.override_assay,
-            args.override_analysis,
+            args.assay,
+            args.analysis,
         )
         logging.info("Now proceeding with checking out the --checkout")
     main(
@@ -371,8 +371,8 @@ def main_wrapper(args: argparse.Namespace):
         args.nostart,
         args.datestamp,
         args.verbose,
-        args.override_assay,
-        args.override_analysis,
+        args.assay,
+        args.analysis,
     )
 
 
@@ -443,11 +443,11 @@ def add_arguments(parser: argparse.ArgumentParser):
         "--silent", action="store_true", help="Run silently, produce only output files"
     )
     parser.add_argument(
-        "--override_assay",
+        "--assay",
         help="Specify a custom assay in the CSV file (for Scout yaml generation testing, otherwise defaults to 'dev')",
     )
     parser.add_argument(
-        "--override_analysis",
+        "--analysis",
         help="Specify a custom analysis in the CSV file (defaults to --run_type argument)",
     )
 
