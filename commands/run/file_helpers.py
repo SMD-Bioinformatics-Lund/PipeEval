@@ -7,7 +7,9 @@ from typing import Any, Dict, List, Optional
 from commands.run.help_classes import Case, CsvEntry
 
 
-def write_resume_script(logging: Logger, results_dir: Path, run_command: List[str], dry_run: bool):
+def write_resume_script(
+    logging: Logger, results_dir: Path, run_command: List[str], dry_run: bool
+):
     resume_command = run_command + ["--resume"]
     resume_script = results_dir / "resume.sh"
     if not dry_run:
@@ -112,7 +114,9 @@ def get_trio_csv(
 ):
 
     case_ids = run_type_settings["cases"].split(",")
-    assert len(case_ids) == 3, f"For a trio, three fields are expected, found: {case_ids}"
+    assert (
+        len(case_ids) == 3
+    ), f"For a trio, three fields are expected, found: {case_ids}"
     cases: List[Case] = []
     for case_id in case_ids:
         case_dict = config[case_id]
@@ -126,7 +130,9 @@ def get_trio_csv(
         case = parse_case(dict(case_dict), start_data, is_trio=True)
 
         if not Path(case.read1).exists() or not Path(case.read2).exists():
-            raise FileNotFoundError(f"One or both files missing: {case.read1} {case.read2}")
+            raise FileNotFoundError(
+                f"One or both files missing: {case.read1} {case.read2}"
+            )
 
         cases.append(case)
 
@@ -146,7 +152,9 @@ def parse_case(case_dict: Dict[str, str], start_data: str, is_trio: bool) -> Cas
         fw = case_dict["fq_fw"]
         rv = case_dict["fq_rv"]
     else:
-        raise ValueError(f"Unknown start_data, found: {start_data}, valid are vcf, bam, fq")
+        raise ValueError(
+            f"Unknown start_data, found: {start_data}, valid are vcf, bam, fq"
+        )
 
     case = Case(
         case_dict["id"],

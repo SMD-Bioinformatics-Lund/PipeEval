@@ -76,14 +76,20 @@ def main(  # noqa: C901 (skipping complexity check)
     outdir: Optional[Path],
 ):
 
-    r1_paths = get_files_in_dir(ro.r1_results, ro.r1_id, RUN_ID_PLACEHOLDER, ro.r1_results)
-    r2_paths = get_files_in_dir(ro.r2_results, ro.r2_id, RUN_ID_PLACEHOLDER, ro.r2_results)
+    r1_paths = get_files_in_dir(
+        ro.r1_results, ro.r1_id, RUN_ID_PLACEHOLDER, ro.r1_results
+    )
+    r2_paths = get_files_in_dir(
+        ro.r2_results, ro.r2_id, RUN_ID_PLACEHOLDER, ro.r2_results
+    )
 
     curr_dir = os.path.dirname(os.path.abspath(__file__))
     config = load_config(logger, curr_dir, config_path)
 
     if comparisons is not None and len(comparisons & VALID_COMPARISONS) == 0:
-        raise ValueError(f"Valid comparisons are: {VALID_COMPARISONS}, found: {comparisons}")
+        raise ValueError(
+            f"Valid comparisons are: {VALID_COMPARISONS}, found: {comparisons}"
+        )
 
     verify_pair_exists("result dirs", ro.r1_results, ro.r2_results)
 
@@ -123,7 +129,11 @@ def main(  # noqa: C901 (skipping complexity check)
         else:
             logger.warning("No VCFs detected, skipping VCF comparison")
 
-    if comparisons is None or "score_snv" in comparisons or "annotation_snv" in comparisons:
+    if (
+        comparisons is None
+        or "score_snv" in comparisons
+        or "annotation_snv" in comparisons
+    ):
         logger.info("")
         logger.info("--- Comparing scored SNV VCFs ---")
 
@@ -143,7 +153,9 @@ def main(  # noqa: C901 (skipping complexity check)
             )
         else:
 
-            snv_score_paths = ScorePaths("snv", outdir, rs.score_threshold, rs.output_all_variants)
+            snv_score_paths = ScorePaths(
+                "snv", outdir, rs.score_threshold, rs.output_all_variants
+            )
 
             is_sv = False
             variant_comparisons(
@@ -159,7 +171,11 @@ def main(  # noqa: C901 (skipping complexity check)
                 comparisons is None or "annotation_snv" in comparisons,
             )
 
-    if comparisons is None or "score_sv" in comparisons or "annotation_sv" in comparisons:
+    if (
+        comparisons is None
+        or "score_sv" in comparisons
+        or "annotation_sv" in comparisons
+    ):
         logger.info("")
         logger.info("--- Comparing scored SV VCFs ---")
 
@@ -174,10 +190,14 @@ def main(  # noqa: C901 (skipping complexity check)
         )
 
         if scored_sv_pair is None:
-            logger.warning(f"Skipping scored SV comparison due to missing files {scored_sv_pair}")
+            logger.warning(
+                f"Skipping scored SV comparison due to missing files {scored_sv_pair}"
+            )
         else:
 
-            sv_score_paths = ScorePaths("sv", outdir, rs.score_threshold, rs.output_all_variants)
+            sv_score_paths = ScorePaths(
+                "sv", outdir, rs.score_threshold, rs.output_all_variants
+            )
 
             is_sv = True
             variant_comparisons(
@@ -206,7 +226,9 @@ def main(  # noqa: C901 (skipping complexity check)
             rs.verbose,
         )
         if not yaml_pair:
-            logging.warning(f"Skipping yaml comparison, at least one file missing ({yaml_pair})")
+            logging.warning(
+                f"Skipping yaml comparison, at least one file missing ({yaml_pair})"
+            )
         else:
             out_path = outdir / "yaml_diff.txt" if outdir else None
             diff_compare_files(ro.r1_id, ro.r2_id, yaml_pair[0], yaml_pair[1], out_path)
@@ -224,7 +246,9 @@ def main(  # noqa: C901 (skipping complexity check)
             rs.verbose,
         )
         if not qc_pair:
-            logging.warning(f"Skipping QC comparison, at least one file missing ({qc_pair})")
+            logging.warning(
+                f"Skipping QC comparison, at least one file missing ({qc_pair})"
+            )
         else:
             out_path = outdir / "qc_diff.txt" if outdir else None
             diff_compare_files(ro.r1_id, ro.r2_id, qc_pair[0], qc_pair[1], out_path)
@@ -245,7 +269,9 @@ def main(  # noqa: C901 (skipping complexity check)
             logging.warning(f"At least one version file missing ({version_pair})")
         else:
             out_path = outdir / "yaml_diff.txt" if outdir else None
-            diff_compare_files(ro.r1_id, ro.r2_id, version_pair[0], version_pair[1], out_path)
+            diff_compare_files(
+                ro.r1_id, ro.r2_id, version_pair[0], version_pair[1], out_path
+            )
 
 
 def check_same_files(
@@ -263,8 +289,12 @@ def check_same_files(
 
     out_fh = open(out_path, "w") if out_path else None
 
-    (r1_nbr_ignored_per_pattern, r1_non_ignored) = get_ignored(comparison.r1, ignore_files)
-    (r2_nbr_ignored_per_pattern, r2_non_ignored) = get_ignored(comparison.r2, ignore_files)
+    (r1_nbr_ignored_per_pattern, r1_non_ignored) = get_ignored(
+        comparison.r1, ignore_files
+    )
+    (r2_nbr_ignored_per_pattern, r2_non_ignored) = get_ignored(
+        comparison.r2, ignore_files
+    )
 
     ignored = Counter(r1_nbr_ignored_per_pattern) + Counter(r2_nbr_ignored_per_pattern)
 
@@ -339,8 +369,12 @@ def diff_compare_files(
 ):
 
     with get_filehandle(file1) as r1_fh, get_filehandle(file2) as r2_fh:
-        r1_lines = [line.replace(run_id1, RUN_ID_PLACEHOLDER) for line in r1_fh.readlines()]
-        r2_lines = [line.replace(run_id2, RUN_ID_PLACEHOLDER) for line in r2_fh.readlines()]
+        r1_lines = [
+            line.replace(run_id1, RUN_ID_PLACEHOLDER) for line in r1_fh.readlines()
+        ]
+        r2_lines = [
+            line.replace(run_id2, RUN_ID_PLACEHOLDER) for line in r2_fh.readlines()
+        ]
 
     out_fh = open(out_path, "w") if out_path else None
     diff = list(difflib.unified_diff(r1_lines, r2_lines))

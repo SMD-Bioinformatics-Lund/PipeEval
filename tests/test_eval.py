@@ -67,7 +67,7 @@ def create_results_dir(base: Path, run_id: str, diff_scores: bool = False):
 
     with open(version_dir / f"{run_id}.versions.yml", "w") as fh:
         fh.write(f"version: {run_id}\n")
-    
+
     with open(qc_dir / f"{run_id}.QC", "w") as fh:
         fh.write(f"QC: {run_id}\n")
 

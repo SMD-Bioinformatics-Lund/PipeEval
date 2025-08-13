@@ -46,7 +46,9 @@ def test_basic_run(monkeypatch: MonkeyPatch, base_dir: Path, basic_config_path: 
     assert (result_dir / "nextflow.config").exists()
 
 
-def test_override_assay(monkeypatch: MonkeyPatch, base_dir: Path, basic_config_path: Path):
+def test_override_assay(
+    monkeypatch: MonkeyPatch, base_dir: Path, basic_config_path: Path
+):
 
     monkeypatch.setattr(run_main, "do_repo_checkout", lambda *a, **k: None)
     monkeypatch.setattr(run_main, "start_run", lambda *a, **k: None)
@@ -74,7 +76,7 @@ def test_override_assay(monkeypatch: MonkeyPatch, base_dir: Path, basic_config_p
         datestamp=False,
         verbose=False,
         assay="prod",
-        analysis="analysis_test"
+        analysis="analysis_test",
     )
 
     result_dir = base_dir / "test-label-testcheckout-stub-fq"
@@ -82,4 +84,3 @@ def test_override_assay(monkeypatch: MonkeyPatch, base_dir: Path, basic_config_p
         lines = fh.read().splitlines()
     assert lines[1].split(",")[4] == "prod"
     assert lines[1].split(",")[14] == "analysis_test"
-

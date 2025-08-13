@@ -67,7 +67,9 @@ def main(
     logger.info(f"Preparing run, type: {run_type}, data: {start_data}")
 
     check_valid_config_arguments(config, run_type, start_data, base_dir, repo)
-    base_dir = base_dir if base_dir is not None else Path(config.get("settings", "base"))
+    base_dir = (
+        base_dir if base_dir is not None else Path(config.get("settings", "base"))
+    )
     repo = repo if repo is not None else Path(config.get("settings", "repo"))
     datestamp = datestamp or config.getboolean("settings", "datestamp")
 
@@ -108,7 +110,14 @@ def main(
 
     if not config.getboolean(run_type, "trio"):
         csv = get_single_csv(
-            config, run_type_settings, run_label, start_data, queue, stub_run, assay, analysis
+            config,
+            run_type_settings,
+            run_label,
+            start_data,
+            queue,
+            stub_run,
+            assay,
+            analysis,
         )
     else:
         csv = get_trio_csv(
@@ -230,7 +239,9 @@ def build_run_label(
     run_label = "-".join(label_parts)
 
     if run_label.find("/") != -1:
-        logger.warning(f"Found '/' characters in run label: {run_label}, replacing with '-'")
+        logger.warning(
+            f"Found '/' characters in run label: {run_label}, replacing with '-'"
+        )
         run_label = run_label.replace("/", "-")
 
     return run_label
@@ -297,7 +308,9 @@ def build_start_nextflow_analysis_cmd(
     return start_nextflow_command
 
 
-def start_run(start_nextflow_command: List[str], dry_run: bool, skip_confirmation: bool):
+def start_run(
+    start_nextflow_command: List[str], dry_run: bool, skip_confirmation: bool
+):
     if not dry_run:
         if not skip_confirmation:
             pretty_command = " \\\n    ".join(start_nextflow_command)
@@ -325,7 +338,9 @@ def main_wrapper(args: argparse.Namespace):
         logger.setLevel(logging.WARNING)
 
     if args.baseline is not None:
-        logging.info("Performing additional baseline run as specified by --baseline flag")
+        logging.info(
+            "Performing additional baseline run as specified by --baseline flag"
+        )
 
         if args.baseline_repo is not None:
             baseline_repo = str(args.baseline_repo)
@@ -437,8 +452,12 @@ def add_arguments(parser: argparse.ArgumentParser):
         action="store_true",
         help="Run start_nextflow_analysis.pl with nostart, printing the path to the SLURM job only",
     )
-    parser.add_argument("--baseline", help="Start a second baseline run and specified checkout")
-    parser.add_argument("--verbose", action="store_true", help="Print additional debug output")
+    parser.add_argument(
+        "--baseline", help="Start a second baseline run and specified checkout"
+    )
+    parser.add_argument(
+        "--verbose", action="store_true", help="Print additional debug output"
+    )
     parser.add_argument(
         "--silent", action="store_true", help="Run silently, produce only output files"
     )
