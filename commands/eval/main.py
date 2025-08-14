@@ -28,6 +28,7 @@ from .utils import (
     get_files_ending_with,
     get_ignored,
     get_pair_match,
+    get_pair_matches,
     verify_pair_exists,
 )
 
@@ -235,23 +236,25 @@ def main(  # noqa: C901 (skipping complexity check)
 
     if comparisons is None or "qc" in comparisons:
         logger.info("")
-        logger.info("--- Comparing QC ---")
-        qc_pair = get_pair_match(
+        logger.info("--- Comparing QC for samples ---")
+
+        qc_pairs = get_pair_matches(
             logger,
             "QC files",
-            config["settings"]["qc"].split(","),
+            config["settings"]["qc"],
             ro,
             r1_paths,
             r2_paths,
             rs.verbose,
         )
-        if not qc_pair:
+        if len(qc_pairs) == 0:
             logging.warning(
-                f"Skipping QC comparison, at least one file missing ({qc_pair})"
+                f"Skipping QC comparisons, no matching pairs found"
             )
         else:
-            out_path = outdir / "qc_diff.txt" if outdir else None
-            diff_compare_files(ro.r1_id, ro.r2_id, qc_pair[0], qc_pair[1], out_path)
+            for qc_pair in qc_pairs:
+                out_path = outdir / f"qc_diff_{qc_pair[0].sample_id}.txt" if outdir else None
+                diff_compare_files(ro.r1_id, ro.r2_id, qc_pair[0].path, qc_pair[1].path, out_path)
 
     if comparisons is None or "versions" in comparisons:
         logger.info("")
