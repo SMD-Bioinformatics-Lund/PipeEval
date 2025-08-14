@@ -80,7 +80,7 @@ def get_pair_matches(
 
     re_pattern = re.compile(valid_pattern)
 
-    def get_match(path: PathObj, pattern: re.Pattern[str]) -> Optional[SampleMatch]:
+    def get_match(path: PathObj) -> Optional[SampleMatch]:
         match = re.search(re_pattern, str(path.real_path))
         if match:
             sample_id = match.groups()[0]
@@ -90,13 +90,13 @@ def get_pair_matches(
 
     r1_matches = {}
     for path in r1_paths:
-        match = get_match(path, re_pattern)
+        match = get_match(path)
         if match:
             r1_matches[match.sample_id] = match
         
     r2_matches = {}
     for path in r2_paths:
-        match = get_match(path, re_pattern)
+        match = get_match(path)
         if match:
             r2_matches[match.sample_id] = match
 
