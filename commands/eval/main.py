@@ -244,7 +244,7 @@ def main(  # noqa: C901 (skipping complexity check)
             r2_paths,
         )
         if len(qc_pairs) == 0:
-            logging.warning(f"Skipping QC comparisons, no matching pairs found")
+            logging.warning("Skipping QC comparisons, no matching pairs found")
         else:
             for qc_pair in qc_pairs:
                 out_path = (
