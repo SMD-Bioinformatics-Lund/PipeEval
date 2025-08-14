@@ -254,6 +254,7 @@ def main(  # noqa: C901 (skipping complexity check)
         else:
             for qc_pair in qc_pairs:
                 out_path = outdir / f"qc_diff_{qc_pair[0].sample_id}.txt" if outdir else None
+                logger.info(f"Showing differences for sample {qc_pair[0].sample_id}")
                 diff_compare_files(ro.r1_id, ro.r2_id, qc_pair[0].path, qc_pair[1].path, out_path)
 
     if comparisons is None or "versions" in comparisons:
