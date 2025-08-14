@@ -92,7 +92,10 @@ def get_pair_match(
                 f"Looking for pattern(s) {valid_patterns}, did not match any file in {ro.r2_results}"
             )
 
-    verify_pair_exists(error_label, r1_matching, r2_matching)
+    try:
+        verify_pair_exists(error_label, r1_matching, r2_matching)
+    except ValueError as e:
+        logger.warning(e)
 
     if not r1_matching or not r2_matching:
         return None
