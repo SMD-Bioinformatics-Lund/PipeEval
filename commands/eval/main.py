@@ -239,23 +239,21 @@ def main(  # noqa: C901 (skipping complexity check)
         logger.info("--- Comparing QC for samples ---")
 
         qc_pairs = get_pair_matches(
-            logger,
-            "QC files",
             config["settings"]["qc"],
-            ro,
             r1_paths,
             r2_paths,
-            rs.verbose,
         )
         if len(qc_pairs) == 0:
-            logging.warning(
-                f"Skipping QC comparisons, no matching pairs found"
-            )
+            logging.warning(f"Skipping QC comparisons, no matching pairs found")
         else:
             for qc_pair in qc_pairs:
-                out_path = outdir / f"qc_diff_{qc_pair[0].sample_id}.txt" if outdir else None
+                out_path = (
+                    outdir / f"qc_diff_{qc_pair[0].sample_id}.txt" if outdir else None
+                )
                 logger.info(f"Showing differences for sample {qc_pair[0].sample_id}")
-                diff_compare_files(ro.r1_id, ro.r2_id, qc_pair[0].path, qc_pair[1].path, out_path)
+                diff_compare_files(
+                    ro.r1_id, ro.r2_id, qc_pair[0].path, qc_pair[1].path, out_path
+                )
 
     if comparisons is None or "versions" in comparisons:
         logger.info("")

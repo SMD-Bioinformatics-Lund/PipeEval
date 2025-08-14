@@ -69,13 +69,9 @@ class SampleMatch:
 
 
 def get_pair_matches(
-    logger: Logger,
-    error_label: str,
     valid_pattern: str,
-    ro: RunObject,
     r1_paths: List[PathObj],
     r2_paths: List[PathObj],
-    verbose: bool,
 ) -> List[Tuple[SampleMatch, SampleMatch]]:
 
     re_pattern = re.compile(valid_pattern)
@@ -84,8 +80,8 @@ def get_pair_matches(
         match = re.search(re_pattern, str(path.real_path))
         if match:
             sample_id = match.groups()[0]
-            match = SampleMatch(sample_id, path.real_path)
-            return match
+            match_obj = SampleMatch(sample_id, path.real_path)
+            return match_obj
         return None
 
     r1_matches = {}
@@ -93,7 +89,7 @@ def get_pair_matches(
         match = get_match(path)
         if match:
             r1_matches[match.sample_id] = match
-        
+
     r2_matches = {}
     for path in r2_paths:
         match = get_match(path)
@@ -120,7 +116,7 @@ def get_pair_match(
     r2_paths: List[PathObj],
     verbose: bool,
 ) -> Optional[Tuple[Path, Path]]:
-    
+
     r1_matching = get_single_file_ending_with(valid_patterns, r1_paths)
     r2_matching = get_single_file_ending_with(valid_patterns, r2_paths)
     if verbose:
