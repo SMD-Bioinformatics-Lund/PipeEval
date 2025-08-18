@@ -24,9 +24,11 @@ def create_results_dir(base: Path, run_id: str, diff_scores: bool = False):
     vcf_dir = base / "vcf"
     yaml_dir = base / "yaml"
     version_dir = base / "versions"
+    qc_dir = base / "qc"
     vcf_dir.mkdir(parents=True)
     yaml_dir.mkdir()
     version_dir.mkdir()
+    qc_dir.mkdir()
 
     snv_vcf = vcf_dir / f"{run_id}.snv.rescored.sorted.vcf.gz"
     score1 = 10
@@ -65,6 +67,9 @@ def create_results_dir(base: Path, run_id: str, diff_scores: bool = False):
 
     with open(version_dir / f"{run_id}.versions.yml", "w") as fh:
         fh.write(f"version: {run_id}\n")
+
+    with open(qc_dir / f"{run_id}.QC", "w") as fh:
+        fh.write(f"QC: {run_id}\n")
 
 
 @pytest.fixture()

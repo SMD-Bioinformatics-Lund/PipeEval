@@ -28,6 +28,7 @@ from .utils import (
     get_files_ending_with,
     get_ignored,
     get_pair_match,
+    get_pair_matches,
     verify_pair_exists,
 )
 
@@ -43,6 +44,7 @@ VALID_COMPARISONS = set(
         "score_snv",
         "score_sv",
         "yaml",
+        "qc",
         "annotation_snv",
         "annotation_sv",
     ]
@@ -57,6 +59,7 @@ Performs all or a subset of the comparisons:
 - Do the VCF files have the same number of variants
 - For the scored SNV and SV VCFs, what are call differences and differences in rank scores
 - Are there differences in the Scout yaml
+- Are there differences in the QC report
 """
 
 
@@ -225,11 +228,32 @@ def main(  # noqa: C901 (skipping complexity check)
         )
         if not yaml_pair:
             logging.warning(
-                f"Skipping yaml comparison, at least one missing ({yaml_pair})"
+                f"Skipping yaml comparison, at least one file missing ({yaml_pair})"
             )
         else:
             out_path = outdir / "yaml_diff.txt" if outdir else None
             diff_compare_files(ro.r1_id, ro.r2_id, yaml_pair[0], yaml_pair[1], out_path)
+
+    if comparisons is None or "qc" in comparisons:
+        logger.info("")
+        logger.info("--- Comparing QC for samples ---")
+
+        qc_pairs = get_pair_matches(
+            config["settings"]["qc"],
+            r1_paths,
+            r2_paths,
+        )
+        if len(qc_pairs) == 0:
+            logging.warning("Skipping QC comparisons, no matching pairs found")
+        else:
+            for qc_pair in qc_pairs:
+                out_path = (
+                    outdir / f"qc_diff_{qc_pair[0].sample_id}.txt" if outdir else None
+                )
+                logger.info(f"Showing differences for sample {qc_pair[0].sample_id}")
+                diff_compare_files(
+                    ro.r1_id, ro.r2_id, qc_pair[0].path, qc_pair[1].path, out_path
+                )
 
     if comparisons is None or "versions" in comparisons:
         logger.info("")

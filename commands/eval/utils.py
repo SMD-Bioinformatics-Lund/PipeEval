@@ -62,6 +62,51 @@ def verify_pair_exists(
         )
 
 
+class SampleMatch:
+    def __init__(self, sample_id, path):
+        self.sample_id = sample_id
+        self.path = path
+
+
+def get_pair_matches(
+    valid_pattern: str,
+    r1_paths: List[PathObj],
+    r2_paths: List[PathObj],
+) -> List[Tuple[SampleMatch, SampleMatch]]:
+
+    re_pattern = re.compile(valid_pattern)
+
+    def get_match(path: PathObj) -> Optional[SampleMatch]:
+        match = re.search(re_pattern, str(path.real_path))
+        if match:
+            sample_id = match.groups()[0]
+            match_obj = SampleMatch(sample_id, path.real_path)
+            return match_obj
+        return None
+
+    r1_matches = {}
+    for path in r1_paths:
+        match = get_match(path)
+        if match:
+            r1_matches[match.sample_id] = match
+
+    r2_matches = {}
+    for path in r2_paths:
+        match = get_match(path)
+        if match:
+            r2_matches[match.sample_id] = match
+
+    matches = []
+    for r1_id in r1_matches:
+        if r2_matches.get(r1_id):
+            match_pair = (r1_matches[r1_id], r2_matches[r1_id])
+            matches.append(match_pair)
+
+    # r1_matches = get_files_ending_with(pattern, paths)
+
+    return matches
+
+
 def get_pair_match(
     logger: Logger,
     error_label: str,
@@ -71,6 +116,7 @@ def get_pair_match(
     r2_paths: List[PathObj],
     verbose: bool,
 ) -> Optional[Tuple[Path, Path]]:
+
     r1_matching = get_single_file_ending_with(valid_patterns, r1_paths)
     r2_matching = get_single_file_ending_with(valid_patterns, r2_paths)
     if verbose:
@@ -92,7 +138,10 @@ def get_pair_match(
                 f"Looking for pattern(s) {valid_patterns}, did not match any file in {ro.r2_results}"
             )
 
-    verify_pair_exists(error_label, r1_matching, r2_matching)
+    try:
+        verify_pair_exists(error_label, r1_matching, r2_matching)
+    except ValueError as e:
+        logger.warning(e)
 
     if not r1_matching or not r2_matching:
         return None

@@ -5,7 +5,6 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from commands.run.help_classes import Case, CsvEntry
-from shared.constants import ASSAY_PLACEHOLDER
 
 
 def write_resume_script(
@@ -26,7 +25,12 @@ def copy_nextflow_config(repo: Path, results_dir: Path):
 
 
 def setup_results_links(
-    logger: Logger, config: ConfigParser, results_dir: Path, run_label: str, dry: bool
+    logger: Logger,
+    config: ConfigParser,
+    results_dir: Path,
+    run_label: str,
+    dry: bool,
+    assay: str,
 ):
 
     log_base_dir = config["settings"]["log_base_dir"]
@@ -40,13 +44,9 @@ def setup_results_links(
     trace_link = results_dir / "trace.txt"
     work_link = results_dir / "work"
 
-    log_link_target = Path(
-        f"{log_base_dir}/{run_label}.{ASSAY_PLACEHOLDER}.{date_stamp}.log"
-    )
-    trace_link_target = Path(
-        f"{trace_base_dir}/{run_label}.{ASSAY_PLACEHOLDER}.trace.txt"
-    )
-    work_link_target = Path(f"{work_base_dir}/{run_label}.{ASSAY_PLACEHOLDER}")
+    log_link_target = Path(f"{log_base_dir}/{run_label}.{assay}.{date_stamp}.log")
+    trace_link_target = Path(f"{trace_base_dir}/{run_label}.{assay}.trace.txt")
+    work_link_target = Path(f"{work_base_dir}/{run_label}.{assay}")
 
     if log_link.exists():
         logger.warning(f"{log_link} already exists, removing previous link")
@@ -80,6 +80,8 @@ def get_single_csv(
     start_data: str,
     queue: Optional[str],
     stub_run: bool,
+    assay: str,
+    analysis: str,
 ):
     case_id = run_type_settings["case"]
     case_conf = config[case_id]
@@ -95,11 +97,8 @@ def get_single_csv(
     if not Path(case.read1).exists() or not Path(case.read2).exists():
         raise FileNotFoundError(f"One or both files missing: {case.read1} {case.read2}")
 
-    analysis = run_type_settings["profile"]
     default_panel = run_type_settings["default_panel"]
-    run_csv = CsvEntry(
-        run_label, [case], queue, ASSAY_PLACEHOLDER, analysis, default_panel
-    )
+    run_csv = CsvEntry(run_label, [case], queue, assay, analysis, default_panel)
     return run_csv
 
 
@@ -110,6 +109,8 @@ def get_trio_csv(
     start_data: str,
     queue: Optional[str],
     stub_run: bool,
+    assay: str,
+    analysis: str,
 ):
 
     case_ids = run_type_settings["cases"].split(",")
@@ -135,11 +136,8 @@ def get_trio_csv(
 
         cases.append(case)
 
-    analysis = run_type_settings["profile"]
     default_panel = run_type_settings["default_panel"]
-    run_csv = CsvEntry(
-        run_label, cases, queue, ASSAY_PLACEHOLDER, analysis, default_panel
-    )
+    run_csv = CsvEntry(run_label, cases, queue, assay, analysis, default_panel)
     return run_csv
 
 

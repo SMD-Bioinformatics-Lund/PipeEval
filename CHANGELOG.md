@@ -1,3 +1,10 @@
+# 1.4.0
+
+* Add run types for oncov1, myeloid-const, modycf
+* Rename run types to follow the profile names rather than dataset names
+* --analysis and --assay flags for run mode to allow overriding the CSV fields
+* Diffing QC files
+
 # 1.3.1
 
 * Put proper quoting on pipeline arguments in resume.sh

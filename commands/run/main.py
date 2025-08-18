@@ -27,6 +27,7 @@ from commands.run.gittools import (
     get_git_commit_hash_and_log,
     pull_branch,
 )
+from shared.constants import ASSAY_PLACEHOLDER
 from shared.util import check_valid_config_path, load_config
 
 description = """
@@ -60,6 +61,8 @@ def main(
     no_start: bool,
     datestamp: bool,
     verbose: bool,
+    assay: Optional[str],
+    analysis: Optional[str],
 ):
     logger.info(f"Preparing run, type: {run_type}, data: {start_data}")
 
@@ -102,13 +105,30 @@ def main(
 
     run_type_settings = dict(config[run_type])
 
+    assay = assay or ASSAY_PLACEHOLDER
+    analysis = analysis or run_type_settings["profile"]
+
     if not config.getboolean(run_type, "trio"):
         csv = get_single_csv(
-            config, run_type_settings, run_label, start_data, queue, stub_run
+            config,
+            run_type_settings,
+            run_label,
+            start_data,
+            queue,
+            stub_run,
+            assay,
+            analysis,
         )
     else:
         csv = get_trio_csv(
-            config, run_type_settings, run_label, start_data, queue, stub_run
+            config,
+            run_type_settings,
+            run_label,
+            start_data,
+            queue,
+            stub_run,
+            assay,
+            analysis,
         )
     out_csv = results_dir / "run.csv"
     if dry_run:
@@ -142,7 +162,7 @@ def main(
         dry_run,
     )
     copy_nextflow_config(repo, results_dir)
-    setup_results_links(logger, config, results_dir, run_label, dry_run)
+    setup_results_links(logger, config, results_dir, run_label, dry_run, assay)
 
     start_run(get_start_nextflow_command(False), dry_run, skip_confirmation)
 
@@ -347,6 +367,8 @@ def main_wrapper(args: argparse.Namespace):
             args.nostart,
             args.datestamp,
             args.verbose,
+            args.assay,
+            args.analysis,
         )
         logging.info("Now proceeding with checking out the --checkout")
     main(
@@ -364,6 +386,8 @@ def main_wrapper(args: argparse.Namespace):
         args.nostart,
         args.datestamp,
         args.verbose,
+        args.assay,
+        args.analysis,
     )
 
 
@@ -436,6 +460,14 @@ def add_arguments(parser: argparse.ArgumentParser):
     )
     parser.add_argument(
         "--silent", action="store_true", help="Run silently, produce only output files"
+    )
+    parser.add_argument(
+        "--assay",
+        help="Specify a custom assay in the CSV file (for Scout yaml generation testing, otherwise defaults to 'dev')",
+    )
+    parser.add_argument(
+        "--analysis",
+        help="Specify a custom analysis in the CSV file (defaults to --run_type argument)",
     )
 
 
