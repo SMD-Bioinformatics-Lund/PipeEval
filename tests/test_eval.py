@@ -99,7 +99,7 @@ def test_eval_main(
     results1, results2, outdir = mock_results
 
     run_object = RunObject("r1", "r2", results1, results2)
-    run_settings = RunSettings(score_threshold=17)
+    run_settings = RunSettings("FIXME - pipeline placeholder", score_threshold=17)
 
     with caplog.at_level(logging.INFO):
         main(run_object, run_settings, None, None, outdir)

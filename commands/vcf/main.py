@@ -4,14 +4,14 @@ from pathlib import Path
 from typing import List, Optional
 
 from commands.eval.classes.run_settings import RunSettings
-from commands.eval.classes.score_paths import ScorePaths
-from shared.vcf.main_functions import variant_comparisons
+from commands.eval.main import vcf_comparisons
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 
 def main(
+    pipeline: str,
     vcf1: Path,
     vcf2: Path,
     is_sv: bool,
@@ -25,6 +25,7 @@ def main(
     output_all_variants: bool,
 ):
     run_settings = RunSettings(
+        pipeline,
         score_threshold=score_threshold,
         max_display=max_display,
         max_checked_annots=max_checked_annots,
@@ -47,22 +48,28 @@ def main(
         logger.info(f"# --run_id2 not set, assigned: {run_id2}")
 
     label = "sv" if is_sv else "snv"
-    score_paths = ScorePaths(label, results, score_threshold, output_all_variants)
 
-    do_score_check = True
-    do_annot_check = True
-    variant_comparisons(
-        logger,
-        run_id1,
-        run_id2,
-        vcf1,
-        vcf2,
-        is_sv,
-        run_settings,
-        score_paths,
-        do_score_check,
-        do_annot_check,
-    )
+    comparisons = None
+
+    vcf_comparisons(comparisons, pipe_conf, ro, r1_paths, r2_paths, outdir, rs, "snv")
+
+
+    # score_paths = ScorePaths(label, results, score_threshold, output_all_variants)
+
+    # do_score_check = True
+    # do_annot_check = True
+    # variant_comparisons(
+    #     logger,
+    #     run_id1,
+    #     run_id2,
+    #     vcf1,
+    #     vcf2,
+    #     is_sv,
+    #     run_settings,
+    #     score_paths,
+    #     do_score_check,
+    #     do_annot_check,
+    # )
 
 
 def main_wrapper(args: argparse.Namespace):

@@ -96,7 +96,6 @@ class VCFPair:
 
 
 def main(  # noqa: C901 (skipping complexity check)
-    pipeline: str,
     ro: RunObject,
     rs: RunSettings,
     config_path: Optional[str],
@@ -114,13 +113,13 @@ def main(  # noqa: C901 (skipping complexity check)
     curr_dir = os.path.dirname(os.path.abspath(__file__))
     config = load_config(logger, curr_dir, config_path)
 
-    if not config.has_section(pipeline):
+    if not config.has_section(rs.pipeline):
         available_sections = config.sections()
         raise ValueError(
-            f"Pipeline {pipeline} is not defined in config. Available in config file are: {", ".join(available_sections)}"
+            f"Pipeline {rs.pipeline} is not defined in config. Available in config file are: {", ".join(available_sections)}"
         )
 
-    pipe_conf = config[pipeline]
+    pipe_conf = config[rs.pipeline]
 
     if comparisons is not None and len(comparisons & VALID_COMPARISONS) == 0:
         raise ValueError(
@@ -135,8 +134,10 @@ def main(  # noqa: C901 (skipping complexity check)
     if comparisons is None or "file" in comparisons:
         do_file_diff(outdir, pipe_conf, ro, r1_paths, r2_paths)
 
-    vcf_comparisons(comparisons, pipe_conf, ro, r1_paths, r2_paths, outdir, rs, "snv")
-    vcf_comparisons(comparisons, pipe_conf, ro, r1_paths, r2_paths, outdir, rs, "sv")
+    vcf_path_patterns = (pipe_conf["vcf"] or "").split(",")
+
+    vcf_comparisons(comparisons, ro, r1_paths, r2_paths, outdir, rs, "snv", vcf_path_patterns)
+    vcf_comparisons(comparisons, ro, r1_paths, r2_paths, outdir, rs, "sv", vcf_path_patterns)
 
     scout_yaml_check = "scout_yaml"
     if (
@@ -174,7 +175,8 @@ def do_file_diff(
     logger.info("")
     logger.info("### Comparing existing files ###")
 
-    ignore_files = pipe_conf.get("ignore", fallback="").split(",")
+    ignore_file_string = pipe_conf.get("ignore") or ""
+    ignore_files = ignore_file_string.split(",")
 
     check_same_files(
         ro,
@@ -186,7 +188,7 @@ def do_file_diff(
 
 
 def get_vcf_pair(
-    pipe_conf: SectionProxy,
+    vcf_paths: List[str],
     ro: RunObject,
     r1_paths: List[PathObj],
     r2_paths: List[PathObj],
@@ -195,7 +197,7 @@ def get_vcf_pair(
     snv_vcf_pair_paths = get_pair_match(
         logger,
         "scored SNVs",
-        pipe_conf["scored_snv"].split(","),
+        vcf_paths,
         ro,
         r1_paths,
         r2_paths,
@@ -259,13 +261,13 @@ def do_simple_diff(
 
 def vcf_comparisons(
     comparisons: Optional[Set[str]],
-    pipe_conf: SectionProxy,
     ro: RunObject,
     r1_paths: List[PathObj],
     r2_paths: List[PathObj],
     outdir: Optional[Path],
     rs: RunSettings,
     vcf_type: str,
+    vcf_path_patterns: List[str],
 ):
     vcfs: Optional[VCFPair] = None
 
@@ -277,9 +279,10 @@ def vcf_comparisons(
             )
         )
         > 0
-        and pipe_conf.get(f"{vcf_type}_vcf")
+        and vcf_path_patterns
     ):
-        vcfs = get_vcf_pair(pipe_conf, ro, r1_paths, r2_paths, rs.verbose)
+        # vcf_path_patterns = pipe_conf["scored_snv"].split(",")
+        vcfs = get_vcf_pair(vcf_path_patterns, ro, r1_paths, r2_paths, rs.verbose)
 
     if check_comparison(comparisons, f"presence_{vcf_type}") and vcfs is not None:
         logger.info("Basic comparison")
@@ -541,6 +544,7 @@ def main_wrapper(args: argparse.Namespace):
         extra_annot_keys = args.annotations.split(",")
 
     run_settings = RunSettings(
+        # FIXME: Detect pipeline from the run.log ?
         args.pipeline,
         args.score_threshold,
         args.max_display,
