@@ -51,7 +51,9 @@ def main(
 
     comparisons = None
 
-    vcf_comparisons(comparisons, pipe_conf, ro, r1_paths, r2_paths, outdir, rs, "snv")
+
+
+    vcf_comparisons(comparisons, ro, outdir, rs, "snv", vcfs)
 
 
     # score_paths = ScorePaths(label, results, score_threshold, output_all_variants)
