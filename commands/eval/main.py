@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 
 import argparse
-from configparser import SectionProxy
 import difflib
 import logging
 import os
 from collections import Counter
+from configparser import SectionProxy
 from io import TextIOWrapper
 from pathlib import Path
-from typing import Dict, List, Optional, Set, Tuple
+from typing import Dict, List, Optional, Set
 
 from commands.eval.classes.pathobj import PathObj
 from commands.eval.classes.run_object import (
@@ -20,23 +20,20 @@ from commands.eval.classes.run_settings import RunSettings
 
 # from commands.eval.classes.score_paths import ScorePaths
 from shared.compare import Comparison, do_comparison
-from shared.constants import IS_VCF_PATTERN, RUN_ID_PLACEHOLDER
+from shared.constants import RUN_ID_PLACEHOLDER
 from shared.file import check_valid_file, get_filehandle
 from shared.util import load_config
 from shared.vcf.annotation import compare_variant_annotation
 from shared.vcf.main_functions import (
     compare_variant_presence,
     compare_variant_score,
-    variant_comparisons,
     write_full_score_table,
 )
 from shared.vcf.vcf import ScoredVCF, count_variants, parse_scored_vcf
 
 from .utils import (
-    get_files_ending_with,
     get_ignored,
     get_pair_match,
-    get_pair_matches,
     verify_pair_exists,
 )
 
@@ -81,7 +78,9 @@ def log_and_write(text: str, fh: Optional[TextIOWrapper]):
         print(text, file=fh)
 
 
-def check_comparison(all_comparisons: Optional[Set[str]], target_comparison: str) -> bool:
+def check_comparison(
+    all_comparisons: Optional[Set[str]], target_comparison: str
+) -> bool:
     return all_comparisons is None or target_comparison in all_comparisons
 
 
@@ -105,8 +104,12 @@ def main(  # noqa: C901 (skipping complexity check)
     outdir: Optional[Path],
 ):
 
-    r1_paths = get_files_in_dir(ro.r1_results, ro.r1_id, RUN_ID_PLACEHOLDER, ro.r1_results)
-    r2_paths = get_files_in_dir(ro.r2_results, ro.r2_id, RUN_ID_PLACEHOLDER, ro.r2_results)
+    r1_paths = get_files_in_dir(
+        ro.r1_results, ro.r1_id, RUN_ID_PLACEHOLDER, ro.r1_results
+    )
+    r2_paths = get_files_in_dir(
+        ro.r2_results, ro.r2_id, RUN_ID_PLACEHOLDER, ro.r2_results
+    )
 
     curr_dir = os.path.dirname(os.path.abspath(__file__))
     config = load_config(logger, curr_dir, config_path)
@@ -120,7 +123,9 @@ def main(  # noqa: C901 (skipping complexity check)
     pipe_conf = config[pipeline]
 
     if comparisons is not None and len(comparisons & VALID_COMPARISONS) == 0:
-        raise ValueError(f"Valid comparisons are: {VALID_COMPARISONS}, found: {comparisons}")
+        raise ValueError(
+            f"Valid comparisons are: {VALID_COMPARISONS}, found: {comparisons}"
+        )
 
     verify_pair_exists("result dirs", ro.r1_results, ro.r2_results)
 
@@ -134,16 +139,28 @@ def main(  # noqa: C901 (skipping complexity check)
     vcf_comparisons(comparisons, pipe_conf, ro, r1_paths, r2_paths, outdir, rs, "sv")
 
     scout_yaml_check = "scout_yaml"
-    if comparisons is None or scout_yaml_check in comparisons and pipe_conf.get(scout_yaml_check):
-        do_simple_diff(ro, r1_paths, r2_paths, pipe_conf, scout_yaml_check, outdir, rs.verbose)
+    if (
+        comparisons is None
+        or scout_yaml_check in comparisons
+        and pipe_conf.get(scout_yaml_check)
+    ):
+        do_simple_diff(
+            ro, r1_paths, r2_paths, pipe_conf, scout_yaml_check, outdir, rs.verbose
+        )
 
     qc_check = "qc"
     if comparisons is None or qc_check in comparisons and pipe_conf.get(qc_check):
         do_simple_diff(ro, r1_paths, r2_paths, pipe_conf, qc_check, outdir, rs.verbose)
 
     version_check = "versions"
-    if comparisons is None or version_check in comparisons and pipe_conf.get(version_check):
-        do_simple_diff(ro, r1_paths, r2_paths, pipe_conf, version_check, outdir, rs.verbose)
+    if (
+        comparisons is None
+        or version_check in comparisons
+        and pipe_conf.get(version_check)
+    ):
+        do_simple_diff(
+            ro, r1_paths, r2_paths, pipe_conf, version_check, outdir, rs.verbose
+        )
 
 
 def do_file_diff(
@@ -186,7 +203,9 @@ def get_vcf_pair(
     )
 
     if snv_vcf_pair_paths is None:
-        logger.warning(f"Skipping SNV comparisons due to missing files ({snv_vcf_pair_paths})")
+        logger.warning(
+            f"Skipping SNV comparisons due to missing files ({snv_vcf_pair_paths})"
+        )
         return None
 
     logger.info("# Parsing VCFs ...")
@@ -233,7 +252,9 @@ def do_simple_diff(
         logging.warning(f"At least one file missing ({matched_pair})")
     else:
         out_path = outdir / file_name_map[analysis] if outdir else None
-        diff_compare_files(ro.r1_id, ro.r2_id, matched_pair[0], matched_pair[1], out_path)
+        diff_compare_files(
+            ro.r1_id, ro.r2_id, matched_pair[0], matched_pair[1], out_path
+        )
 
 
 def vcf_comparisons(
@@ -293,9 +314,13 @@ def vcf_comparisons(
         logger.info("")
         logger.info("### Comparing score ###")
         score_thres_path = (
-            outdir / f"scored_{vcf_type}_above_thres_{rs.score_threshold}.txt" if outdir else None
+            outdir / f"scored_{vcf_type}_above_thres_{rs.score_threshold}.txt"
+            if outdir
+            else None
         )
-        all_diffing_path = outdir / f"scored_{vcf_type}_all_diffing.txt" if outdir else None
+        all_diffing_path = (
+            outdir / f"scored_{vcf_type}_all_diffing.txt" if outdir else None
+        )
         is_sv = False
 
         compare_variant_score(
@@ -343,8 +368,12 @@ def check_same_files(
 
     out_fh = open(out_path, "w") if out_path else None
 
-    (r1_nbr_ignored_per_pattern, r1_non_ignored) = get_ignored(comparison.r1, ignore_files)
-    (r2_nbr_ignored_per_pattern, r2_non_ignored) = get_ignored(comparison.r2, ignore_files)
+    (r1_nbr_ignored_per_pattern, r1_non_ignored) = get_ignored(
+        comparison.r1, ignore_files
+    )
+    (r2_nbr_ignored_per_pattern, r2_non_ignored) = get_ignored(
+        comparison.r2, ignore_files
+    )
 
     ignored = Counter(r1_nbr_ignored_per_pattern) + Counter(r2_nbr_ignored_per_pattern)
 
@@ -419,8 +448,12 @@ def diff_compare_files(
 ):
 
     with get_filehandle(file1) as r1_fh, get_filehandle(file2) as r2_fh:
-        r1_lines = [line.replace(run_id1, RUN_ID_PLACEHOLDER) for line in r1_fh.readlines()]
-        r2_lines = [line.replace(run_id2, RUN_ID_PLACEHOLDER) for line in r2_fh.readlines()]
+        r1_lines = [
+            line.replace(run_id1, RUN_ID_PLACEHOLDER) for line in r1_fh.readlines()
+        ]
+        r2_lines = [
+            line.replace(run_id2, RUN_ID_PLACEHOLDER) for line in r2_fh.readlines()
+        ]
 
     out_fh = open(out_path, "w") if out_path else None
     diff = list(difflib.unified_diff(r1_lines, r2_lines))
