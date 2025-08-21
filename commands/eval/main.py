@@ -8,7 +8,7 @@ import os
 from collections import Counter
 from io import TextIOWrapper
 from pathlib import Path
-from typing import Dict, List, Optional, Set
+from typing import Dict, List, Optional, Set, Tuple
 
 from commands.eval.classes.pathobj import PathObj
 from commands.eval.classes.run_object import (
@@ -17,13 +17,13 @@ from commands.eval.classes.run_object import (
     get_run_object,
 )
 from commands.eval.classes.run_settings import RunSettings
-from commands.eval.classes.score_paths import ScorePaths
-from shared.compare import do_comparison
+# from commands.eval.classes.score_paths import ScorePaths
+from shared.compare import Comparison, do_comparison
 from shared.constants import IS_VCF_PATTERN, RUN_ID_PLACEHOLDER
 from shared.file import check_valid_file, get_filehandle
 from shared.util import load_config
-from shared.vcf.main_functions import variant_comparisons
-from shared.vcf.vcf import count_variants
+from shared.vcf.main_functions import compare_variant_presence, variant_comparisons
+from shared.vcf.vcf import ScoredVCF, count_variants, parse_scored_vcf
 
 from .utils import (
     get_files_ending_with,
@@ -73,6 +73,20 @@ def log_and_write(text: str, fh: Optional[TextIOWrapper]):
         print(text, file=fh)
 
 
+def check_comparison(all_comparisons: Optional[Set[str]], target_comparison: str) -> bool:
+    return all_comparisons is None or target_comparison in all_comparisons
+
+
+class VCFPair:
+    vcf1: ScoredVCF
+    vcf2: ScoredVCF
+    comp: Comparison[str]
+    def __init__(self, vcf1: ScoredVCF, vcf2: ScoredVCF, comp: Comparison[str]):
+        self.vcf1 = vcf1
+        self.vcf2 = vcf2
+        self.comp = comp
+
+
 def main(  # noqa: C901 (skipping complexity check)
     pipeline: str,
     ro: RunObject,
@@ -104,115 +118,116 @@ def main(  # noqa: C901 (skipping complexity check)
     if outdir is not None:
         outdir.mkdir(parents=True, exist_ok=True)
 
-    # FIXME: Can this be generalized a bit? Such that this if statement is a 1-2 lines thing
     if comparisons is None or "file" in comparisons:
-        out_path = outdir / "check_sample_files.txt" if outdir else None
-        logger.info("")
-        logger.info("### Comparing existing files ###")
+        do_file_diff(outdir, pipe_conf, ro, r1_paths, r2_paths)
 
-        ignore_files = pipe_conf.get("ignore", fallback="").split(",")
 
-        check_same_files(
-            ro,
-            r1_paths,
-            r2_paths,
-            ignore_files,
-            out_path,
-        )
+    # Load the VCF pair once
+    snv_vcfs: Optional[VCFPair] = None
 
-    if comparisons is not None and "vcf" in comparisons:
-        logger.info("")
-        logger.info("--- Comparing VCF numbers ---")
+    if (
+        comparisons is None
+        or len(comparisons.intersection({"basic_snv", "score_snv", "annotation_snv"})) > 0
+        and pipe_conf.get("snv_vcf")
+    ):
+        snv_vcfs = get_vcf_pair(pipe_conf, ro, r1_paths, r2_paths, rs.verbose)
 
-        r1_vcfs = [p.real_path for p in get_files_ending_with(IS_VCF_PATTERN, r1_paths)]
-        r2_vcfs = [p.real_path for p in get_files_ending_with(IS_VCF_PATTERN, r2_paths)]
-
-        if len(r1_vcfs) > 0 or len(r2_vcfs) > 0:
-            out_path = outdir / "all_vcf_compare.txt" if outdir else None
-            compare_all_vcfs(
-                ro,
-                r1_vcfs,
-                r2_vcfs,
-                out_path,
-            )
-        else:
-            logger.warning("No VCFs detected, skipping VCF comparison")
-
-    # FIXME: Should split the score and annotation functions on this level
-    # Actually three checks
-    # 1. Variants are present
-    # 2. Annotations
-    # 3. Score
-    if comparisons is None or "score_snv" in comparisons or "annotation_snv" in comparisons:
-        logger.info("")
-        logger.info("--- Comparing scored SNV VCFs ---")
-
-        scored_snv_pair = get_pair_match(
+    if check_comparison(comparisons, "basic_snv") and snv_vcfs is not None:
+        logger.info("Basic comparison")
+        # FIXME: Some inline "get path function" here?
+        presence_path = outdir / f"scored_snv_presence.txt" if outdir else None
+        compare_variant_presence(
             logger,
-            "scored SNVs",
-            pipe_conf["scored_snv"].split(","),
-            ro,
-            r1_paths,
-            r2_paths,
-            rs.verbose,
+            ro.r1_id,
+            ro.r2_id,
+            snv_vcfs.vcf1.variants,
+            snv_vcfs.vcf2.variants,
+            snv_vcfs.comp,
+            rs.max_display,
+            presence_path,
+            rs.show_line_numbers,
+            rs.annotation_info_keys,
         )
 
-        if scored_snv_pair is None:
-            logger.warning(
-                f"Skipping scored SNV comparison due to missing files ({scored_snv_pair})"
-            )
-        else:
+    if comparisons is None or "score_snv" in comparisons and snv_vcfs:
+        ...
 
-            snv_score_paths = ScorePaths("snv", outdir, rs.score_threshold, rs.output_all_variants)
+    if comparisons is None or "annotation_snv" in comparisons and snv_vcfs:
+        ...
 
-            is_sv = False
-            variant_comparisons(
-                logger,
-                ro.r1_id,
-                ro.r2_id,
-                scored_snv_pair[0],
-                scored_snv_pair[1],
-                is_sv,
-                rs,
-                snv_score_paths,
-                comparisons is None or "score_snv" in comparisons,
-                comparisons is None or "annotation_snv" in comparisons,
-            )
+    # # FIXME: Should split the score and annotation functions on this level
+    # # Actually three checks
+    # # 1. Variants are present
+    # # 2. Annotations
+    # # 3. Score
+    # if comparisons is None or "score_snv" in comparisons or "annotation_snv" in comparisons:
+    #     # logger.info("")
+    #     # logger.info("--- Comparing scored SNV VCFs ---")
 
-    # FIXME: Should split the score and annotation functions on this level
-    if comparisons is None or "score_sv" in comparisons or "annotation_sv" in comparisons:
-        logger.info("")
-        logger.info("--- Comparing scored SV VCFs ---")
+    #     # snv_vcf_pair = get_pair_match(
+    #     #     logger,
+    #     #     "scored SNVs",
+    #     #     pipe_conf["scored_snv"].split(","),
+    #     #     ro,
+    #     #     r1_paths,
+    #     #     r2_paths,
+    #     #     rs.verbose,
+    #     # )
 
-        scored_sv_pair = get_pair_match(
-            logger,
-            "scored SVs",
-            pipe_conf["scored_sv"].split(","),
-            ro,
-            r1_paths,
-            r2_paths,
-            rs.verbose,
-        )
+    #     if snv_vcfs is None:
+    #         logger.warning(f"Skipping scored SNV comparison due to missing files ({snv_vcfs})")
+    #     else:
 
-        if scored_sv_pair is None:
-            logger.warning(f"Skipping scored SV comparison due to missing files {scored_sv_pair}")
-        else:
+    #         snv_score_paths = ScorePaths("snv", outdir, rs.score_threshold, rs.output_all_variants)
 
-            sv_score_paths = ScorePaths("sv", outdir, rs.score_threshold, rs.output_all_variants)
+    #         is_sv = False
+    #         variant_comparisons(
+    #             logger,
+    #             ro.r1_id,
+    #             ro.r2_id,
+    #             snv_vcfs[0],
+    #             snv_vcfs[1],
+    #             is_sv,
+    #             rs,
+    #             snv_score_paths,
+    #             comparisons is None or "score_snv" in comparisons,
+    #             comparisons is None or "annotation_snv" in comparisons,
+    #         )
 
-            is_sv = True
-            variant_comparisons(
-                logger,
-                ro.r1_id,
-                ro.r2_id,
-                scored_sv_pair[0],
-                scored_sv_pair[1],
-                is_sv,
-                rs,
-                sv_score_paths,
-                comparisons is None or "score_sv" in comparisons,
-                comparisons is None or "annotation_sv" in comparisons,
-            )
+    # # FIXME: Should split the score and annotation functions on this level
+    # if comparisons is None or "score_sv" in comparisons or "annotation_sv" in comparisons:
+    #     logger.info("")
+    #     logger.info("--- Comparing scored SV VCFs ---")
+
+    #     scored_sv_pair = get_pair_match(
+    #         logger,
+    #         "scored SVs",
+    #         pipe_conf["scored_sv"].split(","),
+    #         ro,
+    #         r1_paths,
+    #         r2_paths,
+    #         rs.verbose,
+    #     )
+
+    #     if scored_sv_pair is None:
+    #         logger.warning(f"Skipping scored SV comparison due to missing files {scored_sv_pair}")
+    #     else:
+
+    #         sv_score_paths = ScorePaths("sv", outdir, rs.score_threshold, rs.output_all_variants)
+
+    #         is_sv = True
+    #         variant_comparisons(
+    #             logger,
+    #             ro.r1_id,
+    #             ro.r2_id,
+    #             scored_sv_pair[0],
+    #             scored_sv_pair[1],
+    #             is_sv,
+    #             rs,
+    #             sv_score_paths,
+    #             comparisons is None or "score_sv" in comparisons,
+    #             comparisons is None or "annotation_sv" in comparisons,
+    #         )
 
     scout_yaml_check = "scout_yaml"
     if comparisons is None or scout_yaml_check in comparisons and pipe_conf.get(scout_yaml_check):
@@ -225,6 +240,65 @@ def main(  # noqa: C901 (skipping complexity check)
     version_check = "versions"
     if comparisons is None or version_check in comparisons and pipe_conf.get(version_check):
         do_simple_diff(ro, r1_paths, r2_paths, pipe_conf, version_check, outdir, rs.verbose)
+
+
+def do_file_diff(
+    outdir: Optional[Path],
+    pipe_conf: SectionProxy,
+    ro: RunObject,
+    r1_paths: List[PathObj],
+    r2_paths: List[PathObj],
+):
+    out_path = outdir / "check_sample_files.txt" if outdir else None
+    logger.info("")
+    logger.info("### Comparing existing files ###")
+
+    ignore_files = pipe_conf.get("ignore", fallback="").split(",")
+
+    check_same_files(
+        ro,
+        r1_paths,
+        r2_paths,
+        ignore_files,
+        out_path,
+    )
+
+
+def get_vcf_pair(
+    pipe_conf: SectionProxy, ro: RunObject, r1_paths: List[PathObj], r2_paths: List[PathObj], verbose: bool
+) -> Optional[VCFPair]:
+    snv_vcf_pair_paths = get_pair_match(
+        logger,
+        "scored SNVs",
+        pipe_conf["scored_snv"].split(","),
+        ro,
+        r1_paths,
+        r2_paths,
+        verbose,
+    )
+
+    if snv_vcf_pair_paths is None:
+        logger.warning(f"Skipping SNV comparisons due to missing files ({snv_vcf_pair_paths})")
+        return None
+
+    logger.info("# Parsing VCFs ...")
+
+    vcf_r1 = parse_scored_vcf(snv_vcf_pair_paths[0], False)
+    logger.info(f"{ro.r1_id} number variants: {len(vcf_r1.variants)}")
+    vcf_r2 = parse_scored_vcf(snv_vcf_pair_paths[1], False)
+    logger.info(f"{ro.r2_id} number variants: {len(vcf_r2.variants)}")
+
+    comp_res = do_comparison(
+        set(vcf_r1.variants.keys()),
+        set(vcf_r2.variants.keys()),
+    )
+    logger.info(f"In common: {len(comp_res.shared)}")
+    logger.info(f"Only in {ro.r1_id}: {len(comp_res.r1)}")
+    logger.info(f"Only in {ro.r2_id}: {len(comp_res.r2)}")
+
+    vcf_pair = VCFPair(vcf_r1, vcf_r2, comp_res)
+
+    return vcf_pair
 
 
 def do_simple_diff(

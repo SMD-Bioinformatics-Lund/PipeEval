@@ -292,6 +292,7 @@ def write_full_score_table(
             print("\t".join(row), file=out_fh)
 
 
+# FIXME: Make sure the VCF comparison still runs after this
 def variant_comparisons(
     logger: Logger,
     run_id1: str,
