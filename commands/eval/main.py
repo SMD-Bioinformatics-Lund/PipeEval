@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import argparse
+from configparser import SectionProxy
 import difflib
 import logging
 import os
@@ -51,7 +52,7 @@ VALID_COMPARISONS = set(
 )
 
 description = """
-Compare results for runs in the CMD constitutional pipeline.
+Compare results for runs in two pipelines.
 
 Performs all or a subset of the comparisons:
 
@@ -63,6 +64,9 @@ Performs all or a subset of the comparisons:
 """
 
 
+file_name_map = {"versions": "versions_diff.txt"}
+
+
 def log_and_write(text: str, fh: Optional[TextIOWrapper]):
     logger.info(text)
     if fh is not None:
@@ -70,6 +74,7 @@ def log_and_write(text: str, fh: Optional[TextIOWrapper]):
 
 
 def main(  # noqa: C901 (skipping complexity check)
+    pipeline: str,
     ro: RunObject,
     rs: RunSettings,
     config_path: Optional[str],
@@ -77,32 +82,35 @@ def main(  # noqa: C901 (skipping complexity check)
     outdir: Optional[Path],
 ):
 
-    r1_paths = get_files_in_dir(
-        ro.r1_results, ro.r1_id, RUN_ID_PLACEHOLDER, ro.r1_results
-    )
-    r2_paths = get_files_in_dir(
-        ro.r2_results, ro.r2_id, RUN_ID_PLACEHOLDER, ro.r2_results
-    )
+    r1_paths = get_files_in_dir(ro.r1_results, ro.r1_id, RUN_ID_PLACEHOLDER, ro.r1_results)
+    r2_paths = get_files_in_dir(ro.r2_results, ro.r2_id, RUN_ID_PLACEHOLDER, ro.r2_results)
 
     curr_dir = os.path.dirname(os.path.abspath(__file__))
     config = load_config(logger, curr_dir, config_path)
 
-    if comparisons is not None and len(comparisons & VALID_COMPARISONS) == 0:
+    if not config.has_section(pipeline):
+        available_sections = config.sections()
         raise ValueError(
-            f"Valid comparisons are: {VALID_COMPARISONS}, found: {comparisons}"
+            f"Pipeline {pipeline} is not defined in config. Available in config file are: {", ".join(available_sections)}"
         )
+
+    pipe_conf = config[pipeline]
+
+    if comparisons is not None and len(comparisons & VALID_COMPARISONS) == 0:
+        raise ValueError(f"Valid comparisons are: {VALID_COMPARISONS}, found: {comparisons}")
 
     verify_pair_exists("result dirs", ro.r1_results, ro.r2_results)
 
     if outdir is not None:
         outdir.mkdir(parents=True, exist_ok=True)
 
+    # FIXME: Can this be generalized a bit? Such that this if statement is a 1-2 lines thing
     if comparisons is None or "file" in comparisons:
         out_path = outdir / "check_sample_files.txt" if outdir else None
         logger.info("")
         logger.info("### Comparing existing files ###")
 
-        ignore_files = config.get("settings", "ignore", fallback="").split(",")
+        ignore_files = pipe_conf.get("ignore", fallback="").split(",")
 
         check_same_files(
             ro,
@@ -130,18 +138,15 @@ def main(  # noqa: C901 (skipping complexity check)
         else:
             logger.warning("No VCFs detected, skipping VCF comparison")
 
-    if (
-        comparisons is None
-        or "score_snv" in comparisons
-        or "annotation_snv" in comparisons
-    ):
+    # FIXME: Should split the score and annotation functions on this level
+    if comparisons is None or "score_snv" in comparisons or "annotation_snv" in comparisons:
         logger.info("")
         logger.info("--- Comparing scored SNV VCFs ---")
 
         scored_snv_pair = get_pair_match(
             logger,
             "scored SNVs",
-            config["settings"]["scored_snv"].split(","),
+            pipe_conf["scored_snv"].split(","),
             ro,
             r1_paths,
             r2_paths,
@@ -154,9 +159,7 @@ def main(  # noqa: C901 (skipping complexity check)
             )
         else:
 
-            snv_score_paths = ScorePaths(
-                "snv", outdir, rs.score_threshold, rs.output_all_variants
-            )
+            snv_score_paths = ScorePaths("snv", outdir, rs.score_threshold, rs.output_all_variants)
 
             is_sv = False
             variant_comparisons(
@@ -172,11 +175,8 @@ def main(  # noqa: C901 (skipping complexity check)
                 comparisons is None or "annotation_snv" in comparisons,
             )
 
-    if (
-        comparisons is None
-        or "score_sv" in comparisons
-        or "annotation_sv" in comparisons
-    ):
+    # FIXME: Should split the score and annotation functions on this level
+    if comparisons is None or "score_sv" in comparisons or "annotation_sv" in comparisons:
         logger.info("")
         logger.info("--- Comparing scored SV VCFs ---")
 
@@ -191,14 +191,10 @@ def main(  # noqa: C901 (skipping complexity check)
         )
 
         if scored_sv_pair is None:
-            logger.warning(
-                f"Skipping scored SV comparison due to missing files {scored_sv_pair}"
-            )
+            logger.warning(f"Skipping scored SV comparison due to missing files {scored_sv_pair}")
         else:
 
-            sv_score_paths = ScorePaths(
-                "sv", outdir, rs.score_threshold, rs.output_all_variants
-            )
+            sv_score_paths = ScorePaths("sv", outdir, rs.score_threshold, rs.output_all_variants)
 
             is_sv = True
             variant_comparisons(
@@ -227,53 +223,45 @@ def main(  # noqa: C901 (skipping complexity check)
             rs.verbose,
         )
         if not yaml_pair:
-            logging.warning(
-                f"Skipping yaml comparison, at least one file missing ({yaml_pair})"
-            )
+            logging.warning(f"Skipping yaml comparison, at least one file missing ({yaml_pair})")
         else:
             out_path = outdir / "yaml_diff.txt" if outdir else None
             diff_compare_files(ro.r1_id, ro.r2_id, yaml_pair[0], yaml_pair[1], out_path)
 
-    if comparisons is None or "qc" in comparisons:
-        logger.info("")
-        logger.info("--- Comparing QC for samples ---")
+    qc_check = "qc"
+    if comparisons is None or qc_check in comparisons and pipe_conf.get(qc_check):
+        do_simple_diff(ro, r1_paths, r2_paths, pipe_conf, qc_check, outdir, rs.verbose)
 
-        qc_pairs = get_pair_matches(
-            config["settings"]["qc"],
-            r1_paths,
-            r2_paths,
-        )
-        if len(qc_pairs) == 0:
-            logging.warning("Skipping QC comparisons, no matching pairs found")
-        else:
-            for qc_pair in qc_pairs:
-                out_path = (
-                    outdir / f"qc_diff_{qc_pair[0].sample_id}.txt" if outdir else None
-                )
-                logger.info(f"Showing differences for sample {qc_pair[0].sample_id}")
-                diff_compare_files(
-                    ro.r1_id, ro.r2_id, qc_pair[0].path, qc_pair[1].path, out_path
-                )
+    version_check = "versions"
+    if comparisons is None or version_check in comparisons and pipe_conf.get(version_check):
+        do_simple_diff(ro, r1_paths, r2_paths, pipe_conf, version_check, outdir, rs.verbose)
 
-    if comparisons is None or "versions" in comparisons:
-        logger.info("")
-        logger.info("--- Comparing version files ---")
-        version_pair = get_pair_match(
-            logger,
-            "versions",
-            config["settings"]["versions"].split(","),
-            ro,
-            r1_paths,
-            r2_paths,
-            rs.verbose,
-        )
-        if not version_pair:
-            logging.warning(f"At least one version file missing ({version_pair})")
-        else:
-            out_path = outdir / "yaml_diff.txt" if outdir else None
-            diff_compare_files(
-                ro.r1_id, ro.r2_id, version_pair[0], version_pair[1], out_path
-            )
+
+def do_simple_diff(
+    ro: RunObject,
+    r1_paths: List[PathObj],
+    r2_paths: List[PathObj],
+    pipe_conf: SectionProxy,
+    analysis: str,
+    outdir: Optional[Path],
+    verbose: bool,
+):
+    logger.info("")
+    logger.info(f"--- Comparing: {analysis} ---")
+    matched_pair = get_pair_match(
+        logger,
+        analysis,
+        pipe_conf[analysis].split(","),
+        ro,
+        r1_paths,
+        r2_paths,
+        verbose,
+    )
+    if not matched_pair:
+        logging.warning(f"At least one file missing ({matched_pair})")
+    else:
+        out_path = outdir / file_name_map[analysis] if outdir else None
+        diff_compare_files(ro.r1_id, ro.r2_id, matched_pair[0], matched_pair[1], out_path)
 
 
 def check_same_files(
@@ -291,12 +279,8 @@ def check_same_files(
 
     out_fh = open(out_path, "w") if out_path else None
 
-    (r1_nbr_ignored_per_pattern, r1_non_ignored) = get_ignored(
-        comparison.r1, ignore_files
-    )
-    (r2_nbr_ignored_per_pattern, r2_non_ignored) = get_ignored(
-        comparison.r2, ignore_files
-    )
+    (r1_nbr_ignored_per_pattern, r1_non_ignored) = get_ignored(comparison.r1, ignore_files)
+    (r2_nbr_ignored_per_pattern, r2_non_ignored) = get_ignored(comparison.r2, ignore_files)
 
     ignored = Counter(r1_nbr_ignored_per_pattern) + Counter(r2_nbr_ignored_per_pattern)
 
@@ -371,12 +355,8 @@ def diff_compare_files(
 ):
 
     with get_filehandle(file1) as r1_fh, get_filehandle(file2) as r2_fh:
-        r1_lines = [
-            line.replace(run_id1, RUN_ID_PLACEHOLDER) for line in r1_fh.readlines()
-        ]
-        r2_lines = [
-            line.replace(run_id2, RUN_ID_PLACEHOLDER) for line in r2_fh.readlines()
-        ]
+        r1_lines = [line.replace(run_id1, RUN_ID_PLACEHOLDER) for line in r1_fh.readlines()]
+        r2_lines = [line.replace(run_id2, RUN_ID_PLACEHOLDER) for line in r2_fh.readlines()]
 
     out_fh = open(out_path, "w") if out_path else None
     diff = list(difflib.unified_diff(r1_lines, r2_lines))
@@ -390,6 +370,11 @@ def diff_compare_files(
 
 
 def add_arguments(parser: argparse.ArgumentParser):
+    parser.add_argument(
+        "--pipeline",
+        help="The target pipeline. Currently only 'rd-const' is available",
+        required=True,
+    )
     parser.add_argument(
         "--run_id1",
         "-i1",
@@ -459,6 +444,7 @@ def main_wrapper(args: argparse.Namespace):
         extra_annot_keys = args.annotations.split(",")
 
     run_settings = RunSettings(
+        args.pipeline,
         args.score_threshold,
         args.max_display,
         args.verbose,
