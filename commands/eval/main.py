@@ -139,6 +139,10 @@ def main(  # noqa: C901 (skipping complexity check)
             logger.warning("No VCFs detected, skipping VCF comparison")
 
     # FIXME: Should split the score and annotation functions on this level
+    # Actually three checks
+    # 1. Variants are present
+    # 2. Annotations
+    # 3. Score
     if comparisons is None or "score_snv" in comparisons or "annotation_snv" in comparisons:
         logger.info("")
         logger.info("--- Comparing scored SNV VCFs ---")
@@ -183,7 +187,7 @@ def main(  # noqa: C901 (skipping complexity check)
         scored_sv_pair = get_pair_match(
             logger,
             "scored SVs",
-            config["settings"]["scored_sv"].split(","),
+            pipe_conf["scored_sv"].split(","),
             ro,
             r1_paths,
             r2_paths,
@@ -210,23 +214,9 @@ def main(  # noqa: C901 (skipping complexity check)
                 comparisons is None or "annotation_sv" in comparisons,
             )
 
-    if comparisons is None or "yaml" in comparisons:
-        logger.info("")
-        logger.info("--- Comparing YAML ---")
-        yaml_pair = get_pair_match(
-            logger,
-            "Scout YAMLs",
-            config["settings"]["yaml"].split(","),
-            ro,
-            r1_paths,
-            r2_paths,
-            rs.verbose,
-        )
-        if not yaml_pair:
-            logging.warning(f"Skipping yaml comparison, at least one file missing ({yaml_pair})")
-        else:
-            out_path = outdir / "yaml_diff.txt" if outdir else None
-            diff_compare_files(ro.r1_id, ro.r2_id, yaml_pair[0], yaml_pair[1], out_path)
+    scout_yaml_check = "scout_yaml"
+    if comparisons is None or scout_yaml_check in comparisons and pipe_conf.get(scout_yaml_check):
+        do_simple_diff(ro, r1_paths, r2_paths, pipe_conf, scout_yaml_check, outdir, rs.verbose)
 
     qc_check = "qc"
     if comparisons is None or qc_check in comparisons and pipe_conf.get(qc_check):
