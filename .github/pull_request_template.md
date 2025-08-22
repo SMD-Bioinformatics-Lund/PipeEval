@@ -1,0 +1,2 @@
+- [ ] Verify - does all the checks pass?
+- [ ] Try running your PR under Python3.6
