@@ -126,28 +126,29 @@ def main(  # noqa: C901 (skipping complexity check)
     if comparisons is None or "file" in comparisons:
         do_file_diff(outdir, pipe_conf, ro, r1_paths, r2_paths)
 
-    vcf_path_patterns = (pipe_conf["vcf"] or "").split(",")
 
 
     run_ids = (ro.r1_id, ro.r2_id)
 
     # SNV comparisons
+    snv_vcf_path_patterns = (pipe_conf["snv_vcf"] or "").split(",")
     any_snv_comparison = (
         comparisons is None
         or len(comparisons.intersection({f"basic_snv", f"score_snv", f"annotation_snv"})) > 0
     )
-    if any_snv_comparison and vcf_path_patterns:
-        snv_vcfs = get_vcf_pair(vcf_path_patterns, ro, r1_paths, r2_paths, rs.verbose)
+    if any_snv_comparison and snv_vcf_path_patterns:
+        snv_vcfs = get_vcf_pair(snv_vcf_path_patterns, ro, r1_paths, r2_paths, rs.verbose)
         if snv_vcfs:
             vcf_comparisons(comparisons, run_ids, outdir, rs, "snv", snv_vcfs)
 
     # SV comparisons
+    sv_vcf_path_patterns = (pipe_conf["sv_vcf"] or "").split(",")
     any_sv_comparison = (
         comparisons is None
         or len(comparisons.intersection({f"basic_sv", f"score_sv", f"annotation_sv"})) > 0
     )
-    if any_sv_comparison and vcf_path_patterns:
-        sv_vcfs = get_vcf_pair(vcf_path_patterns, ro, r1_paths, r2_paths, rs.verbose)
+    if any_sv_comparison and sv_vcf_path_patterns:
+        sv_vcfs = get_vcf_pair(sv_vcf_path_patterns, ro, r1_paths, r2_paths, rs.verbose)
         if sv_vcfs:
             vcf_comparisons(comparisons, run_ids, outdir, rs, "snv", sv_vcfs)
 
