@@ -1,4 +1,4 @@
-from typing import Dict, List, Set
+from typing import Dict, List, Set, Tuple
 
 from shared.vcf.vcf import DiffScoredVariant, ScoredVariant
 
@@ -14,9 +14,7 @@ def get_comparison_row(
 ) -> List[str]:
 
     if var1 != var2:
-        raise ValueError(
-            f"Must compare the same variant. This: {str(var1)} Other: {str(var2)}"
-        )
+        raise ValueError(f"Must compare the same variant. This: {str(var1)} Other: {str(var2)}")
 
     fields = [
         var1.chr,
@@ -56,8 +54,7 @@ def get_comparison_row(
 
 
 def get_table_header(
-    run_id1: str,
-    run_id2: str,
+    run_ids: Tuple[str, str],
     shared_variant_keys: Set[str],
     variants_r1: Dict[str, ScoredVariant],
     variants_r2: Dict[str, ScoredVariant],
@@ -73,7 +70,7 @@ def get_table_header(
     if show_line_numbers:
         header_fields.append("line_numbers")
     header_fields.extend(annotation_info_keys)
-    header_fields.extend([f"score_{run_id1}", f"score_{run_id2}", "score_diff_summary"])
+    header_fields.extend([f"score_{run_ids[0]}", f"score_{run_ids[1]}", "score_diff_summary"])
 
     if not exclude_subscores:
         for sub_score in variants_r1[first_shared_key].sub_scores:

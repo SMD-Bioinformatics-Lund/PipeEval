@@ -1,7 +1,7 @@
 import re
 from logging import Logger
 from pathlib import Path
-from typing import List, Optional
+from typing import List, Optional, Tuple
 
 from commands.eval.classes.pathobj import PathObj
 
@@ -50,6 +50,7 @@ class RunObject:
 
         self.r1_id: str = run_id1
         self.r2_id: str = run_id2
+        self.run_ids: Tuple[str, str] = (run_id1, run_id2)
 
 
 def get_run_object(

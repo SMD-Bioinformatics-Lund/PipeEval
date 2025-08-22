@@ -1,6 +1,6 @@
 from logging import Logger
 from pathlib import Path
-from typing import Dict, List, Optional, Set
+from typing import Dict, List, Optional, Set, Tuple
 
 from commands.eval.classes.run_settings import RunSettings
 from shared.compare import Comparison, do_comparison, parse_var_key_for_sort
@@ -12,8 +12,7 @@ from shared.vcf.vcf import DiffScoredVariant, ScoredVariant, parse_scored_vcf
 
 def compare_variant_presence(
     logger: Logger,
-    label_r1: str,
-    label_r2: str,
+    run_ids: Tuple[str, str],
     variants_r1: Dict[str, ScoredVariant],
     variants_r2: Dict[str, ScoredVariant],
     comparison_results: Comparison[str],
@@ -27,8 +26,7 @@ def compare_variant_presence(
     r2_only = comparison_results.r2
 
     summary_lines = get_variant_presence_summary(
-        label_r1,
-        label_r2,
+        run_ids,
         common,
         r1_only,
         r2_only,
@@ -43,8 +41,7 @@ def compare_variant_presence(
 
     if out_path is not None:
         full_summary_lines = get_variant_presence_summary(
-            label_r1,
-            label_r2,
+            run_ids,
             common,
             r1_only,
             r2_only,
@@ -60,8 +57,7 @@ def compare_variant_presence(
 
 
 def get_variant_presence_summary(
-    label_r1: str,
-    label_r2: str,
+    run_ids: Tuple[str, str],
     common: Set[str],
     r1_only: Set[str],
     r2_only: Set[str],
@@ -76,10 +72,10 @@ def get_variant_presence_summary(
     if len(r1_only) > 0:
         if max_display is not None:
             output.append(
-                f"# First {min(len(r1_only), max_display)} only found in {label_r1}"
+                f"# First {min(len(r1_only), max_display)} only found in {run_ids[0]}"
             )
         else:
-            output.append(f"Only found in {label_r1}")
+            output.append(f"Only found in {run_ids[0]}")
 
         r1_table: List[List[str]] = []
         for key in sorted(list(r1_only), key=parse_var_key_for_sort)[0:max_display]:
@@ -94,10 +90,10 @@ def get_variant_presence_summary(
     if len(r2_only) > 0:
         if max_display is not None:
             output.append(
-                f"# First {min(len(r2_only), max_display)} only found in {label_r2}"
+                f"# First {min(len(r2_only), max_display)} only found in {run_ids[1]}"
             )
         else:
-            output.append(f"Only found in {label_r2}")
+            output.append(f"Only found in {run_ids[1] }")
 
         r2_table: List[List[str]] = []
         for key in sorted(list(r2_only), key=parse_var_key_for_sort)[0:max_display]:
@@ -114,8 +110,7 @@ def get_variant_presence_summary(
 
 def compare_variant_score(
     logger: Logger,
-    run_id1: str,
-    run_id2: str,
+    run_ids: Tuple[str, str],
     shared_variants: Set[str],
     variants_r1: Dict[str, ScoredVariant],
     variants_r2: Dict[str, ScoredVariant],
@@ -140,8 +135,7 @@ def compare_variant_score(
     if len(diff_scored_variants) > 0:
         print_diff_score_info(
             logger,
-            run_id1,
-            run_id2,
+            run_ids,
             diff_scored_variants,
             shared_variants,
             variants_r1,
@@ -160,8 +154,7 @@ def compare_variant_score(
 
 def print_diff_score_info(
     logger: Logger,
-    run_id1: str,
-    run_id2: str,
+    run_ids: Tuple[str, str],
     diff_scored_variants: List[DiffScoredVariant],
     shared_variant_keys: Set[str],
     variants_r1: Dict[str, ScoredVariant],
@@ -191,12 +184,11 @@ def print_diff_score_info(
         f"# Number differently scored above {score_threshold}: {len(diff_variants_above_thres)}",
     )
     logger.info(
-        f"# Total number shared variants: {len(shared_variant_keys)} ({run_id1}: {len(variants_r1)}, {run_id2}: {len(variants_r2)})",
+        f"# Total number shared variants: {len(shared_variant_keys)} ({run_ids[0]}: {len(variants_r1)}, {run_ids[1]}: {len(variants_r2)})",
     )
 
     limited_header = get_table_header(
-        run_id1,
-        run_id2,
+        run_ids,
         shared_variant_keys,
         variants_r1,
         variants_r2,
@@ -207,8 +199,7 @@ def print_diff_score_info(
     )
 
     full_header = get_table_header(
-        run_id1,
-        run_id2,
+        run_ids,
         shared_variant_keys,
         variants_r1,
         variants_r2,
@@ -255,8 +246,7 @@ def print_diff_score_info(
 
 
 def write_full_score_table(
-    run_id1: str,
-    run_id2: str,
+    run_ids: Tuple[str, str],
     shared_variant_keys: Set[str],
     variants_r1: Dict[str, ScoredVariant],
     variants_r2: Dict[str, ScoredVariant],
@@ -274,8 +264,7 @@ def write_full_score_table(
     all_variants.sort(key=lambda var: var.r1.get_rank_score(), reverse=True)
 
     header = get_table_header(
-        run_id1,
-        run_id2,
+        run_ids,
         shared_variant_keys,
         variants_r1,
         variants_r2,

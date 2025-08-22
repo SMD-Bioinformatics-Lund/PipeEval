@@ -8,7 +8,7 @@ from collections import Counter
 from configparser import SectionProxy
 from io import TextIOWrapper
 from pathlib import Path
-from typing import Dict, List, Optional, Set
+from typing import Dict, List, Optional, Set, Tuple
 
 from commands.eval.classes.pathobj import PathObj
 from commands.eval.classes.run_object import (
@@ -128,25 +128,28 @@ def main(  # noqa: C901 (skipping complexity check)
 
     vcf_path_patterns = (pipe_conf["vcf"] or "").split(",")
 
-    vcfs: Optional[VCFPair] = None
 
+    run_ids = (ro.r1_id, ro.r2_id)
+
+    # SNV comparisons
     any_snv_comparison = (
         comparisons is None
         or len(comparisons.intersection({f"basic_snv", f"score_snv", f"annotation_snv"})) > 0
     )
     if any_snv_comparison and vcf_path_patterns:
-        vcfs = get_vcf_pair(vcf_path_patterns, ro, r1_paths, r2_paths, rs.verbose)
-        if vcfs:
-            vcf_comparisons(comparisons, ro, outdir, rs, "snv", vcfs)
+        snv_vcfs = get_vcf_pair(vcf_path_patterns, ro, r1_paths, r2_paths, rs.verbose)
+        if snv_vcfs:
+            vcf_comparisons(comparisons, run_ids, outdir, rs, "snv", snv_vcfs)
 
+    # SV comparisons
     any_sv_comparison = (
         comparisons is None
         or len(comparisons.intersection({f"basic_sv", f"score_sv", f"annotation_sv"})) > 0
     )
     if any_sv_comparison and vcf_path_patterns:
-        vcfs = get_vcf_pair(vcf_path_patterns, ro, r1_paths, r2_paths, rs.verbose)
-        if vcfs:
-            vcf_comparisons(comparisons, ro, outdir, rs, "snv", vcfs)
+        sv_vcfs = get_vcf_pair(vcf_path_patterns, ro, r1_paths, r2_paths, rs.verbose)
+        if sv_vcfs:
+            vcf_comparisons(comparisons, run_ids, outdir, rs, "snv", sv_vcfs)
 
     scout_yaml_check = "scout_yaml"
     if comparisons is None or scout_yaml_check in comparisons and pipe_conf.get(scout_yaml_check):
@@ -191,7 +194,7 @@ def get_vcf_pair(
     r2_paths: List[PathObj],
     verbose: bool,
 ) -> Optional[VCFPair]:
-    snv_vcf_pair_paths = get_pair_match(
+    vcf_pair_paths = get_pair_match(
         logger,
         "scored SNVs",
         vcf_paths,
@@ -201,27 +204,32 @@ def get_vcf_pair(
         verbose,
     )
 
-    if snv_vcf_pair_paths is None:
-        logger.warning(f"Skipping SNV comparisons due to missing files ({snv_vcf_pair_paths})")
+    if vcf_pair_paths is None:
+        logger.warning(f"Skipping SNV comparisons due to missing files ({vcf_pair_paths})")
         return None
 
+    vcf_pair = parse_vcf_pair(ro.run_ids, vcf_pair_paths)
+
+    return vcf_pair
+
+
+def parse_vcf_pair(run_ids: Tuple[str, str], vcf_paths: Tuple[Path, Path]) -> VCFPair:
     logger.info("# Parsing VCFs ...")
 
-    vcf_r1 = parse_scored_vcf(snv_vcf_pair_paths[0], False)
-    logger.info(f"{ro.r1_id} number variants: {len(vcf_r1.variants)}")
-    vcf_r2 = parse_scored_vcf(snv_vcf_pair_paths[1], False)
-    logger.info(f"{ro.r2_id} number variants: {len(vcf_r2.variants)}")
+    vcf_r1 = parse_scored_vcf(vcf_paths[0], False)
+    logger.info(f"{run_ids[0]} number variants: {len(vcf_r1.variants)}")
+    vcf_r2 = parse_scored_vcf(vcf_paths[1], False)
+    logger.info(f"{run_ids[1]} number variants: {len(vcf_r2.variants)}")
 
     comp_res = do_comparison(
         set(vcf_r1.variants.keys()),
         set(vcf_r2.variants.keys()),
     )
     logger.info(f"In common: {len(comp_res.shared)}")
-    logger.info(f"Only in {ro.r1_id}: {len(comp_res.r1)}")
-    logger.info(f"Only in {ro.r2_id}: {len(comp_res.r2)}")
+    logger.info(f"Only in {run_ids[0]}: {len(comp_res.r1)}")
+    logger.info(f"Only in {run_ids[1]}: {len(comp_res.r2)}")
 
     vcf_pair = VCFPair(vcf_r1, vcf_r2, comp_res)
-
     return vcf_pair
 
 
@@ -254,7 +262,7 @@ def do_simple_diff(
 
 def vcf_comparisons(
     comparisons: Optional[Set[str]],
-    ro: RunObject,
+    run_ids: Tuple[str, str],
     outdir: Optional[Path],
     rs: RunSettings,
     vcf_type: str,
@@ -265,8 +273,7 @@ def vcf_comparisons(
         presence_path = outdir / f"scored_{vcf_type}_presence.txt" if outdir else None
         compare_variant_presence(
             logger,
-            ro.r1_id,
-            ro.r2_id,
+            run_ids,
             vcfs.vcf1.variants,
             vcfs.vcf2.variants,
             vcfs.comp,
@@ -281,8 +288,7 @@ def vcf_comparisons(
         logger.info("### Comparing annotations ###")
         compare_variant_annotation(
             logger,
-            ro.r1_id,
-            ro.r2_id,
+            run_ids,
             vcfs.comp.shared,
             vcfs.vcf1.variants,
             vcfs.vcf2.variants,
@@ -300,8 +306,7 @@ def vcf_comparisons(
 
         compare_variant_score(
             logger,
-            ro.r1_id,
-            ro.r2_id,
+            run_ids,
             vcfs.comp.shared,
             vcfs.vcf1.variants,
             vcfs.vcf2.variants,
@@ -316,8 +321,7 @@ def vcf_comparisons(
         if rs.output_all_variants is not None and outdir:
             all_path = outdir / f"scored_{vcf_type}_score_full.txt"
             write_full_score_table(
-                ro.r1_id,
-                ro.r2_id,
+                run_ids,
                 vcfs.comp.shared,
                 vcfs.vcf1.variants,
                 vcfs.vcf2.variants,
