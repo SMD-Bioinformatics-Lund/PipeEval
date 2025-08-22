@@ -8,7 +8,7 @@ from commands.run.help_classes import RunConfig
 
 def load_config(
     logger: logging.Logger, parent_path: str, config_path: Optional[str]
-) -> RunConfig:
+) -> ConfigParser:
     config = ConfigParser()
     if config_path is None:
         script_dir = Path(parent_path)
@@ -23,7 +23,7 @@ def load_config(
         )
 
     config.read(config_path)
-    return RunConfig(config)
+    return config
 
 
 def prettify_rows(rows: List[List[Any]], padding: int = 4) -> List[str]:

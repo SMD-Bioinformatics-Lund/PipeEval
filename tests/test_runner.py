@@ -5,6 +5,7 @@ from pathlib import Path
 from pytest import MonkeyPatch
 
 from commands.run import main as run_main
+from commands.run.help_classes import RunConfig
 
 LOG = logging.getLogger()
 
@@ -21,8 +22,10 @@ def test_basic_run(monkeypatch: MonkeyPatch, base_dir: Path, basic_config_path: 
     with open(basic_config_path, "r") as in_fh:
         basic_config.read_file(in_fh)
 
+    run_config = RunConfig(LOG, basic_config, "test")
+
     run_main.main(
-        basic_config,
+        run_config,
         label="label",
         checkout="testcheckout",
         base_dir=None,
@@ -59,8 +62,10 @@ def test_override_assay(
     with open(basic_config_path, "r") as in_fh:
         basic_config.read_file(in_fh)
 
+    run_config = RunConfig(LOG, basic_config, "test")
+
     run_main.main(
-        basic_config,
+        run_config,
         label="label",
         checkout="testcheckout",
         base_dir=None,

@@ -5,7 +5,6 @@ import logging
 import os
 import subprocess
 import sys
-from configparser import ConfigParser, SectionProxy
 from datetime import datetime
 from pathlib import Path
 from typing import List, Optional
@@ -313,20 +312,20 @@ def start_run(start_nextflow_command: List[str], skip_confirmation: bool):
 def main_wrapper(args: argparse.Namespace):
 
     curr_dir = os.path.dirname(os.path.abspath(__file__))
-    config = load_config(logger, curr_dir, args.config)
+    config = RunConfig(logger, load_config(logger, curr_dir, args.config), args.run_type)
 
     if args.silent:
         logger.setLevel(logging.WARNING)
 
     if args.baseline is not None:
-        logging.info("Performing additional baseline run as specified by --baseline flag")
+        logger.info("Performing additional baseline run as specified by --baseline flag")
 
         if args.baseline_repo is not None:
             baseline_repo = str(args.baseline_repo)
         else:
             baseline_repo = config.settings.baseline_repo
             if not baseline_repo:
-                logging.error(
+                logger.error(
                     "When running with --baseline a baseline repo must either be provided using --baseline_repo option or in the config"
                 )
                 sys.exit(1)
@@ -348,7 +347,7 @@ def main_wrapper(args: argparse.Namespace):
             args.assay,
             args.analysis,
         )
-        logging.info("Now proceeding with checking out the --checkout")
+        logger.info("Now proceeding with checking out the --checkout")
     main(
         config,
         args.label,

@@ -29,9 +29,9 @@ def setup_results_links(
     assay: str,
 ):
 
-    log_base_dir = config.log_base_dir
-    trace_base_dir = config.trace_base_dir
-    work_base_dir = config.work_base_dir
+    log_base_dir = config.settings.log_base_dir
+    trace_base_dir = config.settings.trace_base_dir
+    work_base_dir = config.settings.work_base_dir
 
     current_date = datetime.now()
     date_stamp = current_date.strftime("%Y-%m-%d")
@@ -177,9 +177,9 @@ def write_run_log(
         print(f"commit hash: {commit_hash}", file=out_fh)
         print("", file=out_fh)
         print("# Config file - settings", file=out_fh)
-        for key, val in config.get_setting_entries():
+        for key, val in config.get_setting_entries().items():
             print(f"{key}: {val}", file=out_fh)
 
         print(f"# Config file - {run_type}", file=out_fh)
-        for key, val in config.get_profile_entries(run_type):
+        for key, val in config.get_profile_entries(run_type).items():
             print(f"{key}: {val}", file=out_fh)
