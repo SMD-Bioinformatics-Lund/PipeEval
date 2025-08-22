@@ -103,33 +103,39 @@ class RunSettingsConfig:
         self._default_settings = default_settings
         self._pipeline_settings = pipeline_settings
 
-        self.start_nextflow_analysis = str(self._parse_setting(
-            logger, default_settings_key, pipeline_settings_key, "start_nextflow_analysis"
-        ))
-        self.log_base_dir = str(self._parse_setting(
-            logger, default_settings_key, pipeline_settings_key, "log_base_dir"
-        ))
-        self.trace_base_dir = str(self._parse_setting(
-            logger, default_settings_key, pipeline_settings_key, "trace_base_dir"
-        ))
-        self.work_base_dir = str(self._parse_setting(
-            logger, default_settings_key, pipeline_settings_key, "work_base_dir"
-        ))
-        self.base = str(self._parse_setting(
-            logger, default_settings_key, pipeline_settings_key, "base"
-        ))
-        self.datestamp = bool(self._parse_setting(
-            logger, default_settings_key, pipeline_settings_key, "datestamp"
-        ))
-        self.queue = str(self._parse_setting(
-            logger, default_settings_key, pipeline_settings_key, "queue"
-        ))
-        self.executor = str(self._parse_setting(
-            logger, default_settings_key, pipeline_settings_key, "executor"
-        ))
-        self.cluster = str(self._parse_setting(
-            logger, default_settings_key, pipeline_settings_key, "cluster"
-        ))
+        self.start_nextflow_analysis = str(
+            self._parse_setting(
+                logger, default_settings_key, pipeline_settings_key, "start_nextflow_analysis"
+            )
+        )
+        self.log_base_dir = str(
+            self._parse_setting(logger, default_settings_key, pipeline_settings_key, "log_base_dir")
+        )
+        self.trace_base_dir = str(
+            self._parse_setting(
+                logger, default_settings_key, pipeline_settings_key, "trace_base_dir"
+            )
+        )
+        self.work_base_dir = str(
+            self._parse_setting(
+                logger, default_settings_key, pipeline_settings_key, "work_base_dir"
+            )
+        )
+        self.base = str(
+            self._parse_setting(logger, default_settings_key, pipeline_settings_key, "base")
+        )
+        self.datestamp = bool(
+            self._parse_setting(logger, default_settings_key, pipeline_settings_key, "datestamp")
+        )
+        self.queue = str(
+            self._parse_setting(logger, default_settings_key, pipeline_settings_key, "queue")
+        )
+        self.executor = str(
+            self._parse_setting(logger, default_settings_key, pipeline_settings_key, "executor")
+        )
+        self.cluster = str(
+            self._parse_setting(logger, default_settings_key, pipeline_settings_key, "cluster")
+        )
 
     def _parse_setting(
         self,
@@ -137,7 +143,7 @@ class RunSettingsConfig:
         default_settings_key: str,
         pipeline_settings_key: str,
         setting_key: str,
-        data_type: str = "string"
+        data_type: str = "string",
     ) -> Union[str, bool]:
         target_section = None
         if self._pipeline_settings.get(setting_key):
@@ -209,6 +215,18 @@ class RunConfig:
             raise ValueError(
                 f"Expected setting key {pipeline_setting_key}, but was not defined in the config file"
             )
+
+        if not self.config_parser.has_section("pipeline-default"):
+            logger.error(f'Run type section "pipeline-default" needs to be specified')
+            sys.exit(1)
+
+        self.run_settings_config = RunSettingsConfig(
+            logger,
+            self.config_parser["pipeline-default"],
+            self.config_parser[pipeline_setting_key],
+            "pipeline-default",
+            pipeline_setting_key,
+        )
 
     def get_sample_conf(self, sample_id: str, is_stub: bool) -> SectionProxy:
         case_settings = self.config_parser[sample_id]
