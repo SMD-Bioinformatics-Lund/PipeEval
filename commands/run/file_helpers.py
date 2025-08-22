@@ -8,14 +8,11 @@ from commands.run.help_classes import Case, CsvEntry
 
 
 def write_resume_script(
-    logging: Logger, results_dir: Path, run_command: List[str], dry_run: bool
+    results_dir: Path, run_command: List[str]
 ):
     resume_command = run_command + ["--resume"]
     resume_script = results_dir / "resume.sh"
-    if not dry_run:
-        resume_script.write_text(" ".join(resume_command))
-    else:
-        logging.info(f"(dry) Writing {resume_command} to {resume_script}")
+    resume_script.write_text(" ".join(resume_command))
 
 
 def copy_nextflow_config(repo: Path, results_dir: Path):
@@ -29,7 +26,6 @@ def setup_results_links(
     config: ConfigParser,
     results_dir: Path,
     run_label: str,
-    dry: bool,
     assay: str,
 ):
 
@@ -50,27 +46,19 @@ def setup_results_links(
 
     if log_link.exists():
         logger.warning(f"{log_link} already exists, removing previous link")
-        if not dry:
-            log_link.unlink()
+        log_link.unlink()
 
     if trace_link.exists():
         logger.warning(f"{trace_link} already exists, removing previous link")
-        if not dry:
-            trace_link.unlink()
+        trace_link.unlink()
 
     if work_link.exists():
         logger.warning(f"{work_link} already exists, removing previous link")
-        if not dry:
-            work_link.unlink()
+        work_link.unlink()
 
-    if not dry:
-        log_link.symlink_to(log_link_target)
-        trace_link.symlink_to(trace_link_target)
-        work_link.symlink_to(work_link_target)
-    else:
-        logger.info(f"(dry) Linking log from {log_link_target} to {log_link}")
-        logger.info(f"(dry) Linking trace from {trace_link_target} to {trace_link}")
-        logger.info(f"(dry) Linking work from {work_link_target} to {work_link}")
+    log_link.symlink_to(log_link_target)
+    trace_link.symlink_to(trace_link_target)
+    work_link.symlink_to(work_link_target)
 
 
 def get_single_csv(

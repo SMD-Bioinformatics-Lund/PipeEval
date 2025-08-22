@@ -53,7 +53,6 @@ def main(
     base_dir: Optional[Path],
     repo: Optional[Path],
     start_data: str,
-    dry_run: bool,
     stub_run: bool,
     run_type: str,
     skip_confirmation: bool,
@@ -67,9 +66,7 @@ def main(
     logger.info(f"Preparing run, type: {run_type}, data: {start_data}")
 
     check_valid_config_arguments(config, run_type, start_data, base_dir, repo)
-    base_dir = (
-        base_dir if base_dir is not None else Path(config.get("settings", "base"))
-    )
+    base_dir = base_dir if base_dir is not None else Path(config.get("settings", "base"))
     repo = repo if repo is not None else Path(config.get("settings", "repo"))
     datestamp = datestamp or config.getboolean("settings", "datestamp")
 
@@ -87,21 +84,17 @@ def main(
 
     confirm_run_if_results_exists(results_dir, skip_confirmation)
 
-    if not dry_run:
-        results_dir.mkdir(exist_ok=True, parents=True)
+    results_dir.mkdir(exist_ok=True, parents=True)
 
     run_log_path = results_dir / "run.log"
-    if dry_run:
-        logging.info(f"(dry) Writing log to {run_log_path}")
-    else:
-        write_run_log(
-            run_log_path,
-            run_type,
-            label or "no label",
-            checkout,
-            config,
-            commit_hash,
-        )
+    write_run_log(
+        run_log_path,
+        run_type,
+        label or "no label",
+        checkout,
+        config,
+        commit_hash,
+    )
 
     run_type_settings = dict(config[run_type])
 
@@ -131,10 +124,7 @@ def main(
             analysis,
         )
     out_csv = results_dir / "run.csv"
-    if dry_run:
-        logging.info(f"(dry) Writing CSV to {out_csv}")
-    else:
-        csv.write_to_file(str(out_csv))
+    csv.write_to_file(str(out_csv))
 
     def get_start_nextflow_command(quote_pipeline_arguments: bool) -> List[str]:
         command = build_start_nextflow_analysis_cmd(
@@ -156,15 +146,13 @@ def main(
         return command
 
     write_resume_script(
-        logger,
         results_dir,
         get_start_nextflow_command(True),
-        dry_run,
     )
     copy_nextflow_config(repo, results_dir)
-    setup_results_links(logger, config, results_dir, run_label, dry_run, assay)
+    setup_results_links(logger, config, results_dir, run_label, assay)
 
-    start_run(get_start_nextflow_command(False), dry_run, skip_confirmation)
+    start_run(get_start_nextflow_command(False), skip_confirmation)
 
 
 def confirm_run_if_results_exists(results_dir: Path, skip_confirmation: bool):
@@ -239,9 +227,7 @@ def build_run_label(
     run_label = "-".join(label_parts)
 
     if run_label.find("/") != -1:
-        logger.warning(
-            f"Found '/' characters in run label: {run_label}, replacing with '-'"
-        )
+        logger.warning(f"Found '/' characters in run label: {run_label}, replacing with '-'")
         run_label = run_label.replace("/", "-")
 
     return run_label
@@ -308,25 +294,18 @@ def build_start_nextflow_analysis_cmd(
     return start_nextflow_command
 
 
-def start_run(
-    start_nextflow_command: List[str], dry_run: bool, skip_confirmation: bool
-):
-    if not dry_run:
-        if not skip_confirmation:
-            pretty_command = " \\\n    ".join(start_nextflow_command)
-            confirmation = input(
-                f"Do you want to run the following command:\n{pretty_command}\n(y/n) "
-            )
+def start_run(start_nextflow_command: List[str], skip_confirmation: bool):
+    if not skip_confirmation:
+        pretty_command = " \\\n    ".join(start_nextflow_command)
+        confirmation = input(
+            f"Do you want to run the following command:\n{pretty_command}\n(y/n) "
+        )
 
-            if confirmation == "y":
-                subprocess.run(start_nextflow_command, check=True)
-            else:
-                logger.info("Exiting ...")
-        else:
-            subprocess.run(start_nextflow_command, check=True)
-    else:
-        joined_command = " ".join(start_nextflow_command)
-        logger.info("(dry) " + joined_command)
+        if confirmation != "y":
+            logger.info("Exiting ...")
+            return
+    
+    subprocess.run(start_nextflow_command, check=True)
 
 
 def main_wrapper(args: argparse.Namespace):
@@ -338,9 +317,7 @@ def main_wrapper(args: argparse.Namespace):
         logger.setLevel(logging.WARNING)
 
     if args.baseline is not None:
-        logging.info(
-            "Performing additional baseline run as specified by --baseline flag"
-        )
+        logging.info("Performing additional baseline run as specified by --baseline flag")
 
         if args.baseline_repo is not None:
             baseline_repo = str(args.baseline_repo)
@@ -359,7 +336,6 @@ def main_wrapper(args: argparse.Namespace):
             Path(args.base) if args.base is not None else None,
             Path(baseline_repo),
             args.start_data,
-            args.dry,
             args.stub,
             args.run_type,
             args.skip_confirmation,
@@ -378,7 +354,6 @@ def main_wrapper(args: argparse.Namespace):
         Path(args.base) if args.base is not None else None,
         Path(args.repo) if args.repo is not None else None,
         args.start_data,
-        args.dry,
         args.stub,
         args.run_type,
         args.skip_confirmation,
@@ -421,12 +396,6 @@ def add_arguments(parser: argparse.ArgumentParser):
         required=True,
     )
     parser.add_argument(
-        "--dry",
-        "-n",
-        action="store_true",
-        help="Go through the motions, but don't execute the pipeline",
-    )
-    parser.add_argument(
         "--skip_confirmation",
         action="store_true",
         help="If not set, you will be asked before starting the pipeline run",
@@ -452,12 +421,8 @@ def add_arguments(parser: argparse.ArgumentParser):
         action="store_true",
         help="Run start_nextflow_analysis.pl with nostart, printing the path to the SLURM job only",
     )
-    parser.add_argument(
-        "--baseline", help="Start a second baseline run and specified checkout"
-    )
-    parser.add_argument(
-        "--verbose", action="store_true", help="Print additional debug output"
-    )
+    parser.add_argument("--baseline", help="Start a second baseline run and specified checkout")
+    parser.add_argument("--verbose", action="store_true", help="Print additional debug output")
     parser.add_argument(
         "--silent", action="store_true", help="Run silently, produce only output files"
     )
