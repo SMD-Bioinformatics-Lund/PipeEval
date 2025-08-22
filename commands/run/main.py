@@ -5,7 +5,7 @@ import logging
 import os
 import subprocess
 import sys
-from configparser import ConfigParser
+from configparser import ConfigParser, SectionProxy
 from datetime import datetime
 from pathlib import Path
 from typing import List, Optional
@@ -27,6 +27,7 @@ from commands.run.gittools import (
     get_git_commit_hash_and_log,
     pull_branch,
 )
+from commands.run.help_classes import RunConfig
 from shared.constants import ASSAY_PLACEHOLDER
 from shared.util import check_valid_config_path, load_config
 
@@ -47,7 +48,7 @@ logger = logging.getLogger(__name__)
 
 
 def main(
-    config: ConfigParser,
+    config: RunConfig,
     label: Optional[str],
     checkout: str,
     base_dir: Optional[Path],
@@ -65,10 +66,10 @@ def main(
 ):
     logger.info(f"Preparing run, type: {run_type}, data: {start_data}")
 
-    check_valid_config_arguments(config, run_type, start_data, base_dir, repo)
-    base_dir = base_dir if base_dir is not None else Path(config.get("settings", "base"))
-    repo = repo if repo is not None else Path(config.get("settings", "repo"))
-    datestamp = datestamp or config.getboolean("settings", "datestamp")
+    # check_valid_config_arguments(config, run_type, start_data, base_dir, repo)
+    base_dir = base_dir if base_dir is not None else Path(config.base)
+    repo = repo if repo is not None else Path(config.repo)
+    datestamp = datestamp or config.datestamp
 
     check_valid_repo(repo)
     do_repo_checkout(repo, checkout, verbose, skip_confirmation)
@@ -96,12 +97,13 @@ def main(
         commit_hash,
     )
 
-    run_type_settings = dict(config[run_type])
+    run_type_settings = config.get_run_type_settings()
 
     assay = assay or ASSAY_PLACEHOLDER
     analysis = analysis or run_type_settings["profile"]
 
-    if not config.getboolean(run_type, "trio"):
+    # FIXME: Consider how to deal with a duo here
+    if not config.trio:
         csv = get_single_csv(
             config,
             run_type_settings,
@@ -128,16 +130,16 @@ def main(
 
     def get_start_nextflow_command(quote_pipeline_arguments: bool) -> List[str]:
         command = build_start_nextflow_analysis_cmd(
-            config["settings"]["start_nextflow_analysis"],
+            config.start_nextflow_analysis,
             out_csv,
             results_dir,
-            config["settings"]["executor"],
-            config["settings"]["cluster"],
-            config["settings"]["queue"],
-            config["settings"]["singularity_version"],
-            config["settings"]["nextflow_version"],
-            config["settings"]["container"],
-            str(repo / config["settings"]["runscript"]),
+            config.executor,
+            config.cluster,
+            config.queue,
+            config.singularity_version,
+            config.nextflow_version,
+            config.container,
+            str(repo / config.runscript),
             run_type_settings["profile"],
             stub_run,
             no_start,
@@ -186,32 +188,32 @@ def do_repo_checkout(repo: Path, checkout: str, verbose: bool, skip_confirmation
             pull_branch(logger, repo, branch, verbose)
 
 
-def check_valid_config_arguments(
-    config: ConfigParser,
-    run_type: str,
-    start_data: str,
-    base_dir: Optional[Path],
-    repo: Optional[Path],
-):
-    if not config.has_section(run_type):
-        raise ValueError(f"Valid config keys are: {config.sections()}")
-    valid_start_data = ["fq", "bam", "vcf"]
-    if start_data not in valid_start_data:
-        raise ValueError(f"Valid start_data types are: {', '.join(valid_start_data)}")
+# def check_valid_config_arguments(
+#     config: ConfigParser,
+#     run_type: str,
+#     start_data: str,
+#     base_dir: Optional[Path],
+#     repo: Optional[Path],
+# ):
+#     if not config.has_section(run_type):
+#         raise ValueError(f"Valid config keys are: {config.sections()}")
+#     valid_start_data = ["fq", "bam", "vcf"]
+#     if start_data not in valid_start_data:
+#         raise ValueError(f"Valid start_data types are: {', '.join(valid_start_data)}")
 
-    if base_dir is None:
-        if not check_valid_config_path(config, "settings", "base"):
-            found = config.get("settings", "base")
-            raise ValueError(
-                f"A valid output base folder must be specified either through the '--base' flag, or in the config['settings']['base']. Found: {found}"
-            )
+#     if base_dir is None:
+#         if not check_valid_config_path(config, "settings", "base"):
+#             found = config.get("settings", "base")
+#             raise ValueError(
+#                 f"A valid output base folder must be specified either through the '--base' flag, or in the config['settings']['base']. Found: {found}"
+#             )
 
-    if repo is None:
-        if not check_valid_config_path(config, "settings", "repo"):
-            found = config.get("settings", "repo")
-            raise ValueError(
-                f"A valid repo must be specified either through the '--repo' flag, or in the config['settings']['repo']. Found: {found}"
-            )
+#     if repo is None:
+#         if not check_valid_config_path(config, "settings", "repo"):
+#             found = config.get("settings", "repo")
+#             raise ValueError(
+#                 f"A valid repo must be specified either through the '--repo' flag, or in the config['settings']['repo']. Found: {found}"
+#             )
 
 
 def build_run_label(
@@ -322,8 +324,8 @@ def main_wrapper(args: argparse.Namespace):
         if args.baseline_repo is not None:
             baseline_repo = str(args.baseline_repo)
         else:
-            baseline_repo = config.get("settings", "baseline_repo", fallback="")
-            if baseline_repo == "":
+            baseline_repo = config.baseline_repo
+            if not baseline_repo:
                 logging.error(
                     "When running with --baseline a baseline repo must either be provided using --baseline_repo option or in the config"
                 )

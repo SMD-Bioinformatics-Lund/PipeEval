@@ -4,7 +4,7 @@ from logging import Logger
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from commands.run.help_classes import Case, CsvEntry
+from commands.run.help_classes import Case, RunConfig, CsvEntry
 
 
 def write_resume_script(
@@ -23,15 +23,15 @@ def copy_nextflow_config(repo: Path, results_dir: Path):
 
 def setup_results_links(
     logger: Logger,
-    config: ConfigParser,
+    config: RunConfig,
     results_dir: Path,
     run_label: str,
     assay: str,
 ):
 
-    log_base_dir = config["settings"]["log_base_dir"]
-    trace_base_dir = config["settings"]["trace_base_dir"]
-    work_base_dir = config["settings"]["work_base_dir"]
+    log_base_dir = config.log_base_dir
+    trace_base_dir = config.trace_base_dir
+    work_base_dir = config.work_base_dir
 
     current_date = datetime.now()
     date_stamp = current_date.strftime("%Y-%m-%d")
@@ -62,7 +62,7 @@ def setup_results_links(
 
 
 def get_single_csv(
-    config: ConfigParser,
+    config: RunConfig,
     run_type_settings: Dict[str, Any],
     run_label: str,
     start_data: str,
@@ -72,13 +72,14 @@ def get_single_csv(
     analysis: str,
 ):
     case_id = run_type_settings["case"]
-    case_conf = config[case_id]
+    case_conf = config.get_sample_conf(case_id, stub_run)
 
-    # Replace real data with dummy files in stub run to avoid scratching
-    if stub_run:
-        stub_case = config["settings"]
-        for key in stub_case:
-            case_conf[key] = stub_case[key]
+    # FIXME: Is this even working? Look into it
+    # # Replace real data with dummy files in stub run to avoid scratching
+    # if stub_run:
+    #     stub_case = config["settings"]
+    #     for key in stub_case:
+    #         case_conf[key] = stub_case[key]
 
     case = parse_case(dict(case_conf), start_data, is_trio=False)
 
@@ -91,7 +92,7 @@ def get_single_csv(
 
 
 def get_trio_csv(
-    config: ConfigParser,
+    config: RunConfig,
     run_type_settings: Dict[str, Any],
     run_label: str,
     start_data: str,
@@ -101,19 +102,20 @@ def get_trio_csv(
     analysis: str,
 ):
 
-    case_ids = run_type_settings["cases"].split(",")
+    sample_ids = run_type_settings["cases"].split(",")
     assert (
-        len(case_ids) == 3
-    ), f"For a trio, three fields are expected, found: {case_ids}"
+        len(sample_ids) == 3
+    ), f"For a trio, three fields are expected, found: {sample_ids}"
     cases: List[Case] = []
-    for case_id in case_ids:
-        case_dict = config[case_id]
+    for sample_id in sample_ids:
+        case_dict = config.get_sample_conf(sample_id, stub_run)
 
+        # FIXME: Investigate
         # Replace real data with dummy files in stub run to avoid scratching
-        if stub_run:
-            stub_case = config["settings"]
-            for key in stub_case:
-                case_dict[key] = stub_case[key]
+        # if stub_run:
+        #     stub_case = config["settings"]
+        #     for key in stub_case:
+        #         case_dict[key] = stub_case[key]
 
         case = parse_case(dict(case_dict), start_data, is_trio=True)
 
@@ -163,7 +165,7 @@ def write_run_log(
     run_type: str,
     label: str,
     checkout_str: str,
-    config: ConfigParser,
+    config: RunConfig,
     commit_hash: str,
 ):
     with run_log_path.open("w") as out_fh:
@@ -175,9 +177,9 @@ def write_run_log(
         print(f"commit hash: {commit_hash}", file=out_fh)
         print("", file=out_fh)
         print("# Config file - settings", file=out_fh)
-        for key, val in config["settings"].items():
+        for key, val in config.get_setting_entries():
             print(f"{key}: {val}", file=out_fh)
 
         print(f"# Config file - {run_type}", file=out_fh)
-        for key, val in config[run_type].items():
+        for key, val in config.get_profile_entries(run_type):
             print(f"{key}: {val}", file=out_fh)
