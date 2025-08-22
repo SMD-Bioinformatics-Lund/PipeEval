@@ -270,7 +270,8 @@ def vcf_comparisons(
     vcfs: VCFPair,
 ):
     if check_comparison(comparisons, f"presence_{vcf_type}") and vcfs is not None:
-        logger.info("Basic comparison")
+        logger.info("")
+        logger.info("### Basic comparison ###")
         presence_path = outdir / f"scored_{vcf_type}_presence.txt" if outdir else None
         compare_variant_presence(
             logger,

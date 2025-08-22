@@ -21,13 +21,11 @@ def compare_variant_presence(
     show_line_numbers: bool,
     additional_annotations: List[str],
 ):
-    common = comparison_results.shared
     r1_only = comparison_results.r1
     r2_only = comparison_results.r2
 
     summary_lines = get_variant_presence_summary(
         run_ids,
-        common,
         r1_only,
         r2_only,
         variants_r1,
@@ -36,13 +34,15 @@ def compare_variant_presence(
         max_display,
         additional_annotations,
     )
-    for line in summary_lines:
-        logger.info(line)
+    if len(summary_lines) > 0:
+        for line in summary_lines:
+            logger.info(line)
+    else:
+        logger.info("No difference found")
 
     if out_path is not None:
         full_summary_lines = get_variant_presence_summary(
             run_ids,
-            common,
             r1_only,
             r2_only,
             variants_r1,
@@ -58,7 +58,6 @@ def compare_variant_presence(
 
 def get_variant_presence_summary(
     run_ids: Tuple[str, str],
-    common: Set[str],
     r1_only: Set[str],
     r2_only: Set[str],
     variants_r1: Dict[str, ScoredVariant],
