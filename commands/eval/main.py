@@ -271,7 +271,7 @@ def vcf_comparisons(
 ):
     if check_comparison(comparisons, f"presence_{vcf_type}") and vcfs is not None:
         logger.info("")
-        logger.info("### Basic comparison ###")
+        logger.info("### Variants only present in one ###")
         presence_path = outdir / f"scored_{vcf_type}_presence.txt" if outdir else None
         compare_variant_presence(
             logger,
