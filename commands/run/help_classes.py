@@ -117,12 +117,19 @@ class RunSettingsConfig:
     log_base_dir: str
     trace_base_dir: str
     work_base_dir: str
+    repo: str
     # FIXME: Clearer name. Out base?
     base: str
+    baseline_repo: str
     datestamp: bool
     queue: str
     executor: str
     cluster: str
+
+    singularity_version: str
+    nextflow_version: str
+    container: str
+    runscript: str
 
     def __init__(
         self,
@@ -134,6 +141,28 @@ class RunSettingsConfig:
     ):
         self._default_settings = default_settings
         self._pipeline_settings = pipeline_settings
+
+        self.singularity_version = str(
+            self._parse_setting(
+                logger, default_settings_key, pipeline_settings_key, "singularity_version"
+            )
+        )
+        self.nextflow_version = str(
+            self._parse_setting(
+                logger, default_settings_key, pipeline_settings_key, "nextflow_version"
+            )
+        )
+        self.container = str(
+            self._parse_setting(
+                logger, default_settings_key, pipeline_settings_key, "container"
+            )
+        )
+        self.runscript = str(
+            self._parse_setting(
+                logger, default_settings_key, pipeline_settings_key, "runscript"
+            )
+        )
+
 
         self.start_nextflow_analysis = str(
             self._parse_setting(
@@ -152,6 +181,12 @@ class RunSettingsConfig:
             self._parse_setting(
                 logger, default_settings_key, pipeline_settings_key, "work_base_dir"
             )
+        )
+        self.repo = str(
+            self._parse_setting(logger, default_settings_key, pipeline_settings_key, "repo")
+        )
+        self.baseline_repo = str(
+            self._parse_setting(logger, default_settings_key, pipeline_settings_key, "baseline_repo")
         )
         self.base = str(
             self._parse_setting(logger, default_settings_key, pipeline_settings_key, "base")

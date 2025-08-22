@@ -67,9 +67,9 @@ def main(
     logger.info(f"Preparing run, type: {run_type}, data: {start_data}")
 
     # check_valid_config_arguments(config, run_type, start_data, base_dir, repo)
-    base_dir = base_dir if base_dir is not None else Path(config.base)
-    repo = repo if repo is not None else Path(config.repo)
-    datestamp = datestamp or config.datestamp
+    base_dir = base_dir if base_dir is not None else Path(config.settings.base)
+    repo = repo if repo is not None else Path(config.settings.repo)
+    datestamp = datestamp or config.settings.datestamp
 
     check_valid_repo(repo)
     do_repo_checkout(repo, checkout, verbose, skip_confirmation)
@@ -103,7 +103,7 @@ def main(
     analysis = analysis or run_type_settings["profile"]
 
     # FIXME: Consider how to deal with a duo here
-    if not config.trio:
+    if not config.profile.sample_type == "trio":
         csv = get_single_csv(
             config,
             run_type_settings,
@@ -130,16 +130,16 @@ def main(
 
     def get_start_nextflow_command(quote_pipeline_arguments: bool) -> List[str]:
         command = build_start_nextflow_analysis_cmd(
-            config.start_nextflow_analysis,
+            config.settings.start_nextflow_analysis,
             out_csv,
             results_dir,
-            config.executor,
-            config.cluster,
-            config.queue,
-            config.singularity_version,
-            config.nextflow_version,
-            config.container,
-            str(repo / config.runscript),
+            config.settings.executor,
+            config.settings.cluster,
+            config.settings.queue,
+            config.settings.singularity_version,
+            config.settings.nextflow_version,
+            config.settings.container,
+            str(repo / config.settings.runscript),
             run_type_settings["profile"],
             stub_run,
             no_start,
@@ -324,7 +324,7 @@ def main_wrapper(args: argparse.Namespace):
         if args.baseline_repo is not None:
             baseline_repo = str(args.baseline_repo)
         else:
-            baseline_repo = config.baseline_repo
+            baseline_repo = config.settings.baseline_repo
             if not baseline_repo:
                 logging.error(
                     "When running with --baseline a baseline repo must either be provided using --baseline_repo option or in the config"
