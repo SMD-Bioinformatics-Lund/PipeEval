@@ -44,6 +44,37 @@ def parse_mandatory_section_argument(
     return section[target_key]
 
 
+
+class SampleConfig:
+
+    id: str
+    clarity_pool_id: int
+    clarity_sample_id: str
+    sex: str
+    type: str
+    fq_fw: Optional[str]
+    fq_rv: Optional[str]
+    bam: Optional[str]
+    vcf: Optional[str]
+
+    def __init__(self, logger: Logger, key: str, sample_section: SectionProxy):
+
+        self.id = parse_mandatory_section_argument(sample_section, key, logger, "pipeline")
+        self.clarity_pool_id = int(
+            parse_mandatory_section_argument(sample_section, key, logger, "clarity_pool_id")
+        )
+        self.clarity_sample_id = parse_mandatory_section_argument(
+            sample_section, key, logger, "clarity_sample_id"
+        )
+        self.sex = parse_mandatory_section_argument(sample_section, key, logger, "sex")
+        self.type = parse_mandatory_section_argument(sample_section, key, logger, "type")
+
+        self.fq_fw = sample_section.get("fq_fw")
+        self.fq_rv = sample_section.get("fq_rv")
+        self.bam = sample_section.get("bam")
+        self.vcf = sample_section.get("vcf")
+
+
 class RunProfileConfig:
 
     raw_config: Dict[str, str]
@@ -71,6 +102,7 @@ class RunProfileConfig:
         samples_str = parse_mandatory_section_argument(
             run_profile_conf, profile_key, logger, "samples"
         )
+        
         self.samples = samples_str.split(",")
         self.default_panel = run_profile_conf.get("default_panel")
 
@@ -166,39 +198,27 @@ class RunSettingsConfig:
             raise ValueError(f"Unknown data_type: {data_type}, known are string and bool")
 
 
-class SampleConfig:
-    def __init__(self):
-        pass
+
 
 
 class RunConfig:
 
     config_parser: ConfigParser
     profile: RunProfileConfig
-    # profile_config: SectionProxy
-    # pipeline_config: SectionProxy
+    settings: RunSettingsConfig
+    samples: Dict[str, SampleConfig]
 
     run_type: str
 
-    # Sub object?
-    start_nextflow_analysis: str
-    executor: str
-    cluster: str
-    queue: str
-    singularity_version: str
-    nextflow_version: str
-    container: str
-    runscript: str
+    # log_base_dir: str
+    # trace_base_dir: str
+    # work_base_dir: str
 
-    log_base_dir: str
-    trace_base_dir: str
-    work_base_dir: str
-
-    base: Path
-    baseline_repo: Path
-    repo: Path
-    datestamp: bool
-    trio: bool
+    # base: Path
+    # baseline_repo: Path
+    # repo: Path
+    # datestamp: bool
+    # trio: bool
 
     def __init__(self, logger: Logger, config_parser: ConfigParser, run_type: str):
         self.config_parser = config_parser
@@ -227,6 +247,16 @@ class RunConfig:
             "pipeline-default",
             pipeline_setting_key,
         )
+
+        for sample in self.profile.samples:
+            sample_key = f"sample-{sample}"
+            if not self.config_parser.has_section(sample_key):
+                logger.error(f'Sample key "{sample_key}" not found in config')
+                sys.exit(1)
+
+            sample_config = SampleConfig(logger, sample_key, self.config_parser[sample_key])
+            self.samples[sample_key] = sample_config
+
 
     def get_sample_conf(self, sample_id: str, is_stub: bool) -> SectionProxy:
         case_settings = self.config_parser[sample_id]
