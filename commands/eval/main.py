@@ -69,7 +69,7 @@ Performs all or a subset of the comparisons:
 """
 
 
-file_name_map = {"versions": "versions_diff.txt"}
+FILE_NAMES = {"versions": "versions.diff", "scout_yaml": "scout_yaml.diff", "qc": "qc.diff"}
 
 
 def log_and_write(text: str, fh: Optional[TextIOWrapper]):
@@ -126,8 +126,6 @@ def main(  # noqa: C901 (skipping complexity check)
     if comparisons is None or "file" in comparisons:
         do_file_diff(outdir, pipe_conf, ro, r1_paths, r2_paths)
 
-
-
     run_ids = (ro.r1_id, ro.r2_id)
 
     # SNV comparisons
@@ -136,10 +134,13 @@ def main(  # noqa: C901 (skipping complexity check)
         comparisons is None
         or len(comparisons.intersection({f"basic_snv", f"score_snv", f"annotation_snv"})) > 0
     )
-    if any_snv_comparison and snv_vcf_path_patterns:
-        snv_vcfs = get_vcf_pair(snv_vcf_path_patterns, ro, r1_paths, r2_paths, rs.verbose)
-        if snv_vcfs:
-            vcf_comparisons(comparisons, run_ids, outdir, rs, "snv", snv_vcfs)
+    if any_snv_comparison:
+        if snv_vcf_path_patterns:
+            snv_vcfs = get_vcf_pair(snv_vcf_path_patterns, ro, r1_paths, r2_paths, rs.verbose, "snv")
+            if snv_vcfs:
+                vcf_comparisons(comparisons, run_ids, outdir, rs, "snv", snv_vcfs)
+        else:
+            logger.warning("No SNV patterns matched, skipping")
 
     # SV comparisons
     sv_vcf_path_patterns = (pipe_conf["sv_vcf"] or "").split(",")
@@ -147,10 +148,14 @@ def main(  # noqa: C901 (skipping complexity check)
         comparisons is None
         or len(comparisons.intersection({f"basic_sv", f"score_sv", f"annotation_sv"})) > 0
     )
-    if any_sv_comparison and sv_vcf_path_patterns:
-        sv_vcfs = get_vcf_pair(sv_vcf_path_patterns, ro, r1_paths, r2_paths, rs.verbose)
-        if sv_vcfs:
-            vcf_comparisons(comparisons, run_ids, outdir, rs, "snv", sv_vcfs)
+    if any_sv_comparison:
+        if sv_vcf_path_patterns:
+            sv_vcfs = get_vcf_pair(sv_vcf_path_patterns, ro, r1_paths, r2_paths, rs.verbose, "sv")
+            if sv_vcfs:
+                vcf_comparisons(comparisons, run_ids, outdir, rs, "sv", sv_vcfs)
+        else:
+            logger.warning("No SV patterns matched, skipping")
+        
 
     scout_yaml_check = "scout_yaml"
     if comparisons is None or scout_yaml_check in comparisons and pipe_conf.get(scout_yaml_check):
@@ -194,10 +199,11 @@ def get_vcf_pair(
     r1_paths: List[PathObj],
     r2_paths: List[PathObj],
     verbose: bool,
+    vcf_type: str
 ) -> Optional[VCFPair]:
     vcf_pair_paths = get_pair_match(
         logger,
-        "scored SNVs",
+        vcf_type,
         vcf_paths,
         ro,
         r1_paths,
@@ -206,16 +212,16 @@ def get_vcf_pair(
     )
 
     if vcf_pair_paths is None:
-        logger.warning(f"Skipping SNV comparisons due to missing files ({vcf_pair_paths})")
+        logger.warning(f"Skipping {vcf_type} comparisons due to missing files ({vcf_pair_paths})")
         return None
 
-    vcf_pair = parse_vcf_pair(ro.run_ids, vcf_pair_paths)
+    vcf_pair = parse_vcf_pair(ro.run_ids, vcf_pair_paths, vcf_type)
 
     return vcf_pair
 
 
-def parse_vcf_pair(run_ids: Tuple[str, str], vcf_paths: Tuple[Path, Path]) -> VCFPair:
-    logger.info("# Parsing VCFs ...")
+def parse_vcf_pair(run_ids: Tuple[str, str], vcf_paths: Tuple[Path, Path], vcf_type: str) -> VCFPair:
+    logger.info(f"# Parsing {vcf_type} VCFs ...")
 
     vcf_r1 = parse_scored_vcf(vcf_paths[0], False)
     logger.info(f"{run_ids[0]} number variants: {len(vcf_r1.variants)}")
@@ -257,7 +263,7 @@ def do_simple_diff(
     if not matched_pair:
         logging.warning(f"At least one file missing ({matched_pair})")
     else:
-        out_path = outdir / file_name_map[analysis] if outdir else None
+        out_path = outdir / FILE_NAMES[analysis] if outdir else None
         diff_compare_files(ro.r1_id, ro.r2_id, matched_pair[0], matched_pair[1], out_path)
 
 

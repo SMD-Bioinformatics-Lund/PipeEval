@@ -187,32 +187,6 @@ def do_repo_checkout(repo: Path, checkout: str, verbose: bool, skip_confirmation
             pull_branch(logger, repo, branch, verbose)
 
 
-# def check_valid_config_arguments(
-#     config: ConfigParser,
-#     run_type: str,
-#     start_data: str,
-#     base_dir: Optional[Path],
-#     repo: Optional[Path],
-# ):
-#     if not config.has_section(run_type):
-#         raise ValueError(f"Valid config keys are: {config.sections()}")
-#     valid_start_data = ["fq", "bam", "vcf"]
-#     if start_data not in valid_start_data:
-#         raise ValueError(f"Valid start_data types are: {', '.join(valid_start_data)}")
-
-#     if base_dir is None:
-#         if not check_valid_config_path(config, "settings", "base"):
-#             found = config.get("settings", "base")
-#             raise ValueError(
-#                 f"A valid output base folder must be specified either through the '--base' flag, or in the config['settings']['base']. Found: {found}"
-#             )
-
-#     if repo is None:
-#         if not check_valid_config_path(config, "settings", "repo"):
-#             found = config.get("settings", "repo")
-#             raise ValueError(
-#                 f"A valid repo must be specified either through the '--repo' flag, or in the config['settings']['repo']. Found: {found}"
-#             )
 
 
 def build_run_label(

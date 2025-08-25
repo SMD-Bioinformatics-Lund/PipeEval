@@ -53,7 +53,7 @@ def test_main(caplog: LogCaptureFixture, tmp_path: Path):
     with caplog.at_level(logging.INFO):
 
         main(
-            "pipeline FIXME",
+            "dna-const",
             vcf1_path,
             vcf2_path,
             is_sv,
