@@ -11,7 +11,6 @@ from typing import List, Optional
 
 from commands.run.file_helpers import (
     copy_nextflow_config,
-    get_single_csv,
     get_csv,
     setup_results_links,
     write_resume_script,

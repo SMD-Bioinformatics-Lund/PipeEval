@@ -62,31 +62,31 @@ def setup_results_links(
     work_link.symlink_to(work_link_target)
 
 
-def get_single_csv(
-    logger: Logger,
-    config: RunConfig,
-    run_label: str,
-    start_data: str,
-    queue: Optional[str],
-    assay: str,
-    analysis: str,
-):
-    sample_id = config.run_profile.samples[0]
-    sample_conf = config.get_sample_conf(sample_id)
+# def get_single_csv(
+#     logger: Logger,
+#     config: RunConfig,
+#     run_label: str,
+#     start_data: str,
+#     queue: Optional[str],
+#     assay: str,
+#     analysis: str,
+# ):
+#     sample_id = config.run_profile.samples[0]
+#     sample_conf = config.get_sample_conf(sample_id)
 
-    case = parse_sample(logger, sample_conf, start_data, "single")
+#     case = parse_sample(logger, sample_conf, start_data, "single")
 
-    if not Path(case.read1).exists() or not Path(case.read2).exists():
-        raise FileNotFoundError(f"One or both files missing: {case.read1} {case.read2}")
+#     if not Path(case.read1).exists() or not Path(case.read2).exists():
+#         raise FileNotFoundError(f"One or both files missing: {case.read1} {case.read2}")
 
-    diagnosis = config.run_profile.default_panel
+#     diagnosis = config.run_profile.default_panel
 
-    if not diagnosis:
-        logger.error("No default ")
-        sys.exit(1)
+#     if not diagnosis:
+#         logger.error("No default ")
+#         sys.exit(1)
 
-    run_csv = CsvEntry(run_label, [case], queue, assay, analysis, diagnosis)
-    return run_csv
+#     run_csv = CsvEntry(run_label, [case], queue, assay, analysis, diagnosis)
+#     return run_csv
 
 
 # FIXME: Generalize for other numbers of samples
@@ -103,18 +103,22 @@ def get_csv(
 ):
 
     sample_ids = config.run_profile.samples
-    samples: List[Case] = []
-    for sample_id in sample_ids:
-        sample_config = config.get_sample_conf(sample_id)
 
-        case = parse_sample(logger, sample_config, start_data, "trio")
+    if len(sample_ids) > 1:
+        raise ValueError("FIXME: Must fix this, only one sample supported atm")
 
-        if not Path(case.read1).exists() or not Path(case.read2).exists():
-            raise FileNotFoundError(
-                f"One or both files missing: {case.read1} {case.read2}"
-            )
 
-        samples.append(case)
+
+    sample_config = config.get_sample_conf(sample_ids[0])
+
+    sample = parse_sample(logger, sample_config, start_data, config.run_profile.case_type)
+
+    if not Path(sample.read1).exists() or not Path(sample.read2).exists():
+        raise FileNotFoundError(
+            f"One or both files missing: {sample.read1} {sample.read2}"
+        )
+
+    # samples.append(case)
 
     default_panel = config.run_profile.default_panel
 
@@ -122,7 +126,7 @@ def get_csv(
         logger.error("Expected a default panel, found none")
         sys.exit(1)
 
-    run_csv = CsvEntry(run_label, samples, queue, assay, analysis, default_panel)
+    run_csv = CsvEntry(run_label, [sample], queue, assay, analysis, default_panel)
     return run_csv
 
 
@@ -161,7 +165,7 @@ def parse_sample(logger: Logger, conf: SampleConfig, start_data: str, sample_typ
         str(conf.clarity_pool_id),
         conf.clarity_sample_id,
         conf.sex,
-        conf.type,
+        sample_type,
         fw,
         rv,
         # FIXME: How to do this? "get_relative ?" No, need a trio / duo structure externally here

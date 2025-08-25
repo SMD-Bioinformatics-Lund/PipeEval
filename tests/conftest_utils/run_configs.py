@@ -62,7 +62,7 @@ def get_pipeline_config(base_dir: Path, tmp_path: Path) -> str:
     return settings_config_text
 
 
-def get_profile_config() -> str:
+def get_run_profile_config() -> str:
 
     pipeline_config_text = textwrap.dedent(
         f"""
@@ -126,8 +126,7 @@ def get_sample_config(config_sample_paths: ConfigSamplePathGroup) -> str:
 
     sample_config_text = textwrap.dedent(
         f"""
-        [proband]
-        id = s_proband
+        [s_proband]
         clarity_pool_id = 0
         clarity_sample_id = sample01
         sex = M
@@ -136,8 +135,7 @@ def get_sample_config(config_sample_paths: ConfigSamplePathGroup) -> str:
         bam = {proband.bam}
         vcf = {proband.vcf}
 
-        [mother]
-        id = s_mother
+        [s_mother]
         clarity_pool_id = 0
         clarity_sample_id = sample02
         sex = F
@@ -146,8 +144,7 @@ def get_sample_config(config_sample_paths: ConfigSamplePathGroup) -> str:
         bam = {mother.bam}
         vcf = {mother.vcf}
 
-        [father]
-        id = s_father
+        [s_father]
         clarity_pool_id = 0
         clarity_sample_id = sample03
         sex = M
@@ -156,8 +153,7 @@ def get_sample_config(config_sample_paths: ConfigSamplePathGroup) -> str:
         bam = {father.bam}
         vcf = {father.vcf}
 
-        [tumor]
-        id = s_tumor
+        [s_tumor]
         clarity_pool_id = 0
         clarity_sample_id = sample04
         sex = F
@@ -166,8 +162,7 @@ def get_sample_config(config_sample_paths: ConfigSamplePathGroup) -> str:
         bam = {tumor.bam}
         vcf = {tumor.vcf}
 
-        [normal]
-        id = s_normal
+        [s_normal]
         clarity_pool_id = 0
         clarity_sample_id = sample05
         sex = F

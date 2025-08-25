@@ -78,8 +78,8 @@ def test_single_run(monkeypatch: MonkeyPatch, base_dir: Path, run_config_paths: 
         rows = list(reader)
         assert len(rows) == 1
         row = rows[0]
-        assert row["id"] == "proband"
-        assert row["type"] == "proband"
+        assert row["id"] == "s_proband"
+        assert row["type"] == "single"
         assert row["sex"] == "M"
         assert row["assay"] == "dev"
         assert row["diagnosis"] == "OMIM"

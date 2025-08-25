@@ -6,7 +6,7 @@ import pytest
 from tests.conftest_utils.run_configs import (
     ConfigSamplePathGroup,
     ConfigSamplePaths,
-    get_profile_config,
+    get_run_profile_config,
     get_sample_config,
     get_pipeline_config,
 )
@@ -42,16 +42,16 @@ def config_sample_paths(tmp_path: Path):
 @pytest.fixture()
 def run_config_paths(tmp_path: Path, base_dir: Path, config_sample_paths: ConfigSamplePathGroup) -> RunConfigs:
 
+    run_profile_config = get_run_profile_config()
+    run_profile_config_path = tmp_path / "profile_config.ini"
+    run_profile_config_path.write_text(run_profile_config)
+
     pipeline_config = get_pipeline_config(base_dir, tmp_path)
     pipeline_config_path = tmp_path / "pipeline_config.ini"
     pipeline_config_path.write_text(pipeline_config)
-
-    profile_config = get_profile_config()
-    profile_config_path = tmp_path / "profile_config.ini"
-    profile_config_path.write_text(profile_config)
 
     sample_config_content = get_sample_config(config_sample_paths)
     sample_config_path = tmp_path / "sample_config.ini"
     sample_config_path.write_text(sample_config_content)
 
-    return RunConfigs(pipeline_config_path, profile_config_path, sample_config_path)
+    return RunConfigs(pipeline_config_path, run_profile_config_path, sample_config_path)

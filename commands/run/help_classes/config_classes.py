@@ -26,7 +26,6 @@ class SampleConfig:
     clarity_pool_id: int
     clarity_sample_id: str
     sex: str
-    type: str
     fq_fw: Optional[str]
     fq_rv: Optional[str]
     bam: Optional[str]
@@ -34,7 +33,7 @@ class SampleConfig:
 
     def __init__(self, logger: Logger, sample_section: SectionProxy):
 
-        self.id = parse_mandatory_section_argument(logger, sample_section, "id")
+        self.id = sample_section.name
         self.clarity_pool_id = int(
             parse_mandatory_section_argument(logger, sample_section, "clarity_pool_id")
         )
@@ -42,7 +41,6 @@ class SampleConfig:
             logger, sample_section, "clarity_sample_id"
         )
         self.sex = parse_mandatory_section_argument(logger, sample_section, "sex")
-        self.type = parse_mandatory_section_argument(logger, sample_section, "type")
 
         self.fq_fw = sample_section.get("fq_fw")
         self.fq_rv = sample_section.get("fq_rv")
@@ -55,11 +53,11 @@ class RunProfileConfig:
     config: ConfigParser
     profile_section: SectionProxy
 
+    # single, trio, paired_tumor - calculated from sample types
     case_type: str
 
     pipeline: str
     profile: str
-    # single, trio, tumor_pair
     samples: List[str]
     sample_types: List[str]
     default_panel: Optional[str]
@@ -80,7 +78,6 @@ class RunProfileConfig:
 
         self.pipeline = parse_mandatory_section_argument(logger, profile_section, "pipeline")
         self.profile = parse_mandatory_section_argument(logger, profile_section, "profile")
-        self.sample_type = parse_mandatory_section_argument(logger, profile_section, "sample_type")
 
         samples_str = parse_mandatory_section_argument(logger, profile_section, "samples")
         self.samples = samples_str.split(",")
@@ -88,7 +85,7 @@ class RunProfileConfig:
         sample_types_str = parse_mandatory_section_argument(logger, profile_section, "sample_types")
         self.sample_types = sample_types_str.split(",")
 
-        if len(samples_str) != len(sample_types_str):
+        if len(self.samples) != len(self.sample_types):
             logger.error(
                 f'Different number of samples and sample types. Found samples: "{samples_str}" and sample_types "{sample_types_str}"'
             )
@@ -108,7 +105,6 @@ class RunProfileConfig:
             logger.error(
                 f"Only known sample type combination for two entries are types 'normal' and 'tumor'. Found: {sorted_types}"
             )
-            sys.exit(1)
         elif len(sample_types) == 3:
             sorted_types = sorted(sample_types)
             if sorted_types == ["father", "mother", "proband"]:
@@ -120,6 +116,7 @@ class RunProfileConfig:
             logger.error(
                 f"Only cases with 1, 2 or 3 samples are supported. Found: {len(sample_types)}"
             )
+        sys.exit(1)
 
 
 class PipelineSettingsConfig:
