@@ -71,7 +71,7 @@ def get_run_profile_config() -> str:
         profile = wgs
         samples = s_proband
         sample_types = proband
-        default_panel = OMIM
+        default_panel = itchy_nose
 
         [duo]
         pipeline = somatic
@@ -79,14 +79,14 @@ def get_run_profile_config() -> str:
         case_type = duo
         samples = s_tumor,s_normal
         sample_types = tumor,normal
-        default_panel = OMIM
+        default_panel = pain_in_toe
 
         [trio]
         pipeline = dna-const
         profile = wgs
         samples = s_proband,s_mother,s_father
         sample_types = proband,mother,father
-        default_panel = OMIM
+        default_panel = stiff_neck
         """
     )
     return pipeline_config_text

@@ -8,9 +8,7 @@ from commands.run.help_classes.help_classes import Case, CsvEntry
 from commands.run.help_classes.config_classes import RunConfig, SampleConfig
 
 
-def write_resume_script(
-    results_dir: Path, run_command: List[str]
-):
+def write_resume_script(results_dir: Path, run_command: List[str]):
     resume_command = run_command + ["--resume"]
     resume_script = results_dir / "resume.sh"
     resume_script.write_text(" ".join(resume_command))
@@ -96,29 +94,29 @@ def get_csv(
     logger: Logger,
     config: RunConfig,
     run_label: str,
-    start_data: str,
+    starting_run_from: str,
     queue: Optional[str],
     assay: str,
     analysis: str,
 ):
 
     sample_ids = config.run_profile.samples
+    samples = []
 
-    if len(sample_ids) > 1:
-        raise ValueError("FIXME: Must fix this, only one sample supported atm")
-
-
-
-    sample_config = config.get_sample_conf(sample_ids[0])
-
-    sample = parse_sample(logger, sample_config, start_data, config.run_profile.case_type)
-
-    if not Path(sample.read1).exists() or not Path(sample.read2).exists():
-        raise FileNotFoundError(
-            f"One or both files missing: {sample.read1} {sample.read2}"
+    for i, sample_id in enumerate(sample_ids):
+        sample_type = config.run_profile.sample_types[i]
+        sample = parse_sample(
+            logger,
+            sample_id,
+            sample_type,
+            config.samples,
+            starting_run_from,
+            config.run_profile.case_type,
+            config.run_profile.sample_types,
         )
-
-    # samples.append(case)
+        if not Path(sample.read1).exists() or not Path(sample.read2).exists():
+            raise FileNotFoundError(f"One or both files missing: {sample.read1} {sample.read2}")
+        samples.append(sample)
 
     default_panel = config.run_profile.default_panel
 
@@ -126,52 +124,82 @@ def get_csv(
         logger.error("Expected a default panel, found none")
         sys.exit(1)
 
-    run_csv = CsvEntry(run_label, [sample], queue, assay, analysis, default_panel)
+    run_csv = CsvEntry(run_label, samples, queue, assay, analysis, default_panel)
+
+    print(run_csv)
+
     return run_csv
 
 
-def parse_sample(logger: Logger, conf: SampleConfig, start_data: str, sample_type: str) -> Case:
-    if start_data == "vcf":
+def parse_sample(
+    logger: Logger,
+    sample_id: str,
+    sample_type: str,
+    confs: Dict[str, SampleConfig],
+    starting_run_from: str,
+    case_type: str,
+    sample_types: List[str],
+) -> Case:
 
-        if conf.vcf is None:
+    target_sample = confs[sample_id]
+    samples = list(confs.values())
+
+    if starting_run_from == "vcf":
+
+        if target_sample.vcf is None:
             logger.error(f'Run mode is "vcf" but missing in config')
             sys.exit(1)
 
-        fw = conf.vcf
+        fw = target_sample.vcf
         rv = f"{fw}.tbi"
-    elif start_data == "bam":
+    elif starting_run_from == "bam":
 
-        if conf.bam is None:
+        if target_sample.bam is None:
             logger.error(f'Run mode is "bam" but missing in config')
             sys.exit(1)
 
-        fw = conf.bam
+        fw = target_sample.bam
         rv = f"{fw}.bai"
-    elif start_data == "fq":
+    elif starting_run_from == "fq":
 
-        if conf.fq_fw is None or conf.fq_rv is None:
-            logger.error(f'Run mode is "fq" but missing at least one of fastq entries (fw: {conf.fq_fw} rv: {conf.fq_rv})')
+        if target_sample.fq_fw is None or target_sample.fq_rv is None:
+            logger.error(
+                f'Run mode is "fq" but missing at least one of fastq entries (fw: {target_sample.fq_fw} rv: {target_sample.fq_rv})'
+            )
             sys.exit(1)
 
-        fw = conf.fq_fw
-        rv = conf.fq_rv
+        fw = target_sample.fq_fw
+        rv = target_sample.fq_rv
     else:
-        raise ValueError(
-            f"Unknown start_data, found: {start_data}, valid are vcf, bam, fq"
-        )
+        raise ValueError(f"Unknown start_data, found: {starting_run_from}, valid are vcf, bam, fq")
+
+    if case_type == "trio" and sample_type == "proband":
+        print([s.id for s in samples])
+        print(sample_types)
+        mother_idx = [i for (i, sample_type) in enumerate(sample_types) if sample_type == "mother"][
+            0
+        ]
+        print("Mother idx", mother_idx)
+        mother = samples[mother_idx].id
+        father_idx = [i for (i, sample_type) in enumerate(sample_types) if sample_type == "father"][
+            0
+        ]
+        print("Father idx", father_idx)
+        father = samples[father_idx].id
+    else:
+        mother = None
+        father = None
 
     case = Case(
-        conf.id,
-        str(conf.clarity_pool_id),
-        conf.clarity_sample_id,
-        conf.sex,
+        target_sample.id,
+        str(target_sample.clarity_pool_id),
+        target_sample.clarity_sample_id,
+        target_sample.sex,
         sample_type,
         fw,
         rv,
-        # FIXME: How to do this? "get_relative ?" No, need a trio / duo structure externally here
-        # This requires more thought
-        mother=None,
-        father=None
+        mother,
+        father,
         # mother=conf.mother if is_trio else None,
         # father=conf.father if is_trio else None,
     )

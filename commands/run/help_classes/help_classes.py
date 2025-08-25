@@ -18,8 +18,8 @@ class Case:
         type: str,
         read1: str,
         read2: str,
-        father: Optional[str] = None,
         mother: Optional[str] = None,
+        father: Optional[str] = None,
         phenotype: str = "healthy",
     ):
         self.id = id
