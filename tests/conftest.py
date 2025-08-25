@@ -3,6 +3,14 @@ from pathlib import Path
 
 import pytest
 
+from tests.conftest_utils.run_configs import (
+    ConfigSamplePaths,
+    get_profile_config,
+    get_sample_config,
+    get_pipeline_config,
+    test_import,
+)
+
 
 @pytest.fixture()
 def base_dir(tmp_path: Path) -> Path:
@@ -11,70 +19,28 @@ def base_dir(tmp_path: Path) -> Path:
     return base_dir
 
 
+class RunConfigs:
+    def __init__(self, pipeline: Path, profile: Path, samples: Path):
+        self.settings = pipeline
+        self.pipeline = profile
+        self.samples = samples
+
+
 @pytest.fixture()
-def basic_config_path(tmp_path: Path, base_dir: Path) -> Path:
+def run_configs(tmp_path: Path, base_dir: Path) -> Path:
 
-    # Setup dummy repository
-    repo_dir = tmp_path / "repo"
-    repo_dir.mkdir()
-    (repo_dir / ".git").mkdir()
-    (repo_dir / "nextflow.config").write_text("nextflow")
+    pipeline_config = get_pipeline_config()
+    pipeline_config_path = tmp_path / "pipeline_config.ini"
+    pipeline_config_path.write_text(pipeline_config)
 
-    # Dummy input files
-    fastq1 = tmp_path / "r1.fq"
-    fastq2 = tmp_path / "r2.fq"
-    fastq1.write_text("1")
-    fastq2.write_text("2")
-    bam = tmp_path / "dummy.bam"
-    bam.write_text("bam")
-    vcf = tmp_path / "dummy.vcf"
-    vcf.write_text("vcf")
+    profile_config = get_profile_config(base_dir, tmp_path)
+    profile_config_path = tmp_path / "profile_config.ini"
+    profile_config_path.write_text(profile_config)
 
-    config_text = textwrap.dedent(
-        f"""
-        [pipeline-default]
-        start_nextflow_analysis = /usr/bin/env
-        log_base_dir = {tmp_path}/log
-        trace_base_dir = {tmp_path}/trace
-        work_base_dir = {tmp_path}/work
-        base = {base_dir}
-        repo = {repo_dir}
+    sample_config_content = get_sample_config(tmp_path)
+    sample_config_path = tmp_path / "sample_config.ini"
+    sample_config_path.write_text(sample_config_content)
 
-        [pipeline-dna-const]
-        runscript = main.nf
-        datestamp = false
-        singularity_version = 3.8.0
-        nextflow_version = 21.10.6
-        queue = test
-        executor = local
-        cluster = local
-        container = container.sif
-        fq_fw = {fastq1}
-        fq_rv = {fastq2}
-        bam = {bam}
-        vcf = {vcf}
+    RunConfigs(pipeline_config_path, profile_config_path, sample_config_path)
 
-        [test]
-        pipeline = dna-const
-        profile = wgs
-        sample_type = single
-        samples = samplecase
-        default_panel = OMIM
-
-        [sample-samplecase]
-        id = caseid
-        clarity_pool_id = 0
-        clarity_sample_id = sample0
-        sex = M
-        type = proband
-        fq_fw = {fastq1}
-        fq_rv = {fastq2}
-        bam = {bam}
-        vcf = {vcf}
-        """
-    )
-
-    config_path = tmp_path / "config.ini"
-    config_path.write_text(config_text)
-
-    return config_path
+    return profile_config_path

@@ -10,7 +10,7 @@ from commands.run.help_classes.config_classes import RunConfig
 LOG = logging.getLogger()
 
 
-def test_basic_run(monkeypatch: MonkeyPatch, base_dir: Path, basic_config_path: Path):
+def test_single_run(monkeypatch: MonkeyPatch, base_dir: Path, run_configs: Path):
 
     monkeypatch.setattr(run_main, "do_repo_checkout", lambda *a, **k: None)
     monkeypatch.setattr(run_main, "start_run", lambda *a, **k: None)
@@ -19,7 +19,7 @@ def test_basic_run(monkeypatch: MonkeyPatch, base_dir: Path, basic_config_path: 
     )
 
     basic_config = ConfigParser()
-    with open(basic_config_path, "r") as in_fh:
+    with open(run_configs, "r") as in_fh:
         basic_config.read_file(in_fh)
 
     run_config = RunConfig(LOG, basic_config, "test")
@@ -32,7 +32,85 @@ def test_basic_run(monkeypatch: MonkeyPatch, base_dir: Path, basic_config_path: 
         repo=None,
         start_data="fq",
         stub_run=True,
-        run_type="test",
+        run_type="test-single",
+        skip_confirmation=True,
+        queue=None,
+        no_start=True,
+        datestamp=False,
+        verbose=False,
+        assay=None,
+        analysis=None,
+    )
+
+    result_dir = base_dir / "test-label-testcheckout-stub-fq"
+
+    assert (result_dir / "run.log").exists()
+    assert (result_dir / "run.csv").exists()
+    assert (result_dir / "nextflow.config").exists()
+
+
+def test_duo_run(monkeypatch: MonkeyPatch, base_dir: Path, run_configs: Path):
+
+    monkeypatch.setattr(run_main, "do_repo_checkout", lambda *a, **k: None)
+    monkeypatch.setattr(run_main, "start_run", lambda *a, **k: None)
+    monkeypatch.setattr(
+        run_main, "get_git_commit_hash_and_log", lambda *a, **k: ("abcd", "abcd")
+    )
+
+    basic_config = ConfigParser()
+    with open(run_configs, "r") as in_fh:
+        basic_config.read_file(in_fh)
+
+    run_config = RunConfig(LOG, basic_config, "test")
+
+    run_main.main(
+        run_config,
+        label="label",
+        checkout="testcheckout",
+        base_dir=None,
+        repo=None,
+        start_data="fq",
+        stub_run=True,
+        run_type="test-single",
+        skip_confirmation=True,
+        queue=None,
+        no_start=True,
+        datestamp=False,
+        verbose=False,
+        assay=None,
+        analysis=None,
+    )
+
+    result_dir = base_dir / "test-label-testcheckout-stub-fq"
+
+    assert (result_dir / "run.log").exists()
+    assert (result_dir / "run.csv").exists()
+    assert (result_dir / "nextflow.config").exists()
+
+
+def test_trio_run(monkeypatch: MonkeyPatch, base_dir: Path, run_configs: Path):
+
+    monkeypatch.setattr(run_main, "do_repo_checkout", lambda *a, **k: None)
+    monkeypatch.setattr(run_main, "start_run", lambda *a, **k: None)
+    monkeypatch.setattr(
+        run_main, "get_git_commit_hash_and_log", lambda *a, **k: ("abcd", "abcd")
+    )
+
+    basic_config = ConfigParser()
+    with open(run_configs, "r") as in_fh:
+        basic_config.read_file(in_fh)
+
+    run_config = RunConfig(LOG, basic_config, "test")
+
+    run_main.main(
+        run_config,
+        label="label",
+        checkout="testcheckout",
+        base_dir=None,
+        repo=None,
+        start_data="fq",
+        stub_run=True,
+        run_type="test-single",
         skip_confirmation=True,
         queue=None,
         no_start=True,
@@ -50,7 +128,7 @@ def test_basic_run(monkeypatch: MonkeyPatch, base_dir: Path, basic_config_path: 
 
 
 def test_override_assay(
-    monkeypatch: MonkeyPatch, base_dir: Path, basic_config_path: Path
+    monkeypatch: MonkeyPatch, base_dir: Path, run_configs: Path
 ):
 
     monkeypatch.setattr(run_main, "do_repo_checkout", lambda *a, **k: None)
@@ -60,7 +138,7 @@ def test_override_assay(
     )
 
     basic_config = ConfigParser()
-    with open(basic_config_path, "r") as in_fh:
+    with open(run_configs, "r") as in_fh:
         basic_config.read_file(in_fh)
 
     run_config = RunConfig(LOG, basic_config, "test")
