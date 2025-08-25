@@ -5,7 +5,7 @@ import difflib
 import logging
 import os
 from collections import Counter
-from configparser import SectionProxy
+from configparser import ConfigParser, SectionProxy
 from io import TextIOWrapper
 from pathlib import Path
 from typing import Dict, List, Optional, Set, Tuple
@@ -22,7 +22,6 @@ from commands.eval.classes.run_settings import RunSettings
 from shared.compare import Comparison, do_comparison
 from shared.constants import RUN_ID_PLACEHOLDER
 from shared.file import check_valid_file, get_filehandle
-from shared.util import load_config
 from shared.vcf.annotation import compare_variant_annotation
 from shared.vcf.main_functions import (
     compare_variant_presence,
@@ -57,7 +56,7 @@ VALID_COMPARISONS = set(
 )
 
 description = """
-Compare results for runs in two pipelines.
+Compare results between runs for two versions of a pipeline.
 
 Performs all or a subset of the comparisons:
 
@@ -96,7 +95,7 @@ class VCFPair:
 def main(  # noqa: C901 (skipping complexity check)
     ro: RunObject,
     rs: RunSettings,
-    config_path: Optional[str],
+    args_config_path: Optional[str],
     comparisons: Optional[Set[str]],
     outdir: Optional[Path],
 ):
@@ -104,8 +103,12 @@ def main(  # noqa: C901 (skipping complexity check)
     r1_paths = get_files_in_dir(ro.r1_results, ro.r1_id, RUN_ID_PLACEHOLDER, ro.r1_results)
     r2_paths = get_files_in_dir(ro.r2_results, ro.r2_id, RUN_ID_PLACEHOLDER, ro.r2_results)
 
-    curr_dir = os.path.dirname(os.path.abspath(__file__))
-    config = load_config(logger, curr_dir, config_path)
+    # curr_dir = os.path.dirname(os.path.abspath(__file__))
+    parent_path = Path(__file__).resolve().parent
+    # config = load_config(logger, curr_dir, config_path)
+    config_path = args_config_path or parent_path / "default.config"
+    config = ConfigParser()
+    config.read(config_path)
 
     if not config.has_section(rs.pipeline):
         available_sections = config.sections()
@@ -520,7 +523,6 @@ def main_wrapper(args: argparse.Namespace):
         extra_annot_keys = args.annotations.split(",")
 
     run_settings = RunSettings(
-        # FIXME: Detect pipeline from the run.log ?
         args.pipeline,
         args.score_threshold,
         args.max_display,

@@ -27,7 +27,6 @@ from commands.run.gittools import (
 )
 from commands.run.help_classes.config_classes import RunConfig
 from shared.constants import ASSAY_PLACEHOLDER
-from shared.util import load_config
 
 description = """
 The intent of this script is to make running control samples on specific versions of pipelines easy.
@@ -97,23 +96,9 @@ def main(
         commit_hash,
     )
 
-    # run_type_settings = config.get_run_type_settings()
-
     assay = assay or ASSAY_PLACEHOLDER
     analysis = analysis or config.run_profile.profile
 
-    # FIXME: Consider how to deal with a duo here
-    # if not config.profile.sample_type == "trio":
-    #     # csv = get_single_csv(
-    #     #     logger,
-    #     #     config,
-    #     #     run_label,
-    #     #     start_data,
-    #     #     queue,
-    #     #     assay,
-    #     #     analysis,
-    #     # )
-    # else:
     csv = get_csv(
         logger,
         config,
@@ -280,15 +265,13 @@ def start_run(start_nextflow_command: List[str], skip_confirmation: bool):
 
 def main_wrapper(args: argparse.Namespace):
 
-    curr_dir = os.path.dirname(os.path.abspath(__file__))
-
-    # FIXME
-    profile_conf_path = Path("")
-    settings_conf_path = Path("")
-    sample_conf_path = Path("")
+    parent_path = Path(__file__).resolve().parent
+    profile_conf_path = args.run_profile_conf or parent_path / "run_profile.config"
+    pipeline_settings_path = args.pipeline_settings_conf or parent_path / "pipeline_settings.config"
+    samples_path = args.samples_conf or parent_path / "samples.config"
 
     config = RunConfig(
-        logger, args.run_profile, profile_conf_path, settings_conf_path, sample_conf_path
+        logger, args.run_profile, profile_conf_path, pipeline_settings_path, samples_path
     )
 
     if args.silent:
@@ -383,8 +366,16 @@ def add_arguments(parser: argparse.ArgumentParser):
         "--stub", action="store_true", help="Pass the -stub-run flag to the pipeline"
     )
     parser.add_argument(
-        "--config",
-        help="Config file in INI format containing information about run types and cases",
+        "--run_profile_config",
+        help="Config file in INI format with PipeEval run profile info. Default path in commands/run/run_profile.config",
+    )
+    parser.add_argument(
+        "--pipeline_settings_config",
+        help="Config file in INI format with PipeEval run pipeline settings. Default path in commands/run/pipeline_settings.config",
+    )
+    parser.add_argument(
+        "--samples_config",
+        help="Config file in INI format with PipeEval samples info. Default path in commands/run/samples.config",
     )
     parser.add_argument(
         "--queue",

@@ -1,2 +1,2 @@
-- [ ] Verify - does all the checks pass?
-- [ ] Try running your PR under Python3.6
+- [ ] Do all the GitHub PR checks pass?
+- [ ] Can you run `pipeeval --help` using Python 3.6
