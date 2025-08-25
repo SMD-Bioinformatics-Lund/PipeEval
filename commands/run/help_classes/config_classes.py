@@ -1,7 +1,10 @@
 from configparser import ConfigParser, SectionProxy
 from logging import Logger
+from pathlib import Path
 import sys
 from typing import Dict, List, Optional, Union
+
+from shared.util import load_config
 
 
 def parse_mandatory_section_argument(
@@ -48,7 +51,7 @@ class SampleConfig:
 
 class RunProfileConfig:
 
-    raw_config: Dict[str, str]
+    config: ConfigParser
 
     pipeline: str
     profile: str
@@ -57,25 +60,28 @@ class RunProfileConfig:
     samples: List[str]
     default_panel: Optional[str]
 
-    def __init__(self, logger: Logger, profile_key: str, run_profile_conf: SectionProxy):
+    def __init__(self, logger: Logger, run_profile: str, conf_path: Path):
 
-        self.raw_config = dict(run_profile_conf)
+        config = ConfigParser()
+        config.read(conf_path)
 
-        self.pipeline = parse_mandatory_section_argument(
-            run_profile_conf, profile_key, logger, "pipeline"
-        )
-        self.profile = parse_mandatory_section_argument(
-            run_profile_conf, profile_key, logger, "profile"
-        )
+        if run_profile not in self.config.keys():
+            available = ", ".join(self.config.keys())
+            logger.error(
+                f'Provided profile not present among available entries in the run profile config. Provided: "{run_profile}", available: "{available}"'
+            )
+
+        profile_section = self.config[run_profile]
+
+        self.pipeline = parse_mandatory_section_argument(profile_section, run_profile, logger, "pipeline")
+        self.profile = parse_mandatory_section_argument(profile_section, run_profile, logger, "profile")
         self.sample_type = parse_mandatory_section_argument(
-            run_profile_conf, profile_key, logger, "sample_type"
+            profile_section, run_profile, logger, "sample_type"
         )
-        samples_str = parse_mandatory_section_argument(
-            run_profile_conf, profile_key, logger, "samples"
-        )
+        samples_str = parse_mandatory_section_argument(profile_section, run_profile, logger, "samples")
 
         self.samples = samples_str.split(",")
-        self.default_panel = run_profile_conf.get("default_panel")
+        self.default_panel = profile_section.get("default_panel")
 
 
 class RunSettingsConfig:
@@ -165,7 +171,7 @@ class RunSettingsConfig:
         )
         self.datestamp: bool = self._parse_setting(
             logger, default_settings_key, pipeline_settings_key, "datestamp", data_type="bool"
-        ) # type: ignore[assignment]
+        )  # type: ignore[assignment]
 
         self.queue = str(
             self._parse_setting(logger, default_settings_key, pipeline_settings_key, "queue")
@@ -223,56 +229,54 @@ class RunSettingsConfig:
 
 class RunConfig:
 
-    config_parser: ConfigParser
-    profile: RunProfileConfig
+    run_profile: RunProfileConfig
     settings: RunSettingsConfig
     samples: Dict[str, SampleConfig] = {}
 
-    run_type: str
+    def __init__(
+        self,
+        logger: Logger,
+        run_profile: str,
+        profile_config_path: Path,
+        pipeline_config_path: Path,
+        sample_config_path: Path,
+    ):
 
-    def __init__(self, logger: Logger, config_parser: ConfigParser, run_type: str):
-        self.config_parser = config_parser
-        self.run_type = run_type
+        self.run_profile = RunProfileConfig(logger, run_profile, profile_config_path)
 
-        if not self.config_parser.has_section(run_type):
-            logger.error(f'Run type section "{run_type}" needs to be specified in config')
-            sys.exit(1)
+        self.settings = RunSettingsConfig(
+            logger,
+            self.settings_config["pipeline-default"],
+            self.settings_config[pipeline_setting_key],
+            "pipeline-default",
+            pipeline_setting_key,
+        )
 
-        self.profile = RunProfileConfig(logger, run_type, config_parser[run_type])
-
-        pipeline_setting_key = f"pipeline-{self.profile.pipeline}"
+        pipeline_setting_key = f"pipeline-{self.run_profile.pipeline}"
         if not config_parser.has_section(pipeline_setting_key):
             raise ValueError(
                 f"Expected setting key {pipeline_setting_key}, but was not defined in the config file"
             )
 
-        if not self.config_parser.has_section("pipeline-default"):
+        if not self.settings_config.has_section("pipeline-default"):
             logger.error(f'Run type section "pipeline-default" needs to be specified')
             sys.exit(1)
 
-        self.settings = RunSettingsConfig(
-            logger,
-            self.config_parser["pipeline-default"],
-            self.config_parser[pipeline_setting_key],
-            "pipeline-default",
-            pipeline_setting_key,
-        )
-
-        for sample in self.profile.samples:
+        for sample in self.run_profile.samples:
             sample_key = f"sample-{sample}"
-            if not self.config_parser.has_section(sample_key):
+            if not self.settings_config.has_section(sample_key):
                 logger.error(f'Sample key "{sample_key}" not found in config')
                 sys.exit(1)
 
-            sample_config = SampleConfig(logger, sample_key, self.config_parser[sample_key])
+            sample_config = SampleConfig(logger, sample_key, self.settings_config[sample_key])
             self.samples[sample_key] = sample_config
 
     def get_sample_conf(self, sample_id: str) -> SectionProxy:
-        case_settings = self.config_parser[f"sample-{sample_id}"]
+        case_settings = self.settings_config[f"sample-{sample_id}"]
         return case_settings
 
     def get_run_type_settings(self) -> Dict[str, str]:
-        return dict(self.config_parser[self.run_type])
+        return dict(self.settings_config[self.run_profile.profile])
 
     def get_setting_entries(self) -> Dict[str, str]:
         key_vals = {}
@@ -280,8 +284,8 @@ class RunConfig:
             key_vals[key] = val
         return key_vals
 
-    def get_profile_entries(self, run_type: str) -> Dict[str, str]:
+    def get_profile_entries(self, run_profile: str) -> Dict[str, str]:
         key_vals = {}
-        for key, val in self.config_parser[run_type].items():
+        for key, val in self.settings_config[run_profile].items():
             key_vals[key] = val
         return key_vals

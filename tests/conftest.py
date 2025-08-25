@@ -27,13 +27,13 @@ class RunConfigs:
 
 
 @pytest.fixture()
-def run_configs(tmp_path: Path, base_dir: Path) -> Path:
+def run_configs(tmp_path: Path, base_dir: Path) -> RunConfigs:
 
-    pipeline_config = get_pipeline_config()
+    pipeline_config = get_pipeline_config(base_dir, tmp_path)
     pipeline_config_path = tmp_path / "pipeline_config.ini"
     pipeline_config_path.write_text(pipeline_config)
 
-    profile_config = get_profile_config(base_dir, tmp_path)
+    profile_config = get_profile_config()
     profile_config_path = tmp_path / "profile_config.ini"
     profile_config_path.write_text(profile_config)
 
@@ -41,6 +41,4 @@ def run_configs(tmp_path: Path, base_dir: Path) -> Path:
     sample_config_path = tmp_path / "sample_config.ini"
     sample_config_path.write_text(sample_config_content)
 
-    RunConfigs(pipeline_config_path, profile_config_path, sample_config_path)
-
-    return profile_config_path
+    return RunConfigs(pipeline_config_path, profile_config_path, sample_config_path)

@@ -54,7 +54,7 @@ def main(
     repo: Optional[Path],
     start_data: str,
     stub_run: bool,
-    run_type: str,
+    run_profile: str,
     skip_confirmation: bool,
     queue: Optional[str],
     no_start: bool,
@@ -63,18 +63,18 @@ def main(
     assay: Optional[str],
     analysis: Optional[str],
 ):
-    logger.info(f"Preparing run, type: {run_type}, data: {start_data}")
+    logger.info(f"Preparing run, type: {run_profile}, data: {start_data}")
 
-    # check_valid_config_arguments(config, run_type, start_data, base_dir, repo)
     base_dir = base_dir if base_dir is not None else Path(config.settings.base)
     repo = repo if repo is not None else Path(config.settings.repo)
     datestamp = datestamp or config.settings.datestamp
 
     check_valid_repo(repo)
+    
     do_repo_checkout(repo, checkout, verbose, skip_confirmation)
     (commit_hash, last_log) = get_git_commit_hash_and_log(logger, repo, verbose)
     logger.info(last_log)
-    run_label = build_run_label(run_type, checkout, label, stub_run, start_data)
+    run_label = build_run_label(run_profile, checkout, label, stub_run, start_data)
 
     if not datestamp:
         results_dir = base_dir / run_label
@@ -89,7 +89,7 @@ def main(
     run_log_path = results_dir / "run.log"
     write_run_log(
         run_log_path,
-        run_type,
+        run_profile,
         label or "no label",
         checkout,
         config,
@@ -99,7 +99,7 @@ def main(
     run_type_settings = config.get_run_type_settings()
 
     assay = assay or ASSAY_PLACEHOLDER
-    analysis = analysis or config.profile.profile
+    analysis = analysis or config.run_profile.profile
 
     # FIXME: Consider how to deal with a duo here
     # if not config.profile.sample_type == "trio":
@@ -188,9 +188,9 @@ def do_repo_checkout(repo: Path, checkout: str, verbose: bool, skip_confirmation
 
 
 def build_run_label(
-    run_type: str, checkout: str, label: Optional[str], stub_run: bool, start_data: str
+    run_profile: str, checkout: str, label: Optional[str], stub_run: bool, start_data: str
 ) -> str:
-    label_parts = [run_type]
+    label_parts = [run_profile]
     if label is not None:
         label_parts.append(label)
     label_parts.append(checkout)
@@ -284,7 +284,7 @@ def start_run(start_nextflow_command: List[str], skip_confirmation: bool):
 def main_wrapper(args: argparse.Namespace):
 
     curr_dir = os.path.dirname(os.path.abspath(__file__))
-    config = RunConfig(logger, load_config(logger, curr_dir, args.config), args.run_type)
+    config = RunConfig(logger, load_config(logger, curr_dir, args.config), args.run_profile)
 
     if args.silent:
         logger.setLevel(logging.WARNING)
@@ -310,7 +310,7 @@ def main_wrapper(args: argparse.Namespace):
             Path(baseline_repo),
             args.start_data,
             args.stub,
-            args.run_type,
+            args.run_profile,
             args.skip_confirmation,
             args.queue,
             args.nostart,
@@ -328,7 +328,7 @@ def main_wrapper(args: argparse.Namespace):
         Path(args.repo) if args.repo is not None else None,
         args.start_data,
         args.stub,
-        args.run_type,
+        args.run_profile,
         args.skip_confirmation,
         args.queue,
         args.nostart,
@@ -348,7 +348,7 @@ def add_arguments(parser: argparse.ArgumentParser):
     )
     parser.add_argument(
         "--base",
-        help="The base folder into which results folders are created following the pattern: {base}/{label}_{run_type}_{checkout}). Can also be specified in the config.",
+        help="The base folder into which results folders are created following the pattern: {base}/{label}_{run_profile}_{checkout}). Can also be specified in the config.",
     )
     parser.add_argument(
         "--repo",
@@ -364,7 +364,8 @@ def add_arguments(parser: argparse.ArgumentParser):
         help="Start run from FASTQ (fq), BAM (bam) or VCF (vcf) (must be present in config)",
     )
     parser.add_argument(
-        "--run_type",
+        "--run_profile",
+        "--run_profile",
         help="Select run type from the config (i.e. giab-single, giab-trio, seracare ...). Multiple comma-separated can be specified.",
         required=True,
     )
@@ -405,7 +406,7 @@ def add_arguments(parser: argparse.ArgumentParser):
     )
     parser.add_argument(
         "--analysis",
-        help="Specify a custom analysis in the CSV file (defaults to --run_type argument)",
+        help="Specify a custom analysis in the CSV file (defaults to --run_profile argument)",
     )
 
 

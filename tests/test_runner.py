@@ -6,23 +6,20 @@ from pytest import MonkeyPatch
 
 from commands.run import main as run_main
 from commands.run.help_classes.config_classes import RunConfig
+from tests.conftest import RunConfigs
 
 LOG = logging.getLogger()
 
 
-def test_single_run(monkeypatch: MonkeyPatch, base_dir: Path, run_configs: Path):
+def test_single_run(monkeypatch: MonkeyPatch, base_dir: Path, run_configs: RunConfigs):
 
     monkeypatch.setattr(run_main, "do_repo_checkout", lambda *a, **k: None)
     monkeypatch.setattr(run_main, "start_run", lambda *a, **k: None)
-    monkeypatch.setattr(
-        run_main, "get_git_commit_hash_and_log", lambda *a, **k: ("abcd", "abcd")
+    monkeypatch.setattr(run_main, "get_git_commit_hash_and_log", lambda *a, **k: ("abcd", "abcd"))
+
+    run_config = RunConfig(
+        LOG, run_configs.settings, run_configs.pipeline, run_configs.samples, "test"
     )
-
-    basic_config = ConfigParser()
-    with open(run_configs, "r") as in_fh:
-        basic_config.read_file(in_fh)
-
-    run_config = RunConfig(LOG, basic_config, "test")
 
     run_main.main(
         run_config,
@@ -32,7 +29,7 @@ def test_single_run(monkeypatch: MonkeyPatch, base_dir: Path, run_configs: Path)
         repo=None,
         start_data="fq",
         stub_run=True,
-        run_type="test-single",
+        run_profile="single",
         skip_confirmation=True,
         queue=None,
         no_start=True,
@@ -53,9 +50,7 @@ def test_duo_run(monkeypatch: MonkeyPatch, base_dir: Path, run_configs: Path):
 
     monkeypatch.setattr(run_main, "do_repo_checkout", lambda *a, **k: None)
     monkeypatch.setattr(run_main, "start_run", lambda *a, **k: None)
-    monkeypatch.setattr(
-        run_main, "get_git_commit_hash_and_log", lambda *a, **k: ("abcd", "abcd")
-    )
+    monkeypatch.setattr(run_main, "get_git_commit_hash_and_log", lambda *a, **k: ("abcd", "abcd"))
 
     basic_config = ConfigParser()
     with open(run_configs, "r") as in_fh:
@@ -71,7 +66,7 @@ def test_duo_run(monkeypatch: MonkeyPatch, base_dir: Path, run_configs: Path):
         repo=None,
         start_data="fq",
         stub_run=True,
-        run_type="test-single",
+        run_profile="test-single",
         skip_confirmation=True,
         queue=None,
         no_start=True,
@@ -92,9 +87,7 @@ def test_trio_run(monkeypatch: MonkeyPatch, base_dir: Path, run_configs: Path):
 
     monkeypatch.setattr(run_main, "do_repo_checkout", lambda *a, **k: None)
     monkeypatch.setattr(run_main, "start_run", lambda *a, **k: None)
-    monkeypatch.setattr(
-        run_main, "get_git_commit_hash_and_log", lambda *a, **k: ("abcd", "abcd")
-    )
+    monkeypatch.setattr(run_main, "get_git_commit_hash_and_log", lambda *a, **k: ("abcd", "abcd"))
 
     basic_config = ConfigParser()
     with open(run_configs, "r") as in_fh:
@@ -110,7 +103,7 @@ def test_trio_run(monkeypatch: MonkeyPatch, base_dir: Path, run_configs: Path):
         repo=None,
         start_data="fq",
         stub_run=True,
-        run_type="test-single",
+        run_profile="single",
         skip_confirmation=True,
         queue=None,
         no_start=True,
@@ -127,15 +120,11 @@ def test_trio_run(monkeypatch: MonkeyPatch, base_dir: Path, run_configs: Path):
     assert (result_dir / "nextflow.config").exists()
 
 
-def test_override_assay(
-    monkeypatch: MonkeyPatch, base_dir: Path, run_configs: Path
-):
+def test_override_assay(monkeypatch: MonkeyPatch, base_dir: Path, run_configs: Path):
 
     monkeypatch.setattr(run_main, "do_repo_checkout", lambda *a, **k: None)
     monkeypatch.setattr(run_main, "start_run", lambda *a, **k: None)
-    monkeypatch.setattr(
-        run_main, "get_git_commit_hash_and_log", lambda *a, **k: ("abcd", "abcd")
-    )
+    monkeypatch.setattr(run_main, "get_git_commit_hash_and_log", lambda *a, **k: ("abcd", "abcd"))
 
     basic_config = ConfigParser()
     with open(run_configs, "r") as in_fh:
@@ -151,7 +140,7 @@ def test_override_assay(
         repo=None,
         start_data="fq",
         stub_run=True,
-        run_type="test",
+        run_profile="test",
         skip_confirmation=True,
         queue=None,
         no_start=True,

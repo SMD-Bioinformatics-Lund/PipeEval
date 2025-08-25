@@ -71,7 +71,7 @@ def get_single_csv(
     assay: str,
     analysis: str,
 ):
-    sample_id = config.profile.samples[0]
+    sample_id = config.run_profile.samples[0]
     case_conf = config.get_sample_conf(sample_id)
 
     case = parse_case(dict(case_conf), start_data, is_trio=False)
@@ -79,7 +79,7 @@ def get_single_csv(
     if not Path(case.read1).exists() or not Path(case.read2).exists():
         raise FileNotFoundError(f"One or both files missing: {case.read1} {case.read2}")
 
-    diagnosis = config.profile.default_panel
+    diagnosis = config.run_profile.default_panel
 
     if not diagnosis:
         logger.error("No default ")
@@ -102,7 +102,7 @@ def get_csv(
     analysis: str,
 ):
 
-    sample_ids = config.profile.samples
+    sample_ids = config.run_profile.samples
     samples: List[Case] = []
     for sample_id in sample_ids:
         case_dict = config.get_sample_conf(sample_id)
@@ -116,7 +116,7 @@ def get_csv(
 
         samples.append(case)
 
-    default_panel = config.profile.default_panel
+    default_panel = config.run_profile.default_panel
 
     if not default_panel:
         logger.error("Expected a default panel, found none")
@@ -157,7 +157,7 @@ def parse_case(case_dict: Dict[str, str], start_data: str, is_trio: bool) -> Cas
 
 def write_run_log(
     run_log_path: Path,
-    run_type: str,
+    run_profile: str,
     label: str,
     checkout_str: str,
     config: RunConfig,
@@ -166,7 +166,7 @@ def write_run_log(
     with run_log_path.open("w") as out_fh:
         print("# Settings", file=out_fh)
         print(f"output dir: {run_log_path.parent}", file=out_fh)
-        print(f"run type: {run_type}", file=out_fh)
+        print(f"run profile: {run_profile}", file=out_fh)
         print(f"run label: {label}", file=out_fh)
         print(f"checkout: {checkout_str}", file=out_fh)
         print(f"commit hash: {commit_hash}", file=out_fh)
@@ -175,6 +175,6 @@ def write_run_log(
         for key, val in config.get_setting_entries().items():
             print(f"{key}: {val}", file=out_fh)
 
-        print(f"# Config file - {run_type}", file=out_fh)
-        for key, val in config.get_profile_entries(run_type).items():
+        print(f"# Config file - {run_profile}", file=out_fh)
+        for key, val in config.get_profile_entries(run_profile).items():
             print(f"{key}: {val}", file=out_fh)

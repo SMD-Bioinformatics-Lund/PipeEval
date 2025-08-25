@@ -19,9 +19,15 @@ class ConfigSamplePaths:
         self.vcf = tmp_path / f"{label}.vcf"
 
 
-def get_pipeline_config() -> str:
+def get_pipeline_config(base_dir: Path, tmp_path: Path) -> str:
+
+    repo_dir = tmp_path / "repo"
+    repo_dir.mkdir()
+    (repo_dir / ".git").mkdir()
+    (repo_dir / "nextflow.config").write_text("nextflow")
+
     settings_config_text = textwrap.dedent(
-        """
+        f"""
         [default]
         start_nextflow_analysis = /usr/bin/env
         log_base_dir = {tmp_path}/log
@@ -54,12 +60,7 @@ def get_pipeline_config() -> str:
     return settings_config_text
 
 
-def get_profile_config(base_dir: Path, tmp_path: Path) -> str:
-
-    repo_dir = tmp_path / "repo"
-    repo_dir.mkdir()
-    (repo_dir / ".git").mkdir()
-    (repo_dir / "nextflow.config").write_text("nextflow")
+def get_profile_config() -> str:
 
     pipeline_config_text = textwrap.dedent(
         f"""
