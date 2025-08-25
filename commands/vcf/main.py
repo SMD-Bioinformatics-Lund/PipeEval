@@ -66,8 +66,9 @@ def main(
         output_all_variants,
     )
 
-    vcfs = parse_vcf_pair(run_ids, (vcf1, vcf2))
-    vcf_comparisons(comparisons, run_ids, results_folder, rs, "snv", vcfs)
+    vcf_type = "snv"
+    vcfs = parse_vcf_pair(run_ids, (vcf1, vcf2), vcf_type)
+    vcf_comparisons(comparisons, run_ids, results_folder, rs, vcf_type, vcfs)
 
 
 def main_wrapper(args: argparse.Namespace):
