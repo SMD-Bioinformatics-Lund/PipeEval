@@ -92,7 +92,7 @@ def get_single_csv(
 # FIXME: Generalize for other numbers of samples
 # Also need to generalize different CSV formats, right?
 # Hmm. That is a more tricky one.
-def get_trio_csv(
+def get_csv(
     logger: Logger,
     config: RunConfig,
     run_label: str,
@@ -103,10 +103,7 @@ def get_trio_csv(
 ):
 
     sample_ids = config.profile.samples
-    assert (
-        len(sample_ids) == 3
-    ), f"For a trio, three fields are expected, found: {sample_ids}"
-    cases: List[Case] = []
+    samples: List[Case] = []
     for sample_id in sample_ids:
         case_dict = config.get_sample_conf(sample_id)
 
@@ -117,7 +114,7 @@ def get_trio_csv(
                 f"One or both files missing: {case.read1} {case.read2}"
             )
 
-        cases.append(case)
+        samples.append(case)
 
     default_panel = config.profile.default_panel
 
@@ -125,7 +122,7 @@ def get_trio_csv(
         logger.error("Expected a default panel, found none")
         sys.exit(1)
 
-    run_csv = CsvEntry(run_label, cases, queue, assay, analysis, default_panel)
+    run_csv = CsvEntry(run_label, samples, queue, assay, analysis, default_panel)
     return run_csv
 
 

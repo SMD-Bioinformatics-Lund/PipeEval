@@ -44,15 +44,6 @@ def test_basic_run(monkeypatch: MonkeyPatch, base_dir: Path, basic_config_path: 
 
     result_dir = base_dir / "test-label-testcheckout-stub-fq"
 
-    print(list(base_dir.iterdir()))
-
-    print("Results folder")
-    files = len(list(result_dir.iterdir()))
-    print(f"Nbr files {files}")
-
-    for f in result_dir.iterdir():
-        print(f"File: {f}")
-
     assert (result_dir / "run.log").exists()
     assert (result_dir / "run.csv").exists()
     assert (result_dir / "nextflow.config").exists()

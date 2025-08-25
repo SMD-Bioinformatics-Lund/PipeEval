@@ -12,7 +12,7 @@ from typing import List, Optional
 from commands.run.file_helpers import (
     copy_nextflow_config,
     get_single_csv,
-    get_trio_csv,
+    get_csv,
     setup_results_links,
     write_resume_script,
     write_run_log,
@@ -68,12 +68,7 @@ def main(
     # check_valid_config_arguments(config, run_type, start_data, base_dir, repo)
     base_dir = base_dir if base_dir is not None else Path(config.settings.base)
     repo = repo if repo is not None else Path(config.settings.repo)
-    print("Original datestamp", datestamp)
-    print("Settings", config.settings.datestamp)
     datestamp = datestamp or config.settings.datestamp
-
-    print("Ending up with datestamp", datestamp)
-    print("Ending up with datestamp", datestamp)
 
     check_valid_repo(repo)
     do_repo_checkout(repo, checkout, verbose, skip_confirmation)
@@ -107,26 +102,26 @@ def main(
     analysis = analysis or config.profile.profile
 
     # FIXME: Consider how to deal with a duo here
-    if not config.profile.sample_type == "trio":
-        csv = get_single_csv(
-            logger,
-            config,
-            run_label,
-            start_data,
-            queue,
-            assay,
-            analysis,
-        )
-    else:
-        csv = get_trio_csv(
-            logger,
-            config,
-            run_label,
-            start_data,
-            queue,
-            assay,
-            analysis,
-        )
+    # if not config.profile.sample_type == "trio":
+    #     # csv = get_single_csv(
+    #     #     logger,
+    #     #     config,
+    #     #     run_label,
+    #     #     start_data,
+    #     #     queue,
+    #     #     assay,
+    #     #     analysis,
+    #     # )
+    # else:
+    csv = get_csv(
+        logger,
+        config,
+        run_label,
+        start_data,
+        queue,
+        assay,
+        analysis,
+    )
     out_csv = results_dir / "run.csv"
     csv.write_to_file(str(out_csv))
 
