@@ -18,7 +18,7 @@ def test_single_run(monkeypatch: MonkeyPatch, base_dir: Path, run_configs: RunCo
     monkeypatch.setattr(run_main, "get_git_commit_hash_and_log", lambda *a, **k: ("abcd", "abcd"))
 
     run_config = RunConfig(
-        LOG, run_configs.settings, run_configs.pipeline, run_configs.samples, "test"
+        LOG, "single", run_configs.run_profile, run_configs.pipeline_settings, run_configs.samples
     )
 
     run_main.main(
@@ -29,7 +29,7 @@ def test_single_run(monkeypatch: MonkeyPatch, base_dir: Path, run_configs: RunCo
         repo=None,
         start_data="fq",
         stub_run=True,
-        run_profile="single",
+        run_profile=run_config.run_profile.profile,
         skip_confirmation=True,
         queue=None,
         no_start=True,
@@ -46,17 +46,15 @@ def test_single_run(monkeypatch: MonkeyPatch, base_dir: Path, run_configs: RunCo
     assert (result_dir / "nextflow.config").exists()
 
 
-def test_duo_run(monkeypatch: MonkeyPatch, base_dir: Path, run_configs: Path):
+def test_duo_run(monkeypatch: MonkeyPatch, base_dir: Path, run_configs: RunConfigs):
 
     monkeypatch.setattr(run_main, "do_repo_checkout", lambda *a, **k: None)
     monkeypatch.setattr(run_main, "start_run", lambda *a, **k: None)
     monkeypatch.setattr(run_main, "get_git_commit_hash_and_log", lambda *a, **k: ("abcd", "abcd"))
 
-    basic_config = ConfigParser()
-    with open(run_configs, "r") as in_fh:
-        basic_config.read_file(in_fh)
-
-    run_config = RunConfig(LOG, basic_config, "test")
+    run_config = RunConfig(
+        LOG, "duo", run_configs.run_profile, run_configs.pipeline_settings, run_configs.samples
+    )
 
     run_main.main(
         run_config,
@@ -66,7 +64,7 @@ def test_duo_run(monkeypatch: MonkeyPatch, base_dir: Path, run_configs: Path):
         repo=None,
         start_data="fq",
         stub_run=True,
-        run_profile="test-single",
+        run_profile=run_config.run_profile.profile,
         skip_confirmation=True,
         queue=None,
         no_start=True,
@@ -83,17 +81,15 @@ def test_duo_run(monkeypatch: MonkeyPatch, base_dir: Path, run_configs: Path):
     assert (result_dir / "nextflow.config").exists()
 
 
-def test_trio_run(monkeypatch: MonkeyPatch, base_dir: Path, run_configs: Path):
+def test_trio_run(monkeypatch: MonkeyPatch, base_dir: Path, run_configs: RunConfigs):
 
     monkeypatch.setattr(run_main, "do_repo_checkout", lambda *a, **k: None)
     monkeypatch.setattr(run_main, "start_run", lambda *a, **k: None)
     monkeypatch.setattr(run_main, "get_git_commit_hash_and_log", lambda *a, **k: ("abcd", "abcd"))
 
-    basic_config = ConfigParser()
-    with open(run_configs, "r") as in_fh:
-        basic_config.read_file(in_fh)
-
-    run_config = RunConfig(LOG, basic_config, "test")
+    run_config = RunConfig(
+        LOG, "trio", run_configs.run_profile, run_configs.pipeline_settings, run_configs.samples
+    )
 
     run_main.main(
         run_config,
@@ -103,7 +99,7 @@ def test_trio_run(monkeypatch: MonkeyPatch, base_dir: Path, run_configs: Path):
         repo=None,
         start_data="fq",
         stub_run=True,
-        run_profile="single",
+        run_profile=run_config.run_profile.profile,
         skip_confirmation=True,
         queue=None,
         no_start=True,
@@ -120,17 +116,15 @@ def test_trio_run(monkeypatch: MonkeyPatch, base_dir: Path, run_configs: Path):
     assert (result_dir / "nextflow.config").exists()
 
 
-def test_override_assay(monkeypatch: MonkeyPatch, base_dir: Path, run_configs: Path):
+def test_override_assay(monkeypatch: MonkeyPatch, base_dir: Path, run_configs: RunConfigs):
 
     monkeypatch.setattr(run_main, "do_repo_checkout", lambda *a, **k: None)
     monkeypatch.setattr(run_main, "start_run", lambda *a, **k: None)
     monkeypatch.setattr(run_main, "get_git_commit_hash_and_log", lambda *a, **k: ("abcd", "abcd"))
 
-    basic_config = ConfigParser()
-    with open(run_configs, "r") as in_fh:
-        basic_config.read_file(in_fh)
-
-    run_config = RunConfig(LOG, basic_config, "test")
+    run_config = RunConfig(
+        LOG, "trio", run_configs.run_profile, run_configs.pipeline_settings, run_configs.samples
+    )
 
     run_main.main(
         run_config,
@@ -140,7 +134,7 @@ def test_override_assay(monkeypatch: MonkeyPatch, base_dir: Path, run_configs: P
         repo=None,
         start_data="fq",
         stub_run=True,
-        run_profile="test",
+        run_profile=run_config.run_profile.profile,
         skip_confirmation=True,
         queue=None,
         no_start=True,

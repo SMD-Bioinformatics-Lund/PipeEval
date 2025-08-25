@@ -65,12 +65,12 @@ def main(
 ):
     logger.info(f"Preparing run, type: {run_profile}, data: {start_data}")
 
-    base_dir = base_dir if base_dir is not None else Path(config.settings.base)
-    repo = repo if repo is not None else Path(config.settings.repo)
-    datestamp = datestamp or config.settings.datestamp
+    base_dir = base_dir if base_dir is not None else Path(config.pipeline_settings.base)
+    repo = repo if repo is not None else Path(config.pipeline_settings.repo)
+    datestamp = datestamp or config.pipeline_settings.datestamp
 
     check_valid_repo(repo)
-    
+
     do_repo_checkout(repo, checkout, verbose, skip_confirmation)
     (commit_hash, last_log) = get_git_commit_hash_and_log(logger, repo, verbose)
     logger.info(last_log)
@@ -96,7 +96,7 @@ def main(
         commit_hash,
     )
 
-    run_type_settings = config.get_run_type_settings()
+    # run_type_settings = config.get_run_type_settings()
 
     assay = assay or ASSAY_PLACEHOLDER
     analysis = analysis or config.run_profile.profile
@@ -127,17 +127,17 @@ def main(
 
     def get_start_nextflow_command(quote_pipeline_arguments: bool) -> List[str]:
         command = build_start_nextflow_analysis_cmd(
-            config.settings.start_nextflow_analysis,
+            config.pipeline_settings.start_nextflow_analysis,
             out_csv,
             results_dir,
-            config.settings.executor,
-            config.settings.cluster,
-            config.settings.queue,
-            config.settings.singularity_version,
-            config.settings.nextflow_version,
-            config.settings.container,
-            str(repo / config.settings.runscript),
-            run_type_settings["profile"],
+            config.pipeline_settings.executor,
+            config.pipeline_settings.cluster,
+            config.pipeline_settings.queue,
+            config.pipeline_settings.singularity_version,
+            config.pipeline_settings.nextflow_version,
+            config.pipeline_settings.container,
+            str(repo / config.pipeline_settings.runscript),
+            config.run_profile.profile,
             stub_run,
             no_start,
             quote_pipeline_arguments,
@@ -183,8 +183,6 @@ def do_repo_checkout(repo: Path, checkout: str, verbose: bool, skip_confirmation
         if confirmation == "y":
             logger.info("Pulling from origin")
             pull_branch(logger, repo, branch, verbose)
-
-
 
 
 def build_run_label(
@@ -270,21 +268,27 @@ def build_start_nextflow_analysis_cmd(
 def start_run(start_nextflow_command: List[str], skip_confirmation: bool):
     if not skip_confirmation:
         pretty_command = " \\\n    ".join(start_nextflow_command)
-        confirmation = input(
-            f"Do you want to run the following command:\n{pretty_command}\n(y/n) "
-        )
+        confirmation = input(f"Do you want to run the following command:\n{pretty_command}\n(y/n) ")
 
         if confirmation != "y":
             logger.info("Exiting ...")
             return
-    
+
     subprocess.run(start_nextflow_command, check=True)
 
 
 def main_wrapper(args: argparse.Namespace):
 
     curr_dir = os.path.dirname(os.path.abspath(__file__))
-    config = RunConfig(logger, load_config(logger, curr_dir, args.config), args.run_profile)
+
+    # FIXME
+    profile_conf_path = Path("")
+    settings_conf_path = Path("")
+    sample_conf_path = Path("")
+
+    config = RunConfig(
+        logger, args.run_profile, profile_conf_path, settings_conf_path, sample_conf_path
+    )
 
     if args.silent:
         logger.setLevel(logging.WARNING)
@@ -295,7 +299,7 @@ def main_wrapper(args: argparse.Namespace):
         if args.baseline_repo is not None:
             baseline_repo = str(args.baseline_repo)
         else:
-            baseline_repo = config.settings.baseline_repo
+            baseline_repo = config.pipeline_settings.baseline_repo
             if not baseline_repo:
                 logger.error(
                     "When running with --baseline a baseline repo must either be provided using --baseline_repo option or in the config"

@@ -5,7 +5,7 @@ import sys
 from typing import Dict, List, Optional
 
 from commands.run.help_classes.help_classes import Case, CsvEntry
-from commands.run.help_classes.config_classes import RunConfig
+from commands.run.help_classes.config_classes import RunConfig, SampleConfig
 
 
 def write_resume_script(
@@ -30,9 +30,9 @@ def setup_results_links(
     assay: str,
 ):
 
-    log_base_dir = config.settings.log_base_dir
-    trace_base_dir = config.settings.trace_base_dir
-    work_base_dir = config.settings.work_base_dir
+    log_base_dir = config.pipeline_settings.log_base_dir
+    trace_base_dir = config.pipeline_settings.trace_base_dir
+    work_base_dir = config.pipeline_settings.work_base_dir
 
     current_date = datetime.now()
     date_stamp = current_date.strftime("%Y-%m-%d")
@@ -74,7 +74,7 @@ def get_single_csv(
     sample_id = config.run_profile.samples[0]
     case_conf = config.get_sample_conf(sample_id)
 
-    case = parse_case(dict(case_conf), start_data, is_trio=False)
+    case = parse_sample(dict(case_conf), start_data, is_trio=False)
 
     if not Path(case.read1).exists() or not Path(case.read2).exists():
         raise FileNotFoundError(f"One or both files missing: {case.read1} {case.read2}")
@@ -105,9 +105,9 @@ def get_csv(
     sample_ids = config.run_profile.samples
     samples: List[Case] = []
     for sample_id in sample_ids:
-        case_dict = config.get_sample_conf(sample_id)
+        sample_config = config.get_sample_conf(sample_id)
 
-        case = parse_case(dict(case_dict), start_data, is_trio=True)
+        case = parse_sample(sample_config, start_data, is_trio=True)
 
         if not Path(case.read1).exists() or not Path(case.read2).exists():
             raise FileNotFoundError(
@@ -126,31 +126,50 @@ def get_csv(
     return run_csv
 
 
-def parse_case(case_dict: Dict[str, str], start_data: str, is_trio: bool) -> Case:
+def parse_sample(logger: Logger, conf: SampleConfig, start_data: str, is_trio: bool) -> Case:
     if start_data == "vcf":
-        fw = case_dict["vcf"]
+
+        if conf.vcf is None:
+            logger.error(f'Run mode is "vcf" but missing in config')
+            sys.exit(1)
+
+        fw = conf.vcf
         rv = f"{fw}.tbi"
     elif start_data == "bam":
-        fw = case_dict["bam"]
+
+        if conf.bam is None:
+            logger.error(f'Run mode is "bam" but missing in config')
+            sys.exit(1)
+
+        fw = conf.bam
         rv = f"{fw}.bai"
     elif start_data == "fq":
-        fw = case_dict["fq_fw"]
-        rv = case_dict["fq_rv"]
+
+        if conf.fq_fw is None or conf.fq_rv is None:
+            logger.error(f'Run mode is "fq" but missing at least one of fastq entries (fw: {conf.fq_fw} rv: {conf.fq_rv})')
+            sys.exit(1)
+
+        fw = conf.fq_fw
+        rv = conf.fq_rv
     else:
         raise ValueError(
             f"Unknown start_data, found: {start_data}, valid are vcf, bam, fq"
         )
 
     case = Case(
-        case_dict["id"],
-        case_dict["clarity_pool_id"],
-        case_dict["clarity_sample_id"],
-        case_dict["sex"],
-        case_dict["type"],
+        conf.id,
+        str(conf.clarity_pool_id),
+        conf.clarity_sample_id,
+        conf.sex,
+        conf.type,
         fw,
         rv,
-        mother=case_dict.get("mother") if is_trio else None,
-        father=case_dict.get("father") if is_trio else None,
+        # FIXME: How to do this? "get_relative ?" No, need a trio / duo structure externally here
+        # This requires more thought
+        mother=None,
+        father=None
+        # mother=conf.mother if is_trio else None,
+        # father=conf.father if is_trio else None,
     )
     return case
 

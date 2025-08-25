@@ -21,8 +21,8 @@ def base_dir(tmp_path: Path) -> Path:
 
 class RunConfigs:
     def __init__(self, pipeline: Path, profile: Path, samples: Path):
-        self.settings = pipeline
-        self.pipeline = profile
+        self.pipeline_settings = pipeline
+        self.run_profile = profile
         self.samples = samples
 
 
