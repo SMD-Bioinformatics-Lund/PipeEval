@@ -3,8 +3,6 @@ from configparser import ConfigParser
 from pathlib import Path
 from typing import Any, List, Optional
 
-from commands.run.help_classes import RunConfig
-
 
 def load_config(
     logger: logging.Logger, parent_path: str, config_path: Optional[str]

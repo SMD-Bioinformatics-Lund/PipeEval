@@ -5,7 +5,7 @@ from pathlib import Path
 from pytest import MonkeyPatch
 
 from commands.run import main as run_main
-from commands.run.help_classes import RunConfig
+from commands.run.help_classes.config_classes import RunConfig
 
 LOG = logging.getLogger()
 

@@ -26,9 +26,9 @@ from commands.run.gittools import (
     get_git_commit_hash_and_log,
     pull_branch,
 )
-from commands.run.help_classes import RunConfig
+from commands.run.help_classes.config_classes import RunConfig
 from shared.constants import ASSAY_PLACEHOLDER
-from shared.util import check_valid_config_path, load_config
+from shared.util import load_config
 
 description = """
 The intent of this script is to make running control samples on specific versions of pipelines easy.
@@ -104,8 +104,8 @@ def main(
     # FIXME: Consider how to deal with a duo here
     if not config.profile.sample_type == "trio":
         csv = get_single_csv(
+            logger,
             config,
-            run_type_settings,
             run_label,
             start_data,
             queue,
@@ -115,8 +115,8 @@ def main(
         )
     else:
         csv = get_trio_csv(
+            logger,
             config,
-            run_type_settings,
             run_label,
             start_data,
             queue,

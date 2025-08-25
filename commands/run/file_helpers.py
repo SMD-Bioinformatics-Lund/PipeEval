@@ -1,10 +1,11 @@
-from configparser import ConfigParser
 from datetime import datetime
 from logging import Logger
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+import sys
+from typing import Dict, List, Optional
 
-from commands.run.help_classes import Case, RunConfig, CsvEntry
+from commands.run.help_classes.help_classes import Case, CsvEntry
+from commands.run.help_classes.config_classes import RunConfig
 
 
 def write_resume_script(
@@ -62,8 +63,8 @@ def setup_results_links(
 
 
 def get_single_csv(
+    logger: Logger,
     config: RunConfig,
-    run_type_settings: Dict[str, Any],
     run_label: str,
     start_data: str,
     queue: Optional[str],
@@ -71,29 +72,30 @@ def get_single_csv(
     assay: str,
     analysis: str,
 ):
-    case_id = run_type_settings["case"]
+    case_id = config.profile.profile_name
     case_conf = config.get_sample_conf(case_id, stub_run)
-
-    # FIXME: Is this even working? Look into it
-    # # Replace real data with dummy files in stub run to avoid scratching
-    # if stub_run:
-    #     stub_case = config["settings"]
-    #     for key in stub_case:
-    #         case_conf[key] = stub_case[key]
 
     case = parse_case(dict(case_conf), start_data, is_trio=False)
 
     if not Path(case.read1).exists() or not Path(case.read2).exists():
         raise FileNotFoundError(f"One or both files missing: {case.read1} {case.read2}")
 
-    default_panel = run_type_settings["default_panel"]
-    run_csv = CsvEntry(run_label, [case], queue, assay, analysis, default_panel)
+    diagnosis = config.profile.default_panel
+
+    if not diagnosis:
+        logger.error("No default ")
+        sys.exit(1)
+
+    run_csv = CsvEntry(run_label, [case], queue, assay, analysis, diagnosis)
     return run_csv
 
 
+# FIXME: Generalize for other numbers of samples
+# Also need to generalize different CSV formats, right?
+# Hmm. That is a more tricky one.
 def get_trio_csv(
+    logger: Logger,
     config: RunConfig,
-    run_type_settings: Dict[str, Any],
     run_label: str,
     start_data: str,
     queue: Optional[str],
@@ -102,20 +104,15 @@ def get_trio_csv(
     analysis: str,
 ):
 
-    sample_ids = run_type_settings["cases"].split(",")
+    sample_ids = list(config.samples.keys())
+
+    # sample_ids = run_type_settings["cases"].split(",")
     assert (
         len(sample_ids) == 3
     ), f"For a trio, three fields are expected, found: {sample_ids}"
     cases: List[Case] = []
     for sample_id in sample_ids:
         case_dict = config.get_sample_conf(sample_id, stub_run)
-
-        # FIXME: Investigate
-        # Replace real data with dummy files in stub run to avoid scratching
-        # if stub_run:
-        #     stub_case = config["settings"]
-        #     for key in stub_case:
-        #         case_dict[key] = stub_case[key]
 
         case = parse_case(dict(case_dict), start_data, is_trio=True)
 
@@ -126,7 +123,12 @@ def get_trio_csv(
 
         cases.append(case)
 
-    default_panel = run_type_settings["default_panel"]
+    default_panel = config.profile.default_panel
+
+    if not default_panel:
+        logger.error("Expected a default panel, found none")
+        sys.exit(1)
+
     run_csv = CsvEntry(run_label, cases, queue, assay, analysis, default_panel)
     return run_csv
 
