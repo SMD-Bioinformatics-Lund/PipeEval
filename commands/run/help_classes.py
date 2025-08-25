@@ -9,12 +9,12 @@ def parse_mandatory_section_argument(
     section: SectionProxy, section_key: str, logger: Logger, target_key: str
 ) -> str:
     if not section.get(target_key):
+        existing_fields = section.keys()
         logger.error(
-            f'Mandatory setting "{target_key}" not defined in run type section {section_key}'
+            f'Mandatory setting "{target_key}" not defined in run type section "{section_key}". (Currently defined fields are : {", ".join(existing_fields)})'
         )
         sys.exit(1)
     return section[target_key]
-
 
 
 class SampleConfig:
@@ -31,7 +31,7 @@ class SampleConfig:
 
     def __init__(self, logger: Logger, key: str, sample_section: SectionProxy):
 
-        self.id = parse_mandatory_section_argument(sample_section, key, logger, "pipeline")
+        self.id = parse_mandatory_section_argument(sample_section, key, logger, "id")
         self.clarity_pool_id = int(
             parse_mandatory_section_argument(sample_section, key, logger, "clarity_pool_id")
         )
@@ -74,7 +74,7 @@ class RunProfileConfig:
         samples_str = parse_mandatory_section_argument(
             run_profile_conf, profile_key, logger, "samples"
         )
-        
+
         self.samples = samples_str.split(",")
         self.default_panel = run_profile_conf.get("default_panel")
 
@@ -125,16 +125,11 @@ class RunSettingsConfig:
             )
         )
         self.container = str(
-            self._parse_setting(
-                logger, default_settings_key, pipeline_settings_key, "container"
-            )
+            self._parse_setting(logger, default_settings_key, pipeline_settings_key, "container")
         )
         self.runscript = str(
-            self._parse_setting(
-                logger, default_settings_key, pipeline_settings_key, "runscript"
-            )
+            self._parse_setting(logger, default_settings_key, pipeline_settings_key, "runscript")
         )
-
 
         self.start_nextflow_analysis = str(
             self._parse_setting(
@@ -158,7 +153,9 @@ class RunSettingsConfig:
             self._parse_setting(logger, default_settings_key, pipeline_settings_key, "repo")
         )
         self.baseline_repo = str(
-            self._parse_setting(logger, default_settings_key, pipeline_settings_key, "baseline_repo")
+            self._parse_setting(
+                logger, default_settings_key, pipeline_settings_key, "baseline_repo", mandatory=False
+            )
         )
         self.base = str(
             self._parse_setting(logger, default_settings_key, pipeline_settings_key, "base")
@@ -183,18 +180,22 @@ class RunSettingsConfig:
         pipeline_settings_key: str,
         setting_key: str,
         data_type: str = "string",
-    ) -> Union[str, bool]:
+        mandatory: bool = True,
+    ) -> Union[str, bool, None]:
         target_section = None
         if self._pipeline_settings.get(setting_key):
             target_section = self._pipeline_settings
         elif self._default_settings.get(setting_key):
             target_section = self._default_settings
 
-        if not target_section:
+        if not target_section and mandatory:
             logger.error(
                 f'Did not find setting "{setting_key}" in neither "{pipeline_settings_key}" or "{default_settings_key}"'
             )
             sys.exit(1)
+
+        if not target_section:
+            return None
 
         if data_type == "string":
             return target_section[setting_key]
@@ -203,9 +204,6 @@ class RunSettingsConfig:
             return parsed_bool
         else:
             raise ValueError(f"Unknown data_type: {data_type}, known are string and bool")
-
-
-
 
 
 class RunConfig:
@@ -263,7 +261,6 @@ class RunConfig:
 
             sample_config = SampleConfig(logger, sample_key, self.config_parser[sample_key])
             self.samples[sample_key] = sample_config
-
 
     def get_sample_conf(self, sample_id: str, is_stub: bool) -> SectionProxy:
         case_settings = self.config_parser[sample_id]

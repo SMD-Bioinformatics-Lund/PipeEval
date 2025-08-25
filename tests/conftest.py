@@ -32,13 +32,15 @@ def basic_config_path(tmp_path: Path, base_dir: Path) -> Path:
 
     config_text = textwrap.dedent(
         f"""
-        [settings]
+        [pipeline-default]
         start_nextflow_analysis = /usr/bin/env
         log_base_dir = {tmp_path}/log
         trace_base_dir = {tmp_path}/trace
         work_base_dir = {tmp_path}/work
         base = {base_dir}
         repo = {repo_dir}
+
+        [pipeline-dna-const]
         runscript = main.nf
         datestamp = false
         singularity_version = 3.8.0
@@ -53,12 +55,13 @@ def basic_config_path(tmp_path: Path, base_dir: Path) -> Path:
         vcf = {vcf}
 
         [test]
+        pipeline = dna-const
         profile = wgs
-        trio = false
-        case = samplecase
+        sample_type = single
+        samples = samplecase
         default_panel = OMIM
 
-        [samplecase]
+        [sample-samplecase]
         id = caseid
         clarity_pool_id = 0
         clarity_sample_id = sample0
