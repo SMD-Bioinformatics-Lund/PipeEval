@@ -3,6 +3,7 @@ import logging
 from configparser import ConfigParser
 from pathlib import Path
 import sys
+from typing import Callable
 
 from pytest import MonkeyPatch
 
@@ -37,9 +38,11 @@ WGS_CSV_HEADERS = [
 def test_single_run(
     monkeypatch: MonkeyPatch,
     base_dir: Path,
-    run_config_paths: RunConfigs,
+    tmp_path: Path,
+    get_run_config_paths: RunConfigs,
     config_sample_paths: ConfigSamplePathGroup,
 ):
+    paths = config_sample_paths
 
     monkeypatch.setattr(run_main, "do_repo_checkout", lambda *a, **k: None)
     monkeypatch.setattr(run_main, "start_run", lambda *a, **k: None)
@@ -48,9 +51,9 @@ def test_single_run(
     run_config = RunConfig(
         LOG,
         "single",
-        run_config_paths.run_profile,
-        run_config_paths.pipeline_settings,
-        run_config_paths.samples,
+        get_run_config_paths.run_profile,
+        get_run_config_paths.pipeline_settings,
+        get_run_config_paths.samples,
     )
 
     run_main.main(
@@ -88,24 +91,25 @@ def test_single_run(
         assert len(rows) == 1
         row = rows[0]
         assert row["id"] == "s_proband"
-        assert row["type"] == "single"
+        assert row["type"] == "proband"
         assert row["sex"] == "M"
         assert row["assay"] == "dev"
         assert row["diagnosis"] == "itchy_nose"
         assert row["group"] == run_label
         assert row["father"] == "0"
         assert row["mother"] == "0"
-        assert str(row["read1"]) == str(config_sample_paths.proband.fq_fw)
-        assert str(row["read2"]) == str(config_sample_paths.proband.fq_rv)
+        assert str(row["read1"]) == str(paths.proband.fq_fw)
+        assert str(row["read2"]) == str(paths.proband.fq_rv)
 
 
 def test_duo_run(
     monkeypatch: MonkeyPatch,
     base_dir: Path,
-    run_config_paths: RunConfigs,
-    config_sample_paths: ConfigSamplePathGroup,
+    get_run_config_paths: RunConfigs,
+    config_sample_paths: ConfigSamplePathGroup
 ):
 
+    paths = config_sample_paths
     monkeypatch.setattr(run_main, "do_repo_checkout", lambda *a, **k: None)
     monkeypatch.setattr(run_main, "start_run", lambda *a, **k: None)
     monkeypatch.setattr(run_main, "get_git_commit_hash_and_log", lambda *a, **k: ("abcd", "abcd"))
@@ -113,9 +117,9 @@ def test_duo_run(
     run_config = RunConfig(
         LOG,
         "duo",
-        run_config_paths.run_profile,
-        run_config_paths.pipeline_settings,
-        run_config_paths.samples,
+        get_run_config_paths.run_profile,
+        get_run_config_paths.pipeline_settings,
+        get_run_config_paths.samples,
     )
 
     run_main.main(
@@ -164,8 +168,8 @@ def test_duo_run(
         assert pb_row["assay"] == assay
         assert pb_row["diagnosis"] == diagnosis
         assert pb_row["group"] == run_label
-        assert str(pb_row["read1"]) == str(config_sample_paths.normal.fq_fw)
-        assert str(pb_row["read2"]) == str(config_sample_paths.normal.fq_rv)
+        assert str(pb_row["read1"]) == str(paths.normal.fq_fw)
+        assert str(pb_row["read2"]) == str(paths.normal.fq_rv)
 
         mother_row = rows[1]
         assert mother_row["id"] == "s_tumor"
@@ -176,16 +180,18 @@ def test_duo_run(
         assert mother_row["group"] == run_label
         assert mother_row["father"] == "0"
         assert mother_row["mother"] == "0"
-        assert str(mother_row["read1"]) == str(config_sample_paths.tumor.fq_fw)
-        assert str(mother_row["read2"]) == str(config_sample_paths.tumor.fq_rv)
+        assert str(mother_row["read1"]) == str(paths.tumor.fq_fw)
+        assert str(mother_row["read2"]) == str(paths.tumor.fq_rv)
 
 
 def test_trio_run(
     monkeypatch: MonkeyPatch,
     base_dir: Path,
-    run_config_paths: RunConfigs,
+    get_run_config_paths: RunConfigs,
     config_sample_paths: ConfigSamplePathGroup,
 ):
+
+    paths = config_sample_paths
 
     monkeypatch.setattr(run_main, "do_repo_checkout", lambda *a, **k: None)
     monkeypatch.setattr(run_main, "start_run", lambda *a, **k: None)
@@ -194,9 +200,9 @@ def test_trio_run(
     run_config = RunConfig(
         LOG,
         "trio",
-        run_config_paths.run_profile,
-        run_config_paths.pipeline_settings,
-        run_config_paths.samples,
+        get_run_config_paths.run_profile,
+        get_run_config_paths.pipeline_settings,
+        get_run_config_paths.samples,
     )
 
     run_main.main(
@@ -207,7 +213,7 @@ def test_trio_run(
         repo=None,
         start_data="fq",
         stub_run=True,
-        run_profile=run_config.run_profile.profile,
+        run_profile="trio",
         skip_confirmation=True,
         queue=None,
         no_start=True,
@@ -217,7 +223,7 @@ def test_trio_run(
         analysis=None,
     )
 
-    run_label = "wgs-label-testcheckout-stub-fq"
+    run_label = "trio-label-testcheckout-stub-fq"
     result_dir = base_dir / run_label
 
     assert (result_dir / "run.log").exists()
@@ -241,8 +247,8 @@ def test_trio_run(
         assert pb_row["group"] == run_label
         assert pb_row["father"] == "s_father"
         assert pb_row["mother"] == "s_mother"
-        assert str(pb_row["read1"]) == str(config_sample_paths.proband.fq_fw)
-        assert str(pb_row["read2"]) == str(config_sample_paths.proband.fq_rv)
+        assert str(pb_row["read1"]) == str(paths.proband.fq_fw)
+        assert str(pb_row["read2"]) == str(paths.proband.fq_rv)
 
         mother_row = rows[1]
         assert mother_row["id"] == "s_mother"
@@ -253,8 +259,8 @@ def test_trio_run(
         assert mother_row["group"] == run_label
         assert mother_row["father"] == "0"
         assert mother_row["mother"] == "0"
-        assert str(mother_row["read1"]) == str(config_sample_paths.mother.fq_fw)
-        assert str(mother_row["read2"]) == str(config_sample_paths.mother.fq_rv)
+        assert str(mother_row["read1"]) == str(paths.mother.fq_fw)
+        assert str(mother_row["read2"]) == str(paths.mother.fq_rv)
 
         father_row = rows[2]
         assert father_row["id"] == "s_father"
@@ -265,11 +271,11 @@ def test_trio_run(
         assert father_row["group"] == run_label
         assert father_row["father"] == "0"
         assert father_row["mother"] == "0"
-        assert str(father_row["read1"]) == str(config_sample_paths.father.fq_fw)
-        assert str(father_row["read2"]) == str(config_sample_paths.father.fq_rv)
+        assert str(father_row["read1"]) == str(paths.father.fq_fw)
+        assert str(father_row["read2"]) == str(paths.father.fq_rv)
 
 
-def test_override_assay(monkeypatch: MonkeyPatch, base_dir: Path, run_config_paths: RunConfigs):
+def test_override_assay(monkeypatch: MonkeyPatch, base_dir: Path, get_run_config_paths: RunConfigs):
 
     monkeypatch.setattr(run_main, "do_repo_checkout", lambda *a, **k: None)
     monkeypatch.setattr(run_main, "start_run", lambda *a, **k: None)
@@ -278,9 +284,9 @@ def test_override_assay(monkeypatch: MonkeyPatch, base_dir: Path, run_config_pat
     run_config = RunConfig(
         LOG,
         "trio",
-        run_config_paths.run_profile,
-        run_config_paths.pipeline_settings,
-        run_config_paths.samples,
+        get_run_config_paths.run_profile,
+        get_run_config_paths.pipeline_settings,
+        get_run_config_paths.samples,
     )
 
     run_main.main(

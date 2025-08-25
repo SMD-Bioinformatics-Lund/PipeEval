@@ -60,36 +60,6 @@ def setup_results_links(
     work_link.symlink_to(work_link_target)
 
 
-# def get_single_csv(
-#     logger: Logger,
-#     config: RunConfig,
-#     run_label: str,
-#     start_data: str,
-#     queue: Optional[str],
-#     assay: str,
-#     analysis: str,
-# ):
-#     sample_id = config.run_profile.samples[0]
-#     sample_conf = config.get_sample_conf(sample_id)
-
-#     case = parse_sample(logger, sample_conf, start_data, "single")
-
-#     if not Path(case.read1).exists() or not Path(case.read2).exists():
-#         raise FileNotFoundError(f"One or both files missing: {case.read1} {case.read2}")
-
-#     diagnosis = config.run_profile.default_panel
-
-#     if not diagnosis:
-#         logger.error("No default ")
-#         sys.exit(1)
-
-#     run_csv = CsvEntry(run_label, [case], queue, assay, analysis, diagnosis)
-#     return run_csv
-
-
-# FIXME: Generalize for other numbers of samples
-# Also need to generalize different CSV formats, right?
-# Hmm. That is a more tricky one.
 def get_csv(
     logger: Logger,
     config: RunConfig,
@@ -108,8 +78,9 @@ def get_csv(
         sample = parse_sample(
             logger,
             sample_id,
+            config.run_profile.samples,
             sample_type,
-            config.samples,
+            config.all_samples,
             starting_run_from,
             config.run_profile.case_type,
             config.run_profile.sample_types,
@@ -134,17 +105,16 @@ def get_csv(
 def parse_sample(
     logger: Logger,
     sample_id: str,
+    case_sample_ids: List[str],
     sample_type: str,
-    confs: Dict[str, SampleConfig],
+    all_samples_dict: Dict[str, SampleConfig],
     starting_run_from: str,
     case_type: str,
     sample_types: List[str],
 ) -> CSVRow:
 
-    target_sample = confs[sample_id]
-    samples = list(confs.values())
+    target_sample = all_samples_dict[sample_id]
 
-    # FIXME: Modularize
     if starting_run_from == "vcf":
 
         if target_sample.vcf is None:
@@ -175,19 +145,23 @@ def parse_sample(
         raise ValueError(f"Unknown start_data, found: {starting_run_from}, valid are vcf, bam, fq")
 
     if case_type == "trio" and sample_type == "proband":
+        print("Hitting the if with sample types", sample_types)
         mother_idx = [i for (i, sample_type) in enumerate(sample_types) if sample_type == "mother"][
             0
         ]
-        print("Mother idx", mother_idx)
-        mother = samples[mother_idx].id
+        mother = case_sample_ids[mother_idx]
         father_idx = [i for (i, sample_type) in enumerate(sample_types) if sample_type == "father"][
             0
         ]
-        print("Father idx", father_idx)
-        father = samples[father_idx].id
+        father = case_sample_ids[father_idx]
+
+        print("mother and father", mother, father)
     else:
         mother = None
         father = None
+
+    if len(case_sample_ids) == 1 and sample_type is None:
+        sample_type = "proband"
 
     csv_row = CSVRow(
         target_sample.id,

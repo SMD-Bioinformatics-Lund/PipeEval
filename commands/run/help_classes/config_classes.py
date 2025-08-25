@@ -240,7 +240,7 @@ class RunConfig:
     run_profile_key: str
     run_profile: RunProfileConfig
     pipeline_settings: PipelineSettingsConfig
-    samples: Dict[str, SampleConfig] = {}
+    all_samples: Dict[str, SampleConfig] = {}
 
     def __init__(
         self,
@@ -269,10 +269,10 @@ class RunConfig:
                 sys.exit(1)
             section = sample_config_parser[sample]
             sample_config = SampleConfig(logger, section)
-            self.samples[sample] = sample_config
+            self.all_samples[sample] = sample_config
 
     def get_sample_conf(self, sample_id: str) -> SampleConfig:
-        case_settings = self.samples[sample_id]
+        case_settings = self.all_samples[sample_id]
         return case_settings
 
     def get_setting_entries(self) -> Dict[str, str]:
