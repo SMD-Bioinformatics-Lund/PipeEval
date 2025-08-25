@@ -8,7 +8,7 @@ from typing import Dict, List, Optional, Union
 
 
 
-class Case:
+class CSVRow:
     def __init__(
         self,
         id: str,
@@ -73,7 +73,7 @@ class CsvEntry:
     def __init__(
         self,
         group: str,
-        cases: List[Case],
+        cases: List[CSVRow],
         priority: Optional[str],
         assay: str,
         analysis: str,

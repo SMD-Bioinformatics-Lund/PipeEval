@@ -34,14 +34,23 @@ WGS_CSV_HEADERS = [
 ]
 
 
-def test_single_run(monkeypatch: MonkeyPatch, base_dir: Path, run_config_paths: RunConfigs, config_sample_paths: ConfigSamplePathGroup):
+def test_single_run(
+    monkeypatch: MonkeyPatch,
+    base_dir: Path,
+    run_config_paths: RunConfigs,
+    config_sample_paths: ConfigSamplePathGroup,
+):
 
     monkeypatch.setattr(run_main, "do_repo_checkout", lambda *a, **k: None)
     monkeypatch.setattr(run_main, "start_run", lambda *a, **k: None)
     monkeypatch.setattr(run_main, "get_git_commit_hash_and_log", lambda *a, **k: ("abcd", "abcd"))
 
     run_config = RunConfig(
-        LOG, "single", run_config_paths.run_profile, run_config_paths.pipeline_settings, run_config_paths.samples
+        LOG,
+        "single",
+        run_config_paths.run_profile,
+        run_config_paths.pipeline_settings,
+        run_config_paths.samples,
     )
 
     run_main.main(
@@ -90,14 +99,23 @@ def test_single_run(monkeypatch: MonkeyPatch, base_dir: Path, run_config_paths: 
         assert str(row["read2"]) == str(config_sample_paths.proband.fq_rv)
 
 
-def test_duo_run(monkeypatch: MonkeyPatch, base_dir: Path, run_config_paths: RunConfigs):
+def test_duo_run(
+    monkeypatch: MonkeyPatch,
+    base_dir: Path,
+    run_config_paths: RunConfigs,
+    config_sample_paths: ConfigSamplePathGroup,
+):
 
     monkeypatch.setattr(run_main, "do_repo_checkout", lambda *a, **k: None)
     monkeypatch.setattr(run_main, "start_run", lambda *a, **k: None)
     monkeypatch.setattr(run_main, "get_git_commit_hash_and_log", lambda *a, **k: ("abcd", "abcd"))
 
     run_config = RunConfig(
-        LOG, "duo", run_config_paths.run_profile, run_config_paths.pipeline_settings, run_config_paths.samples
+        LOG,
+        "duo",
+        run_config_paths.run_profile,
+        run_config_paths.pipeline_settings,
+        run_config_paths.samples,
     )
 
     run_main.main(
@@ -118,21 +136,67 @@ def test_duo_run(monkeypatch: MonkeyPatch, base_dir: Path, run_config_paths: Run
         analysis=None,
     )
 
-    result_dir = base_dir / "wgs-label-testcheckout-stub-fq"
+    run_label = "panel-1-label-testcheckout-stub-fq"
+    result_dir = base_dir / run_label
+
+    print("test")
+    print([f.name for f in result_dir.iterdir()])
 
     assert (result_dir / "run.log").exists()
-    assert (result_dir / "run.csv").exists()
     assert (result_dir / "nextflow.config").exists()
 
+    run_csv = result_dir / "run.csv"
+    assert (run_csv).exists()
 
-def test_trio_run(monkeypatch: MonkeyPatch, base_dir: Path, run_config_paths: RunConfigs, config_sample_paths: ConfigSamplePathGroup):
+    with open(run_csv, newline="") as csv_fh:
+        reader = csv.DictReader(csv_fh)
+        assert reader.fieldnames == WGS_CSV_HEADERS
+        rows = list(reader)
+        assert len(rows) == 2
+
+        diagnosis = "pain_in_toe"
+        assay = "dev"
+
+        pb_row = rows[0]
+        assert pb_row["id"] == "s_normal"
+        assert pb_row["type"] == "N"
+        assert pb_row["sex"] == "F"
+        assert pb_row["assay"] == assay
+        assert pb_row["diagnosis"] == diagnosis
+        assert pb_row["group"] == run_label
+        assert str(pb_row["read1"]) == str(config_sample_paths.normal.fq_fw)
+        assert str(pb_row["read2"]) == str(config_sample_paths.normal.fq_rv)
+
+        mother_row = rows[1]
+        assert mother_row["id"] == "s_tumor"
+        assert mother_row["type"] == "T"
+        assert mother_row["sex"] == "F"
+        assert mother_row["assay"] == assay
+        assert mother_row["diagnosis"] == diagnosis
+        assert mother_row["group"] == run_label
+        assert mother_row["father"] == "0"
+        assert mother_row["mother"] == "0"
+        assert str(mother_row["read1"]) == str(config_sample_paths.tumor.fq_fw)
+        assert str(mother_row["read2"]) == str(config_sample_paths.tumor.fq_rv)
+
+
+def test_trio_run(
+    monkeypatch: MonkeyPatch,
+    base_dir: Path,
+    run_config_paths: RunConfigs,
+    config_sample_paths: ConfigSamplePathGroup,
+):
 
     monkeypatch.setattr(run_main, "do_repo_checkout", lambda *a, **k: None)
     monkeypatch.setattr(run_main, "start_run", lambda *a, **k: None)
     monkeypatch.setattr(run_main, "get_git_commit_hash_and_log", lambda *a, **k: ("abcd", "abcd"))
 
     run_config = RunConfig(
-        LOG, "trio", run_config_paths.run_profile, run_config_paths.pipeline_settings, run_config_paths.samples
+        LOG,
+        "trio",
+        run_config_paths.run_profile,
+        run_config_paths.pipeline_settings,
+        run_config_paths.samples,
     )
 
     run_main.main(
@@ -212,7 +276,11 @@ def test_override_assay(monkeypatch: MonkeyPatch, base_dir: Path, run_config_pat
     monkeypatch.setattr(run_main, "get_git_commit_hash_and_log", lambda *a, **k: ("abcd", "abcd"))
 
     run_config = RunConfig(
-        LOG, "trio", run_config_paths.run_profile, run_config_paths.pipeline_settings, run_config_paths.samples
+        LOG,
+        "trio",
+        run_config_paths.run_profile,
+        run_config_paths.pipeline_settings,
+        run_config_paths.samples,
     )
 
     run_main.main(

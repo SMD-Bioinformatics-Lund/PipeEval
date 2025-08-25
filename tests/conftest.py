@@ -28,7 +28,7 @@ class RunConfigs:
 
 @pytest.fixture
 def config_sample_paths(tmp_path: Path):
-    # Dummy input files
+    
     proband = ConfigSamplePaths(tmp_path, "proband")
     mother = ConfigSamplePaths(tmp_path, "mother")
     father = ConfigSamplePaths(tmp_path, "father")

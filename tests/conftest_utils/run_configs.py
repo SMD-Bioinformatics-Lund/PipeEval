@@ -77,8 +77,8 @@ def get_run_profile_config() -> str:
         pipeline = somatic
         profile = panel-1
         case_type = duo
-        samples = s_tumor,s_normal
-        sample_types = tumor,normal
+        samples = s_normal,s_tumor
+        sample_types = N,T
         default_panel = pain_in_toe
 
         [trio]
@@ -153,15 +153,6 @@ def get_sample_config(config_sample_paths: ConfigSamplePathGroup) -> str:
         bam = {father.bam}
         vcf = {father.vcf}
 
-        [s_tumor]
-        clarity_pool_id = 0
-        clarity_sample_id = sample04
-        sex = F
-        fq_fw = {tumor.fq_fw}
-        fq_rv = {tumor.fq_rv}
-        bam = {tumor.bam}
-        vcf = {tumor.vcf}
-
         [s_normal]
         clarity_pool_id = 0
         clarity_sample_id = sample05
@@ -170,6 +161,15 @@ def get_sample_config(config_sample_paths: ConfigSamplePathGroup) -> str:
         fq_rv = {normal.fq_rv}
         bam = {normal.bam}
         vcf = {normal.vcf}
+
+        [s_tumor]
+        clarity_pool_id = 0
+        clarity_sample_id = sample04
+        sex = F
+        fq_fw = {tumor.fq_fw}
+        fq_rv = {tumor.fq_rv}
+        bam = {tumor.bam}
+        vcf = {tumor.vcf}
         """
     )
 

@@ -4,7 +4,7 @@ from pathlib import Path
 import sys
 from typing import Dict, List, Optional
 
-from commands.run.help_classes.help_classes import Case, CsvEntry
+from commands.run.help_classes.help_classes import CSVRow, CsvEntry
 from commands.run.help_classes.config_classes import RunConfig, SampleConfig
 
 
@@ -139,11 +139,12 @@ def parse_sample(
     starting_run_from: str,
     case_type: str,
     sample_types: List[str],
-) -> Case:
+) -> CSVRow:
 
     target_sample = confs[sample_id]
     samples = list(confs.values())
 
+    # FIXME: Modularize
     if starting_run_from == "vcf":
 
         if target_sample.vcf is None:
@@ -174,8 +175,6 @@ def parse_sample(
         raise ValueError(f"Unknown start_data, found: {starting_run_from}, valid are vcf, bam, fq")
 
     if case_type == "trio" and sample_type == "proband":
-        print([s.id for s in samples])
-        print(sample_types)
         mother_idx = [i for (i, sample_type) in enumerate(sample_types) if sample_type == "mother"][
             0
         ]
@@ -190,7 +189,7 @@ def parse_sample(
         mother = None
         father = None
 
-    case = Case(
+    csv_row = CSVRow(
         target_sample.id,
         str(target_sample.clarity_pool_id),
         target_sample.clarity_sample_id,
@@ -200,10 +199,8 @@ def parse_sample(
         rv,
         mother,
         father,
-        # mother=conf.mother if is_trio else None,
-        # father=conf.father if is_trio else None,
     )
-    return case
+    return csv_row
 
 
 def write_run_log(

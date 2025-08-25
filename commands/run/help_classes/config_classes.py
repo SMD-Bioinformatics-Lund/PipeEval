@@ -100,10 +100,10 @@ class RunProfileConfig:
             return "single"
         elif len(sample_types) == 2:
             sorted_types = sorted(sample_types)
-            if sorted_types == ["normal", "tumor"]:
+            if sorted_types == ["N", "T"]:
                 return "paired_tumor"
             logger.error(
-                f"Only known sample type combination for two entries are types 'normal' and 'tumor'. Found: {sorted_types}"
+                f"Only known sample type combination for two entries are types 'N' and 'T'. Found: {sorted_types}"
             )
         elif len(sample_types) == 3:
             sorted_types = sorted(sample_types)
