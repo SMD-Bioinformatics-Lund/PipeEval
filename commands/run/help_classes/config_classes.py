@@ -42,7 +42,7 @@ class SampleConfig:
             logger, sample_section, "clarity_sample_id"
         )
         self.sex = parse_mandatory_section_argument(logger, sample_section, "sex")
-        self.type = parse_mandatory_section_argument(logger, sample_section,"type")
+        self.type = parse_mandatory_section_argument(logger, sample_section, "type")
 
         self.fq_fw = sample_section.get("fq_fw")
         self.fq_rv = sample_section.get("fq_rv")
@@ -55,11 +55,13 @@ class RunProfileConfig:
     config: ConfigParser
     profile_section: SectionProxy
 
+    case_type: str
+
     pipeline: str
     profile: str
     # single, trio, tumor_pair
-    sample_type: str
     samples: List[str]
+    sample_types: List[str]
     default_panel: Optional[str]
 
     def __init__(self, logger: Logger, run_profile: str, conf_path: Path):
@@ -76,19 +78,48 @@ class RunProfileConfig:
         profile_section = self.config[run_profile]
         self.profile_section = profile_section
 
-        self.pipeline = parse_mandatory_section_argument(
-            logger, profile_section, "pipeline"
-        )
-        self.profile = parse_mandatory_section_argument(
-            logger, profile_section, "profile"
-        )
-        self.sample_type = parse_mandatory_section_argument(
-            logger, profile_section, "sample_type"
-        )
-        samples_str = parse_mandatory_section_argument(logger, profile_section, "samples")
+        self.pipeline = parse_mandatory_section_argument(logger, profile_section, "pipeline")
+        self.profile = parse_mandatory_section_argument(logger, profile_section, "profile")
+        self.sample_type = parse_mandatory_section_argument(logger, profile_section, "sample_type")
 
+        samples_str = parse_mandatory_section_argument(logger, profile_section, "samples")
         self.samples = samples_str.split(",")
+
+        sample_types_str = parse_mandatory_section_argument(logger, profile_section, "sample_types")
+        self.sample_types = sample_types_str.split(",")
+
+        if len(samples_str) != len(sample_types_str):
+            logger.error(
+                f'Different number of samples and sample types. Found samples: "{samples_str}" and sample_types "{sample_types_str}"'
+            )
+            sys.exit(1)
+
+        self.case_type = self._detect_case_type(logger, self.sample_types)
+
         self.default_panel = profile_section.get("default_panel")
+
+    def _detect_case_type(self, logger: Logger, sample_types: List[str]) -> str:
+        if len(sample_types) == 1:
+            return "single"
+        elif len(sample_types) == 2:
+            sorted_types = sorted(sample_types)
+            if sorted_types == ["normal", "tumor"]:
+                return "paired_tumor"
+            logger.error(
+                f"Only known sample type combination for two entries are types 'normal' and 'tumor'. Found: {sorted_types}"
+            )
+            sys.exit(1)
+        elif len(sample_types) == 3:
+            sorted_types = sorted(sample_types)
+            if sorted_types == ["father", "mother", "proband"]:
+                return "trio"
+            logger.error(
+                f"Only known sample type combination for three entries are types 'proband', 'mother' and 'father'. Found: {sorted_types}"
+            )
+        else:
+            logger.error(
+                f"Only cases with 1, 2 or 3 samples are supported. Found: {len(sample_types)}"
+            )
 
 
 class PipelineSettingsConfig:

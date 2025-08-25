@@ -69,22 +69,23 @@ def get_profile_config() -> str:
         [single]
         pipeline = dna-const
         profile = wgs
-        sample_type = single
-        samples = proband
+        samples = s_proband
+        sample_types = proband
         default_panel = OMIM
 
         [duo]
         pipeline = somatic
         profile = panel-1
-        sample_type = duo
-        samples = tumor,normal
+        case_type = duo
+        samples = s_tumor,s_normal
+        sample_types = tumor,normal
         default_panel = OMIM
 
         [trio]
         pipeline = dna-const
         profile = wgs
-        sample_type = trio
-        samples = proband,mother,father
+        samples = s_proband,s_mother,s_father
+        sample_types = proband,mother,father
         default_panel = OMIM
         """
     )
@@ -115,7 +116,7 @@ class ConfigSamplePathGroup:
 
 
 
-def get_sample_config(tmp_path: Path, config_sample_paths: ConfigSamplePathGroup) -> str:
+def get_sample_config(config_sample_paths: ConfigSamplePathGroup) -> str:
 
     proband = config_sample_paths.proband
     mother = config_sample_paths.mother
@@ -126,55 +127,50 @@ def get_sample_config(tmp_path: Path, config_sample_paths: ConfigSamplePathGroup
     sample_config_text = textwrap.dedent(
         f"""
         [proband]
-        id = proband
+        id = s_proband
         clarity_pool_id = 0
         clarity_sample_id = sample01
         sex = M
-        type = proband
         fq_fw = {proband.fq_fw}
         fq_rv = {proband.fq_rv}
         bam = {proband.bam}
         vcf = {proband.vcf}
 
         [mother]
-        id = sample_mother
+        id = s_mother
         clarity_pool_id = 0
         clarity_sample_id = sample02
         sex = F
-        type = mother
         fq_fw = {mother.fq_fw}
         fq_rv = {mother.fq_rv}
         bam = {mother.bam}
         vcf = {mother.vcf}
 
         [father]
-        id = sample_father
+        id = s_father
         clarity_pool_id = 0
         clarity_sample_id = sample03
         sex = M
-        type = father
         fq_fw = {father.fq_fw}
         fq_rv = {father.fq_rv}
         bam = {father.bam}
         vcf = {father.vcf}
 
         [tumor]
-        id = sample_tumor
+        id = s_tumor
         clarity_pool_id = 0
         clarity_sample_id = sample04
         sex = F
-        type = tumor
         fq_fw = {tumor.fq_fw}
         fq_rv = {tumor.fq_rv}
         bam = {tumor.bam}
         vcf = {tumor.vcf}
 
         [normal]
-        id = sample_normal
+        id = s_normal
         clarity_pool_id = 0
         clarity_sample_id = sample05
         sex = F
-        type = normal
         fq_fw = {normal.fq_fw}
         fq_rv = {normal.fq_rv}
         bam = {normal.bam}

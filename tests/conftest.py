@@ -50,7 +50,7 @@ def run_config_paths(tmp_path: Path, base_dir: Path, config_sample_paths: Config
     profile_config_path = tmp_path / "profile_config.ini"
     profile_config_path.write_text(profile_config)
 
-    sample_config_content = get_sample_config(tmp_path, config_sample_paths)
+    sample_config_content = get_sample_config(config_sample_paths)
     sample_config_path = tmp_path / "sample_config.ini"
     sample_config_path.write_text(sample_config_content)
 
