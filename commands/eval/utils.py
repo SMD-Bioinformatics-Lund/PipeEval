@@ -1,8 +1,15 @@
+from configparser import SectionProxy
 import re
 from collections import defaultdict
 from logging import Logger
 from pathlib import Path
 from typing import Dict, List, Optional, Set, Tuple, Union
+
+from commands.eval.classes.helpers import VCFPair
+from commands.eval.eval_functions import check_same_files, diff_compare_files
+from commands.eval.main import FILE_NAMES
+from shared.compare import do_comparison
+from shared.vcf.vcf import parse_scored_vcf
 
 from .classes.run_object import PathObj, RunObject
 
@@ -13,16 +20,12 @@ def get_files_ending_with(pattern: str, paths: List[PathObj]) -> List[PathObj]:
     return matching
 
 
-def get_single_file_ending_with(
-    patterns: List[str], paths: List[PathObj]
-) -> Union[PathObj, None]:
+def get_single_file_ending_with(patterns: List[str], paths: List[PathObj]) -> Union[PathObj, None]:
     for pattern in patterns:
         matching = get_files_ending_with(pattern, paths)
         if len(matching) > 1:
             matches = [str(match) for match in matching]
-            raise ValueError(
-                f"Only one matching file allowed, found: {','.join(matches)}"
-            )
+            raise ValueError(f"Only one matching file allowed, found: {','.join(matches)}")
         elif len(matching) == 1:
             return matching[0]
     return None
@@ -164,3 +167,104 @@ def get_ignored(
             non_ignored.append(path)
 
     return (nbr_ignored_per_pattern, non_ignored)
+
+
+def get_vcf_pair(
+    logger: Logger,
+    vcf_paths: List[str],
+    ro: RunObject,
+    r1_paths: List[PathObj],
+    r2_paths: List[PathObj],
+    verbose: bool,
+    vcf_type: str,
+) -> Optional[VCFPair]:
+    vcf_pair_paths = get_pair_match(
+        logger,
+        vcf_type,
+        vcf_paths,
+        ro,
+        r1_paths,
+        r2_paths,
+        verbose,
+    )
+
+    if vcf_pair_paths is None:
+        logger.warning(f"Skipping {vcf_type} comparisons due to missing files ({vcf_pair_paths})")
+        return None
+
+    vcf_pair = parse_vcf_pair(logger, ro.run_ids, vcf_pair_paths, vcf_type)
+
+    return vcf_pair
+
+
+def parse_vcf_pair(
+    logger: Logger, run_ids: Tuple[str, str], vcf_paths: Tuple[Path, Path], vcf_type: str
+) -> VCFPair:
+    logger.info(f"# Parsing {vcf_type} VCFs ...")
+
+    vcf_r1 = parse_scored_vcf(vcf_paths[0], False)
+    logger.info(f"{run_ids[0]} number variants: {len(vcf_r1.variants)}")
+    vcf_r2 = parse_scored_vcf(vcf_paths[1], False)
+    logger.info(f"{run_ids[1]} number variants: {len(vcf_r2.variants)}")
+
+    comp_res = do_comparison(
+        set(vcf_r1.variants.keys()),
+        set(vcf_r2.variants.keys()),
+    )
+    logger.info(f"In common: {len(comp_res.shared)}")
+    logger.info(f"Only in {run_ids[0]}: {len(comp_res.r1)}")
+    logger.info(f"Only in {run_ids[1]}: {len(comp_res.r2)}")
+
+    vcf_pair = VCFPair(vcf_r1, vcf_r2, comp_res)
+    return vcf_pair
+
+def do_file_diff(
+    logger: Logger,
+    outdir: Optional[Path],
+    pipe_conf: SectionProxy,
+    ro: RunObject,
+    r1_paths: List[PathObj],
+    r2_paths: List[PathObj],
+):
+    out_path = outdir / "check_sample_files.txt" if outdir else None
+    logger.info("")
+    logger.info("### Comparing existing files ###")
+
+    ignore_file_string = pipe_conf.get("ignore") or ""
+    ignore_files = ignore_file_string.split(",")
+
+    check_same_files(
+        ro,
+        r1_paths,
+        r2_paths,
+        ignore_files,
+        out_path,
+    )
+
+def do_simple_diff(
+    logger: Logger,
+    ro: RunObject,
+    r1_paths: List[PathObj],
+    r2_paths: List[PathObj],
+    pipe_conf: SectionProxy,
+    analysis: str,
+    outdir: Optional[Path],
+    verbose: bool,
+):
+    logger.info("")
+    logger.info(f"--- Comparing: {analysis} ---")
+    matched_pair = get_pair_match(
+        logger,
+        analysis,
+        pipe_conf[analysis].split(","),
+        ro,
+        r1_paths,
+        r2_paths,
+        verbose,
+    )
+    if not matched_pair:
+        logger.warning(f"At least one file missing ({matched_pair})")
+    else:
+        out_path = outdir / FILE_NAMES[analysis] if outdir else None
+        diff_compare_files(ro.r1_id, ro.r2_id, matched_pair[0], matched_pair[1], out_path)
+

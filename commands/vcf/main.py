@@ -4,7 +4,8 @@ from pathlib import Path
 from typing import List, Optional
 
 from commands.eval.classes.run_settings import RunSettings
-from commands.eval.main import get_vcf_pair, parse_vcf_pair, vcf_comparisons
+from commands.eval.main import vcf_comparisons
+from commands.eval.utils import parse_vcf_pair
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
@@ -67,8 +68,8 @@ def main(
     )
 
     vcf_type = "snv"
-    vcfs = parse_vcf_pair(run_ids, (vcf1, vcf2), vcf_type)
-    vcf_comparisons(comparisons, run_ids, results_folder, rs, vcf_type, vcfs)
+    vcfs = parse_vcf_pair(logger, run_ids, (vcf1, vcf2), vcf_type)
+    vcf_comparisons(logger, comparisons, run_ids, results_folder, rs, vcf_type, vcfs)
 
 
 def main_wrapper(args: argparse.Namespace):
