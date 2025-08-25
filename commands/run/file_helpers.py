@@ -72,9 +72,9 @@ def get_single_csv(
     analysis: str,
 ):
     sample_id = config.run_profile.samples[0]
-    case_conf = config.get_sample_conf(sample_id)
+    sample_conf = config.get_sample_conf(sample_id)
 
-    case = parse_sample(dict(case_conf), start_data, is_trio=False)
+    case = parse_sample(logger, sample_conf, start_data, "single")
 
     if not Path(case.read1).exists() or not Path(case.read2).exists():
         raise FileNotFoundError(f"One or both files missing: {case.read1} {case.read2}")
@@ -107,7 +107,7 @@ def get_csv(
     for sample_id in sample_ids:
         sample_config = config.get_sample_conf(sample_id)
 
-        case = parse_sample(sample_config, start_data, is_trio=True)
+        case = parse_sample(logger, sample_config, start_data, "trio")
 
         if not Path(case.read1).exists() or not Path(case.read2).exists():
             raise FileNotFoundError(
@@ -126,7 +126,7 @@ def get_csv(
     return run_csv
 
 
-def parse_sample(logger: Logger, conf: SampleConfig, start_data: str, is_trio: bool) -> Case:
+def parse_sample(logger: Logger, conf: SampleConfig, start_data: str, sample_type: str) -> Case:
     if start_data == "vcf":
 
         if conf.vcf is None:
@@ -195,5 +195,5 @@ def write_run_log(
             print(f"{key}: {val}", file=out_fh)
 
         print(f"# Config file - {run_profile}", file=out_fh)
-        for key, val in config.get_profile_entries(run_profile).items():
+        for key, val in config.get_profile_entries().items():
             print(f"{key}: {val}", file=out_fh)

@@ -69,6 +69,8 @@ def main(
     repo = repo if repo is not None else Path(config.pipeline_settings.repo)
     datestamp = datestamp or config.pipeline_settings.datestamp
 
+    print("Check for valid repo")
+
     check_valid_repo(repo)
 
     do_repo_checkout(repo, checkout, verbose, skip_confirmation)
@@ -86,7 +88,9 @@ def main(
 
     results_dir.mkdir(exist_ok=True, parents=True)
 
+
     run_log_path = results_dir / "run.log"
+    print("Ready to write log to", run_log_path)
     write_run_log(
         run_log_path,
         run_profile,

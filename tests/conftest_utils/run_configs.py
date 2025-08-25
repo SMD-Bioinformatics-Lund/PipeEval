@@ -1,9 +1,6 @@
 from pathlib import Path
 import textwrap
-
-
-def test_import():
-    print("Hello")
+from typing import List
 
 
 class ConfigSamplePaths:
@@ -17,6 +14,9 @@ class ConfigSamplePaths:
         self.fq_rv = tmp_path / f"{label}_rv.fq"
         self.bam = tmp_path / f"{label}.bam"
         self.vcf = tmp_path / f"{label}.vcf"
+    
+        for path in [self.fq_fw, self.fq_rv, self.bam, self.vcf]:
+            path.touch()
 
 
 def get_pipeline_config(base_dir: Path, tmp_path: Path) -> str:

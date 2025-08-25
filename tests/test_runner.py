@@ -39,7 +39,7 @@ def test_single_run(monkeypatch: MonkeyPatch, base_dir: Path, run_configs: RunCo
         analysis=None,
     )
 
-    result_dir = base_dir / "test-label-testcheckout-stub-fq"
+    result_dir = base_dir / "wgs-label-testcheckout-stub-fq"
 
     assert (result_dir / "run.log").exists()
     assert (result_dir / "run.csv").exists()
@@ -74,7 +74,7 @@ def test_duo_run(monkeypatch: MonkeyPatch, base_dir: Path, run_configs: RunConfi
         analysis=None,
     )
 
-    result_dir = base_dir / "test-label-testcheckout-stub-fq"
+    result_dir = base_dir / "wgs-label-testcheckout-stub-fq"
 
     assert (result_dir / "run.log").exists()
     assert (result_dir / "run.csv").exists()
@@ -109,7 +109,7 @@ def test_trio_run(monkeypatch: MonkeyPatch, base_dir: Path, run_configs: RunConf
         analysis=None,
     )
 
-    result_dir = base_dir / "test-label-testcheckout-stub-fq"
+    result_dir = base_dir / "wgs-label-testcheckout-stub-fq"
 
     assert (result_dir / "run.log").exists()
     assert (result_dir / "run.csv").exists()
@@ -144,7 +144,7 @@ def test_override_assay(monkeypatch: MonkeyPatch, base_dir: Path, run_configs: R
         analysis="analysis_test",
     )
 
-    result_dir = base_dir / "test-label-testcheckout-stub-fq"
+    result_dir = base_dir / "wgs-label-testcheckout-stub-fq"
     with open(result_dir / "run.csv", "r") as fh:
         lines = fh.read().splitlines()
     assert lines[1].split(",")[4] == "prod"

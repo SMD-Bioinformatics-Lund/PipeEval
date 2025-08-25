@@ -209,6 +209,7 @@ class PipelineSettingsConfig:
 
 class RunConfig:
 
+    run_profile_key: str
     run_profile: RunProfileConfig
     pipeline_settings: PipelineSettingsConfig
     samples: Dict[str, SampleConfig] = {}
@@ -221,7 +222,7 @@ class RunConfig:
         pipeline_config_path: Path,
         sample_config_path: Path,
     ):
-
+        self.run_profile_key = run_profile
         self.run_profile = RunProfileConfig(logger, run_profile, profile_config_path)
 
         self.pipeline_settings = PipelineSettingsConfig(
@@ -252,8 +253,8 @@ class RunConfig:
             key_vals[key] = val
         return key_vals
 
-    def get_profile_entries(self, run_profile: str) -> Dict[str, str]:
+    def get_profile_entries(self) -> Dict[str, str]:
         key_vals = {}
-        for key, val in self.run_profile.config.items():
+        for key, val in self.run_profile.config[self.run_profile_key].items():
             key_vals[key] = val
         return key_vals

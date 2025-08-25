@@ -8,7 +8,6 @@ from tests.conftest_utils.run_configs import (
     get_profile_config,
     get_sample_config,
     get_pipeline_config,
-    test_import,
 )
 
 
