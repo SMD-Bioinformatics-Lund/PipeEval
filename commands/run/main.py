@@ -68,7 +68,12 @@ def main(
     # check_valid_config_arguments(config, run_type, start_data, base_dir, repo)
     base_dir = base_dir if base_dir is not None else Path(config.settings.base)
     repo = repo if repo is not None else Path(config.settings.repo)
+    print("Original datestamp", datestamp)
+    print("Settings", config.settings.datestamp)
     datestamp = datestamp or config.settings.datestamp
+
+    print("Ending up with datestamp", datestamp)
+    print("Ending up with datestamp", datestamp)
 
     check_valid_repo(repo)
     do_repo_checkout(repo, checkout, verbose, skip_confirmation)
@@ -99,7 +104,7 @@ def main(
     run_type_settings = config.get_run_type_settings()
 
     assay = assay or ASSAY_PLACEHOLDER
-    analysis = analysis or run_type_settings["profile"]
+    analysis = analysis or config.profile.profile
 
     # FIXME: Consider how to deal with a duo here
     if not config.profile.sample_type == "trio":
@@ -109,7 +114,6 @@ def main(
             run_label,
             start_data,
             queue,
-            stub_run,
             assay,
             analysis,
         )
@@ -120,7 +124,6 @@ def main(
             run_label,
             start_data,
             queue,
-            stub_run,
             assay,
             analysis,
         )

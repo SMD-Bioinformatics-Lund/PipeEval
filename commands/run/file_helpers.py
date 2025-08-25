@@ -68,12 +68,11 @@ def get_single_csv(
     run_label: str,
     start_data: str,
     queue: Optional[str],
-    stub_run: bool,
     assay: str,
     analysis: str,
 ):
-    case_id = config.profile.profile_name
-    case_conf = config.get_sample_conf(case_id, stub_run)
+    sample_id = config.profile.samples[0]
+    case_conf = config.get_sample_conf(sample_id)
 
     case = parse_case(dict(case_conf), start_data, is_trio=False)
 
@@ -99,20 +98,17 @@ def get_trio_csv(
     run_label: str,
     start_data: str,
     queue: Optional[str],
-    stub_run: bool,
     assay: str,
     analysis: str,
 ):
 
-    sample_ids = list(config.samples.keys())
-
-    # sample_ids = run_type_settings["cases"].split(",")
+    sample_ids = config.profile.samples
     assert (
         len(sample_ids) == 3
     ), f"For a trio, three fields are expected, found: {sample_ids}"
     cases: List[Case] = []
     for sample_id in sample_ids:
-        case_dict = config.get_sample_conf(sample_id, stub_run)
+        case_dict = config.get_sample_conf(sample_id)
 
         case = parse_case(dict(case_dict), start_data, is_trio=True)
 

@@ -51,7 +51,7 @@ class RunProfileConfig:
     raw_config: Dict[str, str]
 
     pipeline: str
-    profile_name: str
+    profile: str
     # single, trio, tumor_pair
     sample_type: str
     samples: List[str]
@@ -64,7 +64,7 @@ class RunProfileConfig:
         self.pipeline = parse_mandatory_section_argument(
             run_profile_conf, profile_key, logger, "pipeline"
         )
-        self.profile_name = parse_mandatory_section_argument(
+        self.profile = parse_mandatory_section_argument(
             run_profile_conf, profile_key, logger, "profile"
         )
         self.sample_type = parse_mandatory_section_argument(
@@ -153,15 +153,20 @@ class RunSettingsConfig:
         )
         self.baseline_repo = str(
             self._parse_setting(
-                logger, default_settings_key, pipeline_settings_key, "baseline_repo", mandatory=False
+                logger,
+                default_settings_key,
+                pipeline_settings_key,
+                "baseline_repo",
+                mandatory=False,
             )
         )
         self.base = str(
             self._parse_setting(logger, default_settings_key, pipeline_settings_key, "base")
         )
-        self.datestamp = bool(
-            self._parse_setting(logger, default_settings_key, pipeline_settings_key, "datestamp")
-        )
+        self.datestamp: bool = self._parse_setting(
+            logger, default_settings_key, pipeline_settings_key, "datestamp", data_type="bool"
+        ) # type: ignore[assignment]
+
         self.queue = str(
             self._parse_setting(logger, default_settings_key, pipeline_settings_key, "queue")
         )
@@ -173,11 +178,11 @@ class RunSettingsConfig:
         )
 
     def get_items(self):
-        
+
         combined_settings = {}
         for key, val in self._default_settings.items():
             combined_settings[key] = val
-        
+
         for key, val in self._pipeline_settings.items():
             combined_settings[key] = val
 
@@ -262,10 +267,8 @@ class RunConfig:
             sample_config = SampleConfig(logger, sample_key, self.config_parser[sample_key])
             self.samples[sample_key] = sample_config
 
-    def get_sample_conf(self, sample_id: str, is_stub: bool) -> SectionProxy:
-        case_settings = self.config_parser[sample_id]
-        # if is_stub:
-        #     stub_case =
+    def get_sample_conf(self, sample_id: str) -> SectionProxy:
+        case_settings = self.config_parser[f"sample-{sample_id}"]
         return case_settings
 
     def get_run_type_settings(self) -> Dict[str, str]:
