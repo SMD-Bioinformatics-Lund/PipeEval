@@ -4,6 +4,7 @@ from pathlib import Path
 import pytest
 
 from tests.conftest_utils.run_configs import (
+    ConfigSamplePathGroup,
     ConfigSamplePaths,
     get_profile_config,
     get_sample_config,
@@ -25,8 +26,21 @@ class RunConfigs:
         self.samples = samples
 
 
+@pytest.fixture
+def config_sample_paths(tmp_path: Path):
+    # Dummy input files
+    proband = ConfigSamplePaths(tmp_path, "proband")
+    mother = ConfigSamplePaths(tmp_path, "mother")
+    father = ConfigSamplePaths(tmp_path, "father")
+    tumor = ConfigSamplePaths(tmp_path, "tumor")
+    normal = ConfigSamplePaths(tmp_path, "normal")
+
+    group = ConfigSamplePathGroup(proband, mother, father, tumor, normal)
+    return group
+
+
 @pytest.fixture()
-def run_configs(tmp_path: Path, base_dir: Path) -> RunConfigs:
+def run_config_paths(tmp_path: Path, base_dir: Path, config_sample_paths: ConfigSamplePathGroup) -> RunConfigs:
 
     pipeline_config = get_pipeline_config(base_dir, tmp_path)
     pipeline_config_path = tmp_path / "pipeline_config.ini"
@@ -36,7 +50,7 @@ def run_configs(tmp_path: Path, base_dir: Path) -> RunConfigs:
     profile_config_path = tmp_path / "profile_config.ini"
     profile_config_path.write_text(profile_config)
 
-    sample_config_content = get_sample_config(tmp_path)
+    sample_config_content = get_sample_config(tmp_path, config_sample_paths)
     sample_config_path = tmp_path / "sample_config.ini"
     sample_config_path.write_text(sample_config_content)
 

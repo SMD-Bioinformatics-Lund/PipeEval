@@ -2,6 +2,8 @@ from pathlib import Path
 import textwrap
 from typing import List
 
+import pytest
+
 
 class ConfigSamplePaths:
     fq_fw: Path
@@ -14,7 +16,7 @@ class ConfigSamplePaths:
         self.fq_rv = tmp_path / f"{label}_rv.fq"
         self.bam = tmp_path / f"{label}.bam"
         self.vcf = tmp_path / f"{label}.vcf"
-    
+
         for path in [self.fq_fw, self.fq_rv, self.bam, self.vcf]:
             path.touch()
 
@@ -89,14 +91,37 @@ def get_profile_config() -> str:
     return pipeline_config_text
 
 
-def get_sample_config(tmp_path: Path) -> str:
+class ConfigSamplePathGroup:
+    proband: ConfigSamplePaths
+    mother: ConfigSamplePaths
+    father: ConfigSamplePaths
+    tumor: ConfigSamplePaths
+    normal: ConfigSamplePaths
 
-    # Dummy input files
-    proband = ConfigSamplePaths(tmp_path, "proband")
-    mother = ConfigSamplePaths(tmp_path, "mother")
-    father = ConfigSamplePaths(tmp_path, "father")
-    tumor = ConfigSamplePaths(tmp_path, "tumor")
-    normal = ConfigSamplePaths(tmp_path, "normal")
+    def __init__(
+        self,
+        proband: ConfigSamplePaths,
+        mother: ConfigSamplePaths,
+        father: ConfigSamplePaths,
+        tumor: ConfigSamplePaths,
+        normal: ConfigSamplePaths,
+    ):
+        self.proband = proband
+        self.mother = mother
+        self.father = father
+        self.tumor = tumor
+        self.normal = normal
+
+
+
+
+def get_sample_config(tmp_path: Path, config_sample_paths: ConfigSamplePathGroup) -> str:
+
+    proband = config_sample_paths.proband
+    mother = config_sample_paths.mother
+    father = config_sample_paths.father
+    tumor = config_sample_paths.tumor
+    normal = config_sample_paths.normal
 
     sample_config_text = textwrap.dedent(
         f"""
