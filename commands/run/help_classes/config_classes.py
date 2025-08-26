@@ -73,6 +73,7 @@ class RunProfileConfig:
             logger.error(
                 f'Provided run profile not present among available entries in the run profile config. Provided: "{run_profile}", available: "{available}"'
             )
+            sys.exit(1)
 
         profile_section = self.config[run_profile]
         self.profile_section = profile_section
