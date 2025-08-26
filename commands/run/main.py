@@ -2,6 +2,7 @@
 
 import argparse
 import logging
+import shutil
 import subprocess
 import sys
 from datetime import datetime
@@ -59,6 +60,7 @@ def main(
     verbose: bool,
     assay: Optional[str],
     analysis: Optional[str],
+    csv_fp: Optional[Path],
 ):
     logger.info(f"Preparing run, type: {run_profile}, data: {start_data}")
 
@@ -97,17 +99,20 @@ def main(
     assay = assay or ASSAY_PLACEHOLDER
     analysis = analysis or config.run_profile.profile
 
-    csv = get_csv(
-        logger,
-        config,
-        run_label,
-        start_data,
-        queue,
-        assay,
-        analysis,
-    )
     out_csv = results_dir / "run.csv"
-    csv.write_to_file(str(out_csv))
+    if not csv_fp:
+        csv = get_csv(
+            logger,
+            config,
+            run_label,
+            start_data,
+            queue,
+            assay,
+            analysis,
+        )
+        csv.write_to_file(str(out_csv))
+    else:
+        shutil.copy(csv_fp, out_csv)
 
     def get_start_nextflow_command(quote_pipeline_arguments: bool) -> List[str]:
         command = build_start_nextflow_analysis_cmd(
@@ -320,6 +325,7 @@ def main_wrapper(args: argparse.Namespace):
             args.verbose,
             args.assay,
             args.analysis,
+            args.csv
         )
         logger.info("Now proceeding with checking out the --checkout")
     main(
@@ -338,6 +344,7 @@ def main_wrapper(args: argparse.Namespace):
         args.verbose,
         args.assay,
         args.analysis,
+        args.csv
     )
 
 
@@ -421,6 +428,10 @@ def add_arguments(parser: argparse.ArgumentParser):
     parser.add_argument(
         "--analysis",
         help="Specify a custom analysis in the CSV file (defaults to --run_profile argument)",
+    )
+    parser.add_argument(
+        "--csv",
+        help="Skip generating CSV and copy this target CSV instead."
     )
 
 

@@ -68,7 +68,7 @@ def get_csv(
     queue: Optional[str],
     assay: str,
     analysis: str,
-):
+) -> CsvEntry:
 
     sample_ids = config.run_profile.samples
     samples = []
@@ -98,8 +98,6 @@ def get_csv(
     #     sys.exit(1)
 
     run_csv = CsvEntry(run_label, samples, queue, assay, analysis, default_panel)
-
-    print(run_csv)
 
     return run_csv
 
