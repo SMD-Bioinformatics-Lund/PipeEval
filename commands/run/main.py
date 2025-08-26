@@ -272,7 +272,7 @@ def start_run(start_nextflow_command: List[str], skip_confirmation: bool):
 def main_wrapper(args: argparse.Namespace):
 
     parent_path = Path(__file__).resolve().parent
-    profile_conf_path = args.run_profile_conf or parent_path / "run_profile.config"
+    profile_conf_path = args.run_profile_config or parent_path / "run_profile.config"
     pipeline_settings_path = (
         args.pipeline_settings_conf or parent_path / "pipeline_settings.config"
     )
@@ -367,7 +367,7 @@ def add_arguments(parser: argparse.ArgumentParser):
     )
     parser.add_argument(
         "--run_profile",
-        "--run_profile",
+        "--run_type",
         help="Select run type from the config (i.e. giab-single, giab-trio, seracare ...). Multiple comma-separated can be specified.",
         required=True,
     )
