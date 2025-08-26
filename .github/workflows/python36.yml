@@ -1,7 +1,6 @@
 name: Py36 CLI does not crash
 
 on:
-  push:
   pull_request:
 
 jobs:
@@ -18,7 +17,7 @@ jobs:
 
       - name: Install package
         run: |
-          python -m pip install -e .  # add your extras if needed
+          python -m pip install . --no-build-isolation  # add your extras if needed
 
       - name: Compile sources with Python 3.6
         run: python -m compileall -q .
