@@ -274,9 +274,9 @@ def main_wrapper(args: argparse.Namespace):
     parent_path = Path(__file__).resolve().parent
     profile_conf_path = args.run_profile_config or parent_path / "run_profile.config"
     pipeline_settings_path = (
-        args.pipeline_settings_conf or parent_path / "pipeline_settings.config"
+        args.pipeline_settings_config or parent_path / "pipeline_settings.config"
     )
-    samples_path = args.samples_conf or parent_path / "samples.config"
+    samples_path = args.samples_config or parent_path / "samples.config"
 
     config = RunConfig(
         logger,
