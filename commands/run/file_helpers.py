@@ -93,9 +93,9 @@ def get_csv(
 
     default_panel = config.run_profile.default_panel
 
-    if not default_panel:
-        logger.error("Expected a default panel, found none")
-        sys.exit(1)
+    # if not default_panel:
+    #     logger.error("Expected a default panel, found none")
+    #     sys.exit(1)
 
     run_csv = CsvEntry(run_label, samples, queue, assay, analysis, default_panel)
 

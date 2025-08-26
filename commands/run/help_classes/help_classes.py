@@ -70,14 +70,14 @@ class CsvEntry:
         priority: Optional[str],
         assay: str,
         analysis: str,
-        diagnosis: str,
+        diagnosis: Optional[str],
     ):
         self.cases = cases
 
         self.assay = assay
         self.group = group
         self.clarity_pool_id = "NA"
-        self.diagnosis = diagnosis
+        self.diagnosis = diagnosis or "no_diagnosis"
         self.platform = "illumina"
         self.analysis = analysis
         self.priority = priority or "grace-lowest"
