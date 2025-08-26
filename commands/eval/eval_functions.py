@@ -9,7 +9,8 @@ from commands.eval.classes.helpers import VCFPair
 from commands.eval.classes.pathobj import PathObj
 from commands.eval.classes.run_object import RunObject
 from commands.eval.classes.run_settings import RunSettings
-from commands.eval.utils import get_ignored
+from commands.eval.constants import FILE_NAMES
+from commands.eval.utils import get_ignored, get_pair_match
 from shared.compare import do_comparison
 from shared.constants import RUN_ID_PLACEHOLDER
 from shared.file import check_valid_file, get_filehandle
@@ -258,3 +259,32 @@ def diff_compare_files(
         log_and_write(logger, "No difference found", out_fh)
     if out_fh:
         out_fh.close()
+
+def do_simple_diff(
+    logger: Logger,
+    ro: RunObject,
+    r1_paths: List[PathObj],
+    r2_paths: List[PathObj],
+    pipe_conf: SectionProxy,
+    analysis: str,
+    outdir: Optional[Path],
+    verbose: bool,
+):
+    logger.info("")
+    logger.info(f"--- Comparing: {analysis} ---")
+    matched_pair = get_pair_match(
+        logger,
+        analysis,
+        pipe_conf[analysis].split(","),
+        ro,
+        r1_paths,
+        r2_paths,
+        verbose,
+    )
+    if not matched_pair:
+        logger.warning(f"At least one file missing ({matched_pair})")
+    else:
+        out_path = outdir / FILE_NAMES[analysis] if outdir else None
+        diff_compare_files(
+            logger, ro.r1_id, ro.r2_id, matched_pair[0], matched_pair[1], out_path
+        )

@@ -1,4 +1,3 @@
-from configparser import SectionProxy
 import re
 from collections import defaultdict
 from logging import Logger
@@ -6,8 +5,6 @@ from pathlib import Path
 from typing import Dict, List, Optional, Set, Tuple, Union
 
 from commands.eval.classes.helpers import VCFPair
-from commands.eval.eval_functions import diff_compare_files
-from commands.eval.main import FILE_NAMES
 from shared.compare import do_comparison
 from shared.vcf.vcf import parse_scored_vcf
 
@@ -226,33 +223,3 @@ def parse_vcf_pair(
 
     vcf_pair = VCFPair(vcf_r1, vcf_r2, comp_res)
     return vcf_pair
-
-
-def do_simple_diff(
-    logger: Logger,
-    ro: RunObject,
-    r1_paths: List[PathObj],
-    r2_paths: List[PathObj],
-    pipe_conf: SectionProxy,
-    analysis: str,
-    outdir: Optional[Path],
-    verbose: bool,
-):
-    logger.info("")
-    logger.info(f"--- Comparing: {analysis} ---")
-    matched_pair = get_pair_match(
-        logger,
-        analysis,
-        pipe_conf[analysis].split(","),
-        ro,
-        r1_paths,
-        r2_paths,
-        verbose,
-    )
-    if not matched_pair:
-        logger.warning(f"At least one file missing ({matched_pair})")
-    else:
-        out_path = outdir / FILE_NAMES[analysis] if outdir else None
-        diff_compare_files(
-            logger, ro.r1_id, ro.r2_id, matched_pair[0], matched_pair[1], out_path
-        )
