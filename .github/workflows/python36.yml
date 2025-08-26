@@ -23,4 +23,4 @@ jobs:
         run: python -m compileall -q .
 
       - name: Run CLI help
-        run: PYTHONPATH=pipeeval python -m pipeeval.main --help
+        run: PYTHONPATH=. python -m pipeeval.main --help
