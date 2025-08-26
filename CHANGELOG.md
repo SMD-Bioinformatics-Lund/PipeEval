@@ -1,3 +1,9 @@
+# 2.0.0
+
+* Generalized run module to allow any pipeline
+* Refactored eval module to reduce amount of code in main function
+* Generalized eval module to allow configuration for different pipelines
+
 # 1.4.0
 
 * Add run types for oncov1, myeloid-const, modycf

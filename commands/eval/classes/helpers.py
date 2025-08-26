@@ -1,7 +1,8 @@
-from shared.compare import Comparison
-from shared.vcf.vcf import ScoredVCF
 from pathlib import Path
 from typing import List
+
+from shared.compare import Comparison
+from shared.vcf.vcf import ScoredVCF
 
 
 class VCFPair:

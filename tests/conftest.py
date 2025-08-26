@@ -5,9 +5,9 @@ import pytest
 from tests.conftest_utils.run_configs import (
     ConfigSamplePathGroup,
     ConfigSamplePaths,
+    get_pipeline_config,
     get_run_profile_config,
     get_sample_config,
-    get_pipeline_config,
 )
 
 

@@ -1,11 +1,11 @@
+import sys
 from datetime import datetime
 from logging import Logger
 from pathlib import Path
-import sys
 from typing import Dict, List, Optional
 
-from commands.run.help_classes.help_classes import CSVRow, CsvEntry
 from commands.run.help_classes.config_classes import RunConfig, SampleConfig
+from commands.run.help_classes.help_classes import CsvEntry, CSVRow
 
 
 def write_resume_script(results_dir: Path, run_command: List[str]):

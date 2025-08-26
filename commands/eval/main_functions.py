@@ -1,10 +1,11 @@
+import difflib
 from collections import Counter
 from configparser import SectionProxy
-import difflib
 from io import TextIOWrapper
 from logging import Logger
 from pathlib import Path
 from typing import Dict, List, Optional, Set, Tuple
+
 from commands.eval.classes.helpers import PathObj, RunSettings, VCFPair
 from commands.eval.classes.run_object import RunObject
 from commands.eval.constants import FILE_NAMES
@@ -257,6 +258,7 @@ def diff_compare_files(
         log_and_write(logger, "No difference found", out_fh)
     if out_fh:
         out_fh.close()
+
 
 def do_simple_diff(
     logger: Logger,
