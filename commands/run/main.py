@@ -368,7 +368,7 @@ def add_arguments(parser: argparse.ArgumentParser):
     parser.add_argument(
         "--run_profile",
         "--run_type",
-        help="Select run type from the config (i.e. giab-single, giab-trio, seracare ...). Multiple comma-separated can be specified.",
+        help="Select run profile from the config (i.e. giab-single, giab-trio, seracare ...). Multiple comma-separated can be specified.",
         required=True,
     )
     parser.add_argument(

@@ -13,7 +13,7 @@ def parse_mandatory_section_argument(
     if not section.get(target_key):
         existing_fields = section.keys()
         logger.error(
-            f'Mandatory setting "{target_key}" not defined in run type section "{section.name}". (Currently defined fields are : {", ".join(existing_fields)})'
+            f'Mandatory setting "{target_key}" not defined in run profile section "{section.name}". (Currently defined fields are : {", ".join(existing_fields)})'
         )
         sys.exit(1)
     return section[target_key]
@@ -71,7 +71,7 @@ class RunProfileConfig:
         if run_profile not in self.config.keys():
             available = ", ".join(self.config.keys())
             logger.error(
-                f'Provided run profile not present among available entries in the run profile config. Provided: "{run_profile}", available: "{available}"'
+                f'Provided run profile not present among available entries in the run profile config. Provided: {run_profile}, available: {available}'
             )
             sys.exit(1)
 
@@ -90,10 +90,13 @@ class RunProfileConfig:
         )
         self.samples = samples_str.split(",")
 
-        sample_types_str = parse_mandatory_section_argument(
-            logger, profile_section, "sample_types"
-        )
-        self.sample_types = sample_types_str.split(",")
+        sample_types_str = profile_section.get("sample_types")
+        
+        if not sample_types_str:
+            logger.info("No sample_types section in run_profile. Defaulting to 'proband'.")
+            self.sample_types = ["proband"]
+        else:
+            self.sample_types = sample_types_str.split(",")
 
         if len(self.samples) != len(self.sample_types):
             logger.error(
