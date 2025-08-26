@@ -52,9 +52,6 @@ python3 main.py vcf \
 
 ### Notes for developers
 
-PipeEval is built to run in an environment where a legacy version (3.6) of Python still is used.
-The most vivid consequence of this is that type hints aren't yet a built-in part of the language and must be imported. I.e. `list[str]` will crash, but `List[str]` (with `List` imported from `typing` library works).
-
 Some expectations on the code:
 
 * Formatted with `black` (run `black .` in the base dir - basic code formatting)
@@ -66,5 +63,9 @@ Some expectations on the code:
 Some other style pointers:
 
 * Use classes rather than nested dicts for complex data structures.
-* Docstrings are not yet needed for functions. Might change in the future.
-* Use clear variable names.
+* Docstrings are not yet required for functions. Might change in the future.
+* Use clear (and if necessary verbose) variable names.
+
+PipeEval is built to run in an environment where a legacy version (3.6) of Python still is used.
+The most vivid consequence of this is that type hints aren't yet a built-in part of the language and must be imported. I.e. `list[str]` will crash, but `List[str]` (with `List` imported from `typing` library works).
+

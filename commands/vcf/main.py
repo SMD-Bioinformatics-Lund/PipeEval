@@ -3,7 +3,7 @@ import logging
 from pathlib import Path
 from typing import List, Optional
 
-from commands.eval.classes.run_settings import RunSettings
+from commands.eval.classes.helpers import RunSettings
 from commands.eval.main import vcf_comparisons
 from commands.eval.utils import parse_vcf_pair
 

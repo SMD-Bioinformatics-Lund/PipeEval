@@ -3,7 +3,7 @@ from logging import Logger
 from pathlib import Path
 from typing import List, Optional, Tuple
 
-from commands.eval.classes.pathobj import PathObj
+from commands.eval.classes.helpers import PathObj
 
 
 def get_files_in_dir(

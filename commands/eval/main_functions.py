@@ -5,10 +5,8 @@ from io import TextIOWrapper
 from logging import Logger
 from pathlib import Path
 from typing import Dict, List, Optional, Set, Tuple
-from commands.eval.classes.helpers import VCFPair
-from commands.eval.classes.pathobj import PathObj
+from commands.eval.classes.helpers import PathObj, RunSettings, VCFPair
 from commands.eval.classes.run_object import RunObject
-from commands.eval.classes.run_settings import RunSettings
 from commands.eval.constants import FILE_NAMES
 from commands.eval.utils import get_ignored, get_pair_match
 from shared.compare import do_comparison

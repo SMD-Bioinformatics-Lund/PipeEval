@@ -6,14 +6,14 @@ from configparser import ConfigParser
 from pathlib import Path
 from typing import List, Optional, Set
 
+from commands.eval.classes.helpers import RunSettings
 from commands.eval.classes.run_object import (
     RunObject,
     get_files_in_dir,
     get_run_object,
 )
-from commands.eval.classes.run_settings import RunSettings
 
-from commands.eval.eval_functions import do_file_diff, do_simple_diff, vcf_comparisons
+from commands.eval.main_functions import do_file_diff, do_simple_diff, vcf_comparisons
 from shared.constants import RUN_ID_PLACEHOLDER
 
 from .utils import (

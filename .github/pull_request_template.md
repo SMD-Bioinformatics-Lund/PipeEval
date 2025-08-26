@@ -1,2 +1,0 @@
-- [ ] Do all the GitHub PR checks pass?
-- [ ] Can you run `pipeeval --help` using Python 3.6
