@@ -1,8 +1,5 @@
 from pathlib import Path
 import textwrap
-from typing import List
-
-import pytest
 
 
 class ConfigSamplePaths:
@@ -65,7 +62,7 @@ def get_pipeline_config(base_dir: Path, tmp_path: Path) -> str:
 def get_run_profile_config() -> str:
 
     pipeline_config_text = textwrap.dedent(
-        f"""
+        """
         [single]
         pipeline = dna-const
         profile = wgs
@@ -112,8 +109,6 @@ class ConfigSamplePathGroup:
         self.father = father
         self.tumor = tumor
         self.normal = normal
-
-
 
 
 def get_sample_config(config_sample_paths: ConfigSamplePathGroup) -> str:

@@ -1,17 +1,11 @@
 #!/usr/bin/env python3
 
 import argparse
-import difflib
 import logging
-import os
-from collections import Counter
-from configparser import ConfigParser, SectionProxy
-from io import TextIOWrapper
+from configparser import ConfigParser
 from pathlib import Path
-from typing import Dict, List, Optional, Set, Tuple
+from typing import List, Optional, Set
 
-from commands.eval.classes.helpers import VCFPair
-from commands.eval.classes.pathobj import PathObj
 from commands.eval.classes.run_object import (
     RunObject,
     get_files_in_dir,
@@ -20,23 +14,11 @@ from commands.eval.classes.run_object import (
 from commands.eval.classes.run_settings import RunSettings
 
 # from commands.eval.classes.score_paths import ScorePaths
-from commands.eval.eval_functions import vcf_comparisons
-from shared.compare import Comparison, do_comparison
+from commands.eval.eval_functions import do_file_diff, vcf_comparisons
 from shared.constants import RUN_ID_PLACEHOLDER
-from shared.file import check_valid_file, get_filehandle
-from shared.vcf.annotation import compare_variant_annotation
-from shared.vcf.main_functions import (
-    compare_variant_presence,
-    compare_variant_score,
-    write_full_score_table,
-)
-from shared.vcf.vcf import ScoredVCF, count_variants, parse_scored_vcf
 
 from .utils import (
-    do_file_diff,
     do_simple_diff,
-    get_ignored,
-    get_pair_match,
     get_vcf_pair,
     verify_pair_exists,
 )
@@ -73,17 +55,11 @@ Performs all or a subset of the comparisons:
 """
 
 
-FILE_NAMES = {"versions": "versions.diff", "scout_yaml": "scout_yaml.diff", "qc": "qc.diff"}
-
-
-def log_and_write(text: str, fh: Optional[TextIOWrapper]):
-    logger.info(text)
-    if fh is not None:
-        print(text, file=fh)
-
-
-def check_comparison(all_comparisons: Optional[Set[str]], target_comparison: str) -> bool:
-    return all_comparisons is None or target_comparison in all_comparisons
+FILE_NAMES = {
+    "versions": "versions.diff",
+    "scout_yaml": "scout_yaml.diff",
+    "qc": "qc.diff",
+}
 
 
 def main(  # noqa: C901 (skipping complexity check)
@@ -94,8 +70,12 @@ def main(  # noqa: C901 (skipping complexity check)
     outdir: Optional[Path],
 ):
 
-    r1_paths = get_files_in_dir(ro.r1_results, ro.r1_id, RUN_ID_PLACEHOLDER, ro.r1_results)
-    r2_paths = get_files_in_dir(ro.r2_results, ro.r2_id, RUN_ID_PLACEHOLDER, ro.r2_results)
+    r1_paths = get_files_in_dir(
+        ro.r1_results, ro.r1_id, RUN_ID_PLACEHOLDER, ro.r1_results
+    )
+    r2_paths = get_files_in_dir(
+        ro.r2_results, ro.r2_id, RUN_ID_PLACEHOLDER, ro.r2_results
+    )
 
     parent_path = Path(__file__).resolve().parent
     config_path = args_config_path or parent_path / "default.config"
@@ -111,7 +91,9 @@ def main(  # noqa: C901 (skipping complexity check)
     pipe_conf = config[rs.pipeline]
 
     if comparisons is not None and len(comparisons & VALID_COMPARISONS) == 0:
-        raise ValueError(f"Valid comparisons are: {VALID_COMPARISONS}, found: {comparisons}")
+        raise ValueError(
+            f"Valid comparisons are: {VALID_COMPARISONS}, found: {comparisons}"
+        )
 
     verify_pair_exists("result dirs", ro.r1_results, ro.r2_results)
 
@@ -127,13 +109,20 @@ def main(  # noqa: C901 (skipping complexity check)
     snv_vcf_path_patterns = (pipe_conf["snv_vcf"] or "").split(",")
     any_snv_comparison = (
         comparisons is None
-        or len(comparisons.intersection({f"basic_snv", f"score_snv", f"annotation_snv"})) > 0
+        or len(
+            comparisons.intersection({"basic_snv", "score_snv", "annotation_snv"})
+        )
+        > 0
     )
     if any_snv_comparison:
         if snv_vcf_path_patterns:
-            snv_vcfs = get_vcf_pair(logger, snv_vcf_path_patterns, ro, r1_paths, r2_paths, rs.verbose, "snv")
+            snv_vcfs = get_vcf_pair(
+                logger, snv_vcf_path_patterns, ro, r1_paths, r2_paths, rs.verbose, "snv"
+            )
             if snv_vcfs:
-                vcf_comparisons(logger, comparisons, run_ids, outdir, rs, "snv", snv_vcfs)
+                vcf_comparisons(
+                    logger, comparisons, run_ids, outdir, rs, "snv", snv_vcfs
+                )
         else:
             logger.warning("No SNV patterns matched, skipping")
 
@@ -141,28 +130,51 @@ def main(  # noqa: C901 (skipping complexity check)
     sv_vcf_path_patterns = (pipe_conf["sv_vcf"] or "").split(",")
     any_sv_comparison = (
         comparisons is None
-        or len(comparisons.intersection({f"basic_sv", f"score_sv", f"annotation_sv"})) > 0
+        or len(comparisons.intersection({"basic_sv", "score_sv", "annotation_sv"}))
+        > 0
     )
     if any_sv_comparison:
         if sv_vcf_path_patterns:
-            sv_vcfs = get_vcf_pair(logger, sv_vcf_path_patterns, ro, r1_paths, r2_paths, rs.verbose, "sv")
+            sv_vcfs = get_vcf_pair(
+                logger, sv_vcf_path_patterns, ro, r1_paths, r2_paths, rs.verbose, "sv"
+            )
             if sv_vcfs:
                 vcf_comparisons(logger, comparisons, run_ids, outdir, rs, "sv", sv_vcfs)
         else:
             logger.warning("No SV patterns matched, skipping")
-        
 
     scout_yaml_check = "scout_yaml"
-    if comparisons is None or scout_yaml_check in comparisons and pipe_conf.get(scout_yaml_check):
-        do_simple_diff(logger, ro, r1_paths, r2_paths, pipe_conf, scout_yaml_check, outdir, rs.verbose)
+    if (
+        comparisons is None
+        or scout_yaml_check in comparisons
+        and pipe_conf.get(scout_yaml_check)
+    ):
+        do_simple_diff(
+            logger,
+            ro,
+            r1_paths,
+            r2_paths,
+            pipe_conf,
+            scout_yaml_check,
+            outdir,
+            rs.verbose,
+        )
 
     qc_check = "qc"
     if comparisons is None or qc_check in comparisons and pipe_conf.get(qc_check):
-        do_simple_diff(logger, ro, r1_paths, r2_paths, pipe_conf, qc_check, outdir, rs.verbose)
+        do_simple_diff(
+            logger, ro, r1_paths, r2_paths, pipe_conf, qc_check, outdir, rs.verbose
+        )
 
     version_check = "versions"
-    if comparisons is None or version_check in comparisons and pipe_conf.get(version_check):
-        do_simple_diff(logger, ro, r1_paths, r2_paths, pipe_conf, version_check, outdir, rs.verbose)
+    if (
+        comparisons is None
+        or version_check in comparisons
+        and pipe_conf.get(version_check)
+    ):
+        do_simple_diff(
+            logger, ro, r1_paths, r2_paths, pipe_conf, version_check, outdir, rs.verbose
+        )
 
 
 def add_arguments(parser: argparse.ArgumentParser):

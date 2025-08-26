@@ -1,6 +1,4 @@
-import textwrap
 from pathlib import Path
-from typing import Callable
 
 import pytest
 
@@ -41,7 +39,9 @@ def config_sample_paths(tmp_path: Path) -> ConfigSamplePathGroup:
 
 
 @pytest.fixture()
-def get_run_config_paths(tmp_path: Path, base_dir: Path, config_sample_paths: ConfigSamplePathGroup) -> RunConfigs:
+def get_run_config_paths(
+    tmp_path: Path, base_dir: Path, config_sample_paths: ConfigSamplePathGroup
+) -> RunConfigs:
 
     run_profile_config = get_run_profile_config()
     run_profile_config_path = tmp_path / "profile_config.ini"

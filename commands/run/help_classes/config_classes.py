@@ -8,7 +8,9 @@ from typing import Dict, List, Optional, Union
 DEFAULT_SECTION = "default"
 
 
-def parse_mandatory_section_argument(logger: Logger, section: SectionProxy, target_key: str) -> str:
+def parse_mandatory_section_argument(
+    logger: Logger, section: SectionProxy, target_key: str
+) -> str:
     if not section.get(target_key):
         existing_fields = section.keys()
         logger.error(
@@ -76,13 +78,21 @@ class RunProfileConfig:
         profile_section = self.config[run_profile]
         self.profile_section = profile_section
 
-        self.pipeline = parse_mandatory_section_argument(logger, profile_section, "pipeline")
-        self.profile = parse_mandatory_section_argument(logger, profile_section, "profile")
+        self.pipeline = parse_mandatory_section_argument(
+            logger, profile_section, "pipeline"
+        )
+        self.profile = parse_mandatory_section_argument(
+            logger, profile_section, "profile"
+        )
 
-        samples_str = parse_mandatory_section_argument(logger, profile_section, "samples")
+        samples_str = parse_mandatory_section_argument(
+            logger, profile_section, "samples"
+        )
         self.samples = samples_str.split(",")
 
-        sample_types_str = parse_mandatory_section_argument(logger, profile_section, "sample_types")
+        sample_types_str = parse_mandatory_section_argument(
+            logger, profile_section, "sample_types"
+        )
         self.sample_types = sample_types_str.split(",")
 
         if len(self.samples) != len(self.sample_types):
@@ -167,12 +177,16 @@ class PipelineSettingsConfig:
             )
             sys.exit(1)
 
-        self.singularity_version = str(self._parse_setting(logger, "singularity_version"))
+        self.singularity_version = str(
+            self._parse_setting(logger, "singularity_version")
+        )
         self.nextflow_version = str(self._parse_setting(logger, "nextflow_version"))
         self.container = str(self._parse_setting(logger, "container"))
         self.runscript = str(self._parse_setting(logger, "runscript"))
 
-        self.start_nextflow_analysis = str(self._parse_setting(logger, "start_nextflow_analysis"))
+        self.start_nextflow_analysis = str(
+            self._parse_setting(logger, "start_nextflow_analysis")
+        )
         self.log_base_dir = str(self._parse_setting(logger, "log_base_dir"))
         self.trace_base_dir = str(self._parse_setting(logger, "trace_base_dir"))
         self.work_base_dir = str(self._parse_setting(logger, "work_base_dir"))
@@ -232,7 +246,9 @@ class PipelineSettingsConfig:
             parsed_bool = bool(target_section.getboolean(setting_key))
             return parsed_bool
         else:
-            raise ValueError(f"Unknown data_type: {data_type}, known are string and bool")
+            raise ValueError(
+                f"Unknown data_type: {data_type}, known are string and bool"
+            )
 
 
 class RunConfig:
@@ -265,7 +281,9 @@ class RunConfig:
         for sample in self.run_profile.samples:
             if sample not in sample_config_parser.keys():
                 sections = ", ".join(sample_config_parser.keys())
-                logger.error(f'Expected to find "{sample}", found sections: "{sections}"')
+                logger.error(
+                    f'Expected to find "{sample}", found sections: "{sections}"'
+                )
                 sys.exit(1)
             section = sample_config_parser[sample]
             sample_config = SampleConfig(logger, section)

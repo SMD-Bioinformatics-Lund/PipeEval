@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Dict, List, Optional, Set, Tuple, Union
 
 from commands.eval.classes.helpers import VCFPair
-from commands.eval.eval_functions import check_same_files, diff_compare_files
+from commands.eval.eval_functions import diff_compare_files
 from commands.eval.main import FILE_NAMES
 from shared.compare import do_comparison
 from shared.vcf.vcf import parse_scored_vcf
@@ -20,12 +20,16 @@ def get_files_ending_with(pattern: str, paths: List[PathObj]) -> List[PathObj]:
     return matching
 
 
-def get_single_file_ending_with(patterns: List[str], paths: List[PathObj]) -> Union[PathObj, None]:
+def get_single_file_ending_with(
+    patterns: List[str], paths: List[PathObj]
+) -> Union[PathObj, None]:
     for pattern in patterns:
         matching = get_files_ending_with(pattern, paths)
         if len(matching) > 1:
             matches = [str(match) for match in matching]
-            raise ValueError(f"Only one matching file allowed, found: {','.join(matches)}")
+            raise ValueError(
+                f"Only one matching file allowed, found: {','.join(matches)}"
+            )
         elif len(matching) == 1:
             return matching[0]
     return None
@@ -189,7 +193,9 @@ def get_vcf_pair(
     )
 
     if vcf_pair_paths is None:
-        logger.warning(f"Skipping {vcf_type} comparisons due to missing files ({vcf_pair_paths})")
+        logger.warning(
+            f"Skipping {vcf_type} comparisons due to missing files ({vcf_pair_paths})"
+        )
         return None
 
     vcf_pair = parse_vcf_pair(logger, ro.run_ids, vcf_pair_paths, vcf_type)
@@ -198,7 +204,10 @@ def get_vcf_pair(
 
 
 def parse_vcf_pair(
-    logger: Logger, run_ids: Tuple[str, str], vcf_paths: Tuple[Path, Path], vcf_type: str
+    logger: Logger,
+    run_ids: Tuple[str, str],
+    vcf_paths: Tuple[Path, Path],
+    vcf_type: str,
 ) -> VCFPair:
     logger.info(f"# Parsing {vcf_type} VCFs ...")
 
@@ -218,28 +227,6 @@ def parse_vcf_pair(
     vcf_pair = VCFPair(vcf_r1, vcf_r2, comp_res)
     return vcf_pair
 
-def do_file_diff(
-    logger: Logger,
-    outdir: Optional[Path],
-    pipe_conf: SectionProxy,
-    ro: RunObject,
-    r1_paths: List[PathObj],
-    r2_paths: List[PathObj],
-):
-    out_path = outdir / "check_sample_files.txt" if outdir else None
-    logger.info("")
-    logger.info("### Comparing existing files ###")
-
-    ignore_file_string = pipe_conf.get("ignore") or ""
-    ignore_files = ignore_file_string.split(",")
-
-    check_same_files(
-        ro,
-        r1_paths,
-        r2_paths,
-        ignore_files,
-        out_path,
-    )
 
 def do_simple_diff(
     logger: Logger,
@@ -266,5 +253,6 @@ def do_simple_diff(
         logger.warning(f"At least one file missing ({matched_pair})")
     else:
         out_path = outdir / FILE_NAMES[analysis] if outdir else None
-        diff_compare_files(ro.r1_id, ro.r2_id, matched_pair[0], matched_pair[1], out_path)
-
+        diff_compare_files(
+            logger, ro.r1_id, ro.r2_id, matched_pair[0], matched_pair[1], out_path
+        )

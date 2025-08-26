@@ -25,15 +25,6 @@ def main(
     extra_annot_keys: List[str],
     output_all_variants: bool,
 ):
-    run_settings = RunSettings(
-        pipeline,
-        score_threshold=score_threshold,
-        max_display=max_display,
-        max_checked_annots=max_checked_annots,
-        show_line_numbers=True,
-        extra_annot_keys=extra_annot_keys,
-    )
-
     if results_folder is not None:
         if not results_folder.exists():
             results_folder.mkdir(parents=True)
@@ -49,8 +40,6 @@ def main(
         logger.info(f"# --run_id2 not set, assigned: {run_id2}")
 
     run_ids = (run_id1, run_id2)
-
-    label = "sv" if is_sv else "snv"
 
     comparisons = None
     verbose = False

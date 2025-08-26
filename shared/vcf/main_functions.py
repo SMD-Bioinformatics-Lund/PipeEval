@@ -2,12 +2,10 @@ from logging import Logger
 from pathlib import Path
 from typing import Dict, List, Optional, Set, Tuple
 
-from commands.eval.classes.run_settings import RunSettings
-from shared.compare import Comparison, do_comparison, parse_var_key_for_sort
+from shared.compare import Comparison, parse_var_key_for_sort
 from shared.util import prettify_rows
-from shared.vcf.annotation import compare_variant_annotation
 from shared.vcf.score import get_table, get_table_header
-from shared.vcf.vcf import DiffScoredVariant, ScoredVariant, parse_scored_vcf
+from shared.vcf.vcf import DiffScoredVariant, ScoredVariant
 
 
 def compare_variant_presence(
@@ -92,7 +90,7 @@ def get_variant_presence_summary(
                 f"# First {min(len(r2_only), max_display)} only found in {run_ids[1]}"
             )
         else:
-            output.append(f"Only found in {run_ids[1] }")
+            output.append(f"Only found in {run_ids[1]}")
 
         r2_table: List[List[str]] = []
         for key in sorted(list(r2_only), key=parse_var_key_for_sort)[0:max_display]:
@@ -277,6 +275,3 @@ def write_full_score_table(
     with out_path.open("w") as out_fh:
         for row in [header] + body:
             print("\t".join(row), file=out_fh)
-
-
-

@@ -2,7 +2,6 @@
 
 import argparse
 import logging
-import os
 import subprocess
 import sys
 from datetime import datetime
@@ -83,7 +82,6 @@ def main(
     confirm_run_if_results_exists(results_dir, skip_confirmation)
 
     results_dir.mkdir(exist_ok=True, parents=True)
-
 
     run_log_path = results_dir / "run.log"
     print("Ready to write log to", run_log_path)
@@ -172,7 +170,11 @@ def do_repo_checkout(repo: Path, checkout: str, verbose: bool, skip_confirmation
 
 
 def build_run_label(
-    run_profile: str, checkout: str, label: Optional[str], stub_run: bool, start_data: str
+    run_profile: str,
+    checkout: str,
+    label: Optional[str],
+    stub_run: bool,
+    start_data: str,
 ) -> str:
     label_parts = [run_profile]
     if label is not None:
@@ -184,7 +186,9 @@ def build_run_label(
     run_label = "-".join(label_parts)
 
     if run_label.find("/") != -1:
-        logger.warning(f"Found '/' characters in run label: {run_label}, replacing with '-'")
+        logger.warning(
+            f"Found '/' characters in run label: {run_label}, replacing with '-'"
+        )
         run_label = run_label.replace("/", "-")
 
     return run_label
@@ -254,7 +258,9 @@ def build_start_nextflow_analysis_cmd(
 def start_run(start_nextflow_command: List[str], skip_confirmation: bool):
     if not skip_confirmation:
         pretty_command = " \\\n    ".join(start_nextflow_command)
-        confirmation = input(f"Do you want to run the following command:\n{pretty_command}\n(y/n) ")
+        confirmation = input(
+            f"Do you want to run the following command:\n{pretty_command}\n(y/n) "
+        )
 
         if confirmation != "y":
             logger.info("Exiting ...")
@@ -267,18 +273,26 @@ def main_wrapper(args: argparse.Namespace):
 
     parent_path = Path(__file__).resolve().parent
     profile_conf_path = args.run_profile_conf or parent_path / "run_profile.config"
-    pipeline_settings_path = args.pipeline_settings_conf or parent_path / "pipeline_settings.config"
+    pipeline_settings_path = (
+        args.pipeline_settings_conf or parent_path / "pipeline_settings.config"
+    )
     samples_path = args.samples_conf or parent_path / "samples.config"
 
     config = RunConfig(
-        logger, args.run_profile, profile_conf_path, pipeline_settings_path, samples_path
+        logger,
+        args.run_profile,
+        profile_conf_path,
+        pipeline_settings_path,
+        samples_path,
     )
 
     if args.silent:
         logger.setLevel(logging.WARNING)
 
     if args.baseline is not None:
-        logger.info("Performing additional baseline run as specified by --baseline flag")
+        logger.info(
+            "Performing additional baseline run as specified by --baseline flag"
+        )
 
         if args.baseline_repo is not None:
             baseline_repo = str(args.baseline_repo)
@@ -391,8 +405,12 @@ def add_arguments(parser: argparse.ArgumentParser):
         action="store_true",
         help="Run start_nextflow_analysis.pl with nostart, printing the path to the SLURM job only",
     )
-    parser.add_argument("--baseline", help="Start a second baseline run and specified checkout")
-    parser.add_argument("--verbose", action="store_true", help="Print additional debug output")
+    parser.add_argument(
+        "--baseline", help="Start a second baseline run and specified checkout"
+    )
+    parser.add_argument(
+        "--verbose", action="store_true", help="Print additional debug output"
+    )
     parser.add_argument(
         "--silent", action="store_true", help="Run silently, produce only output files"
     )

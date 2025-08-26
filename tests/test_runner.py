@@ -1,9 +1,6 @@
 import csv
 import logging
-from configparser import ConfigParser
 from pathlib import Path
-import sys
-from typing import Callable
 
 from pytest import MonkeyPatch
 
@@ -46,7 +43,9 @@ def test_single_run(
 
     monkeypatch.setattr(run_main, "do_repo_checkout", lambda *a, **k: None)
     monkeypatch.setattr(run_main, "start_run", lambda *a, **k: None)
-    monkeypatch.setattr(run_main, "get_git_commit_hash_and_log", lambda *a, **k: ("abcd", "abcd"))
+    monkeypatch.setattr(
+        run_main, "get_git_commit_hash_and_log", lambda *a, **k: ("abcd", "abcd")
+    )
 
     run_config = RunConfig(
         LOG,
@@ -106,13 +105,15 @@ def test_duo_run(
     monkeypatch: MonkeyPatch,
     base_dir: Path,
     get_run_config_paths: RunConfigs,
-    config_sample_paths: ConfigSamplePathGroup
+    config_sample_paths: ConfigSamplePathGroup,
 ):
 
     paths = config_sample_paths
     monkeypatch.setattr(run_main, "do_repo_checkout", lambda *a, **k: None)
     monkeypatch.setattr(run_main, "start_run", lambda *a, **k: None)
-    monkeypatch.setattr(run_main, "get_git_commit_hash_and_log", lambda *a, **k: ("abcd", "abcd"))
+    monkeypatch.setattr(
+        run_main, "get_git_commit_hash_and_log", lambda *a, **k: ("abcd", "abcd")
+    )
 
     run_config = RunConfig(
         LOG,
@@ -195,7 +196,9 @@ def test_trio_run(
 
     monkeypatch.setattr(run_main, "do_repo_checkout", lambda *a, **k: None)
     monkeypatch.setattr(run_main, "start_run", lambda *a, **k: None)
-    monkeypatch.setattr(run_main, "get_git_commit_hash_and_log", lambda *a, **k: ("abcd", "abcd"))
+    monkeypatch.setattr(
+        run_main, "get_git_commit_hash_and_log", lambda *a, **k: ("abcd", "abcd")
+    )
 
     run_config = RunConfig(
         LOG,
@@ -275,11 +278,15 @@ def test_trio_run(
         assert str(father_row["read2"]) == str(paths.father.fq_rv)
 
 
-def test_override_assay(monkeypatch: MonkeyPatch, base_dir: Path, get_run_config_paths: RunConfigs):
+def test_override_assay(
+    monkeypatch: MonkeyPatch, base_dir: Path, get_run_config_paths: RunConfigs
+):
 
     monkeypatch.setattr(run_main, "do_repo_checkout", lambda *a, **k: None)
     monkeypatch.setattr(run_main, "start_run", lambda *a, **k: None)
-    monkeypatch.setattr(run_main, "get_git_commit_hash_and_log", lambda *a, **k: ("abcd", "abcd"))
+    monkeypatch.setattr(
+        run_main, "get_git_commit_hash_and_log", lambda *a, **k: ("abcd", "abcd")
+    )
 
     run_config = RunConfig(
         LOG,

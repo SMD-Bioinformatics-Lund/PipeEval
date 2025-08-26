@@ -86,7 +86,9 @@ def get_csv(
             config.run_profile.sample_types,
         )
         if not Path(sample.read1).exists() or not Path(sample.read2).exists():
-            raise FileNotFoundError(f"One or both files missing: {sample.read1} {sample.read2}")
+            raise FileNotFoundError(
+                f"One or both files missing: {sample.read1} {sample.read2}"
+            )
         samples.append(sample)
 
     default_panel = config.run_profile.default_panel
@@ -118,7 +120,7 @@ def parse_sample(
     if starting_run_from == "vcf":
 
         if target_sample.vcf is None:
-            logger.error(f'Run mode is "vcf" but missing in config')
+            logger.error('Run mode is "vcf" but missing in config')
             sys.exit(1)
 
         fw = target_sample.vcf
@@ -126,7 +128,7 @@ def parse_sample(
     elif starting_run_from == "bam":
 
         if target_sample.bam is None:
-            logger.error(f'Run mode is "bam" but missing in config')
+            logger.error('Run mode is "bam" but missing in config')
             sys.exit(1)
 
         fw = target_sample.bam
@@ -142,17 +144,19 @@ def parse_sample(
         fw = target_sample.fq_fw
         rv = target_sample.fq_rv
     else:
-        raise ValueError(f"Unknown start_data, found: {starting_run_from}, valid are vcf, bam, fq")
+        raise ValueError(
+            f"Unknown start_data, found: {starting_run_from}, valid are vcf, bam, fq"
+        )
 
     if case_type == "trio" and sample_type == "proband":
         print("Hitting the if with sample types", sample_types)
-        mother_idx = [i for (i, sample_type) in enumerate(sample_types) if sample_type == "mother"][
-            0
-        ]
+        mother_idx = [
+            i for (i, sample_type) in enumerate(sample_types) if sample_type == "mother"
+        ][0]
         mother = case_sample_ids[mother_idx]
-        father_idx = [i for (i, sample_type) in enumerate(sample_types) if sample_type == "father"][
-            0
-        ]
+        father_idx = [
+            i for (i, sample_type) in enumerate(sample_types) if sample_type == "father"
+        ][0]
         father = case_sample_ids[father_idx]
 
         print("mother and father", mother, father)
