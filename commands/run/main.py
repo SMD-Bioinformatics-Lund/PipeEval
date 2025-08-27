@@ -240,13 +240,18 @@ def build_start_nextflow_analysis_cmd(
         )
     else:
         start_nextflow_command.append(
-            f"{runscript}",
-            # f"{runscript} -profile {profile}",
+            "--pipeline",
         )
         if profile:
             start_nextflow_command.append(
-                "--pipeline",
+                f"{runscript} -profile {profile}",
             )
+        else:
+            start_nextflow_command.append(
+                f"{runscript}",
+            )
+
+
 
     if stub_run:
         start_nextflow_command.append("--custom_flags")
