@@ -130,13 +130,9 @@ def get_csv(
 
         for i, row in enumerate(csv_body_rows):
 
-            print("Iterating i", i, "for sample IDs", sample_ids)
-
             sample_id = sample_ids[i]
             sample = config.all_samples[sample_id]
             sample_type = sample_types[i]
-
-            print("Working with sample_type", sample_type)
 
             to_replace = {
                 f"<id {sample_type}>": sample.id,
@@ -146,14 +142,15 @@ def get_csv(
                 f"<read1 {sample_type}>": sample.fq_fw,
                 f"<read2 {sample_type}>": sample.fq_rv,
                 f"<sex {sample_type}>": sample.sex,
-                "<father>": type_to_id["father"],
-                "<mother>": type_to_id["mother"],
             }
+
+            if config.run_profile.case_type == "trio":
+                to_replace["<father>"] = type_to_id["father"]
+                to_replace["<mother>"] = type_to_id["mother"]
+
 
             for key, val in to_replace.items():
                 row = row.replace(key, val)
-
-            print("Processed row", row)
 
             updated_rows.append(row)
 
