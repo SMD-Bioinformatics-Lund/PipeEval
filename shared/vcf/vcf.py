@@ -22,6 +22,7 @@ class ScoredVariant:
         is_sv: bool,
         sv_length: Optional[int],
         info_dict: Dict[str, str],
+        filters: List[str],
         line_number: int,
     ):
         self.chr = chr
@@ -33,6 +34,7 @@ class ScoredVariant:
         self.is_sv = is_sv
         self.sv_length = sv_length
         self.info_dict = info_dict
+        self.filters = filters
         self.line_number = line_number
 
     def get_trunc_ref(self) -> str:
@@ -178,6 +180,7 @@ def parse_scored_vcf(vcf: Path, is_sv: bool) -> ScoredVCF:
             pos = int(fields[1])
             ref = fields[3]
             alt = fields[4]
+            filters = fields[6].split(";")
             info = fields[7]
 
             # Some INFO fields are not in the expected format key=value
@@ -221,6 +224,7 @@ def parse_scored_vcf(vcf: Path, is_sv: bool) -> ScoredVCF:
                 is_sv,
                 sv_length,
                 info_dict,
+                filters,
                 line_nbr,
             )
             key = variant.get_simple_key()

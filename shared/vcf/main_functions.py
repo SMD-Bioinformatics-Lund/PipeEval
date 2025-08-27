@@ -11,7 +11,32 @@ from shared.vcf.vcf import DiffScoredVariant, ScoredVariant
 
 def check_vcf_filter_differences(
     logger: Logger, run_ids: Tuple[str, str], vcfs: VCFPair, shared_variant_keys: Set[str]
-): ...
+):
+    
+    # FIXME: Continue
+    filters = {}
+
+    for key in shared_variant_keys:
+        v1 = vcfs.vcf1.variants[key]
+        v2 = vcfs.vcf2.variants[key]
+
+        v1_info = v1
+        v2_info = v2.info_dict.get(info_key)
+
+        if not v1_info and not v2_info:
+            none_present += 1
+        elif v1_info:
+            v1_present += 1
+        elif v2_info:
+            v2_present += 1
+        else:
+            both_present += 1
+            if v1_info == v2_info:
+                nbr_same += 1
+
+    logger.info(
+        f"Both {both_present} ({nbr_same} same) v1 only {v1_present} v2 only {v2_present} none present {none_present}"
+    )
 
 
 def check_vcf_sample_differences(
@@ -20,8 +45,40 @@ def check_vcf_sample_differences(
 
 
 def check_custom_info_field_differences(
-    logger: Logger, run_ids: Tuple[str, str], vcfs: VCFPair, shared_variant_keys: Set[str]
-): ...
+    logger: Logger,
+    run_ids: Tuple[str, str],
+    vcfs: VCFPair,
+    shared_variant_keys: Set[str],
+    info_keys: List[str],
+):
+    for info_key in info_keys:
+        logger.info(f"Checking info key {info_key}")
+        none_present = 0
+        v1_present = 0
+        v2_present = 0
+        both_present = 0
+        nbr_same = 0
+        for key in shared_variant_keys:
+            v1 = vcfs.vcf1.variants[key]
+            v2 = vcfs.vcf2.variants[key]
+
+            v1_info = v1.info_dict.get(info_key)
+            v2_info = v2.info_dict.get(info_key)
+
+            if not v1_info and not v2_info:
+                none_present += 1
+            elif v1_info:
+                v1_present += 1
+            elif v2_info:
+                v2_present += 1
+            else:
+                both_present += 1
+                if v1_info == v2_info:
+                    nbr_same += 1
+
+        logger.info(
+            f"Both {both_present} ({nbr_same} same) v1 only {v1_present} v2 only {v2_present} none present {none_present}"
+        )
 
 
 def compare_variant_presence(

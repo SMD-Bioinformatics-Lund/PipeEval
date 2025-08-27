@@ -71,7 +71,7 @@ def vcf_comparisons(
         logger.info("")
         logger.info(f"### Checking custom info keys {', '.join(info_keys)} ###")
 
-        check_custom_info_field_differences(logger, run_ids, vcfs, vcfs.comp.shared)
+        check_custom_info_field_differences(logger, run_ids, vcfs, vcfs.comp.shared, info_keys)
 
     if check_comparison(comparisons, f"presence_{vcf_type}") and vcfs is not None:
         logger.info("")
