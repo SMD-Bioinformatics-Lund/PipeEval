@@ -259,7 +259,7 @@ def build_start_nextflow_analysis_cmd(
     for conf in nextflow_configs:
         custom_flags += f" -c {conf}"
     if stub_run:
-        custom_flags += "-stub-run"
+        custom_flags += " -stub-run"
 
     start_nextflow_command.append(custom_flags)
 
