@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import List, Optional
 
 from commands.run.file_helpers import (
-    copy_nextflow_config,
+    copy_nextflow_configs,
     get_csv,
     setup_results_links,
     write_resume_script,
@@ -136,7 +136,7 @@ def main(
         results_dir,
         get_start_nextflow_command(True),
     )
-    copy_nextflow_config(repo, results_dir)
+    copy_nextflow_configs(repo, results_dir, config.general_settings.nextflow_configs)
     setup_results_links(logger, config, results_dir, run_label, assay)
 
     start_run(get_start_nextflow_command(False), skip_confirmation)

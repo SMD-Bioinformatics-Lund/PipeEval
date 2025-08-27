@@ -13,10 +13,12 @@ def write_resume_script(results_dir: Path, run_command: List[str]):
     resume_script.write_text(" ".join(resume_command))
 
 
-def copy_nextflow_config(repo: Path, results_dir: Path):
-    config_path = repo / "nextflow.config"
-    dest_path = results_dir / "nextflow.config"
-    dest_path.write_text(config_path.read_text())
+def copy_nextflow_configs(repo: Path, results_dir: Path, configs: List[Path]):
+
+    for config in configs:
+        config_path = repo / config
+        dest_path = results_dir / config.name
+        dest_path.write_text(config_path.read_text())
 
 
 def setup_results_links(
