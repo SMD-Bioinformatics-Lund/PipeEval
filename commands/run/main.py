@@ -72,9 +72,7 @@ def main(
     do_repo_checkout(repo, checkout, verbose, skip_confirmation)
     (commit_hash, last_log) = get_git_commit_hash_and_log(logger, repo, verbose)
     logger.info(last_log)
-    print("Building label")
     run_label = build_run_label(run_profile, checkout, label, stub_run, start_data)
-    print("Label", run_label)
 
     if not datestamp:
         results_dir = base_dir / run_label
@@ -85,8 +83,6 @@ def main(
     confirm_run_if_results_exists(results_dir, skip_confirmation)
 
     results_dir.mkdir(exist_ok=True, parents=True)
-
-    print(">>> Inside")
 
     run_log_path = results_dir / "run.log"
     write_run_log(
