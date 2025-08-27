@@ -111,9 +111,6 @@ def main(
         csv_base
     )
 
-    print("Writing CSV content")
-    print(csv_content)
-
     out_csv.write_text(csv_content)
 
     def get_start_nextflow_command(quote_pipeline_arguments: bool) -> List[str]:

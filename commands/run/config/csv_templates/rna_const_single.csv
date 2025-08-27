@@ -1,2 +1,2 @@
 sample,case,fastq_1,fastq_2,strandedness,sex,phenotype
-<id>,<group>,<read1>,<read2>,reverse,M,2
+<id proband>,<group>,<read1 proband>,<read2 proband>,reverse,M,2

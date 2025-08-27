@@ -30,7 +30,9 @@ class SampleConfig:
     bam: Optional[str]
     vcf: Optional[str]
 
-    def __init__(self, logger: Logger, sample_section: SectionProxy):
+    sample_type: str
+
+    def __init__(self, logger: Logger, sample_section: SectionProxy, sample_type: str):
 
         self.id = sample_section.name
         self.sex = parse_mandatory_section_argument(logger, sample_section, "sex")
@@ -39,6 +41,8 @@ class SampleConfig:
         self.fq_rv = sample_section.get("fq_rv")
         self.bam = sample_section.get("bam")
         self.vcf = sample_section.get("vcf")
+
+        self.sample_type = sample_type
 
 
 class RunProfileConfig:
@@ -278,7 +282,9 @@ class RunConfig:
         sample_config_parser = ConfigParser()
         sample_config_parser.read(sample_config_path)
 
-        for sample in self.run_profile.samples:
+        sample_types = self.run_profile.sample_types
+
+        for i, sample in enumerate(self.run_profile.samples):
             if sample not in sample_config_parser.keys():
                 sections = ", ".join(sample_config_parser.keys())
                 logger.error(
@@ -286,7 +292,7 @@ class RunConfig:
                 )
                 sys.exit(1)
             section = sample_config_parser[sample]
-            sample_config = SampleConfig(logger, section)
+            sample_config = SampleConfig(logger, section, sample_types[i])
             self.all_samples[sample] = sample_config
 
     def get_sample_conf(self, sample_id: str) -> SampleConfig:

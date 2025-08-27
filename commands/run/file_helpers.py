@@ -70,9 +70,11 @@ def get_replace_map(
     all_sample_ids: List[str],
     all_sample_types: List[str],
 ) -> dict[str, str]:
+
     replace_map = {
-        "<id>": sample.id,
-        "<group>": run_label,
+        f"<id {sample.sample_type}>": sample.id,
+        f"<group>": run_label,
+        f"<sex {sample.sample_type}>": sample.sex,
     }
 
     if default_panel:
@@ -84,20 +86,20 @@ def get_replace_map(
                 f"Start run from fastq but at least one file missing. Fw: {sample.fq_fw} Rv: {sample.fq_rv}"
             )
             sys.exit(1)
-        replace_map["<read1>"] = sample.fq_fw
-        replace_map["<read2>"] = sample.fq_rv
+        replace_map[f"<read1 {sample.sample_type}>"] = sample.fq_fw
+        replace_map[f"<read2 {sample.sample_type}>"] = sample.fq_rv
     elif starting_run_from == "bam":
         if not sample.bam:
             logger.error(f"Start run from bam but bam is missing")
             sys.exit(1)
-        replace_map["<read1>"] = sample.bam
-        replace_map["<read2>"] = f"{sample.bam}.bai"
+        replace_map[f"<read1 {sample.sample_type}>"] = sample.bam
+        replace_map[f"<read2 {sample.sample_type}>"] = f"{sample.bam}.bai"
     elif starting_run_from == "vcf":
         if not sample.vcf:
             logger.error(f"Start run from vcf but vcf is missing")
             sys.exit(1)
-        replace_map["<read1>"] = sample.vcf
-        replace_map["<read2>"] = f"{sample.vcf}.bai"
+        replace_map[f"<read1 {sample.sample_type}>"] = sample.vcf
+        replace_map[f"<read2 {sample.sample_type}>"] = f"{sample.vcf}.bai"
     else:
         raise ValueError(f"start_run_from should be fq, bam or vcf, found: '{starting_run_from}'")
 
@@ -149,6 +151,8 @@ def get_csv(
             all_sample_ids,
             all_sample_types,
         )
+
+        print("replace map", replace_map)
 
         for key, val in replace_map.items():
             row = row.replace(key, val)
