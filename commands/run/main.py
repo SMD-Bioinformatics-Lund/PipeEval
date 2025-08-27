@@ -248,12 +248,10 @@ def build_start_nextflow_analysis_cmd(
         start_nextflow_command.append("--custom_flags")
 
         custom_flags = ""
-        custom_flags += "'"
         custom_flags += "-stub-run"
         for conf in nextflow_configs:
             custom_flags += f" -c {conf}"
             # start_nextflow_command.extend(["-c", str(conf)])
-        custom_flags += "'"
 
         start_nextflow_command.append(custom_flags)
 
