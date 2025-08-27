@@ -97,7 +97,6 @@ def test_single_dna_const_run(
         stub_run=True,
         run_profile=run_config.run_profile.run_profile,
         skip_confirmation=True,
-        queue=None,
         no_start=True,
         datestamp=False,
         verbose=False,
@@ -106,7 +105,7 @@ def test_single_dna_const_run(
         csv_base=csv_base,
     )
 
-    run_label = "wgs-label-testcheckout-stub-fq"
+    run_label = "dna_single_const-label-testcheckout-stub-fq"
 
     result_dir = base_dir / run_label
 
@@ -169,7 +168,6 @@ def test_single_rna_const_run(
         stub_run=True,
         run_profile=run_config.run_profile.run_profile,
         skip_confirmation=True,
-        queue=None,
         no_start=True,
         datestamp=False,
         verbose=False,
@@ -178,7 +176,7 @@ def test_single_rna_const_run(
         csv_base=csv_base,
     )
 
-    run_label = "wgs-label-testcheckout-stub-fq"
+    run_label = "rna_single_const-label-testcheckout-stub-fq"
 
     result_dir = base_dir / run_label
 
@@ -201,7 +199,7 @@ def test_single_rna_const_run(
         assert len(rows) == 1
         row = rows[0]
         assert row["sample"] == "s_rna"
-        assert row["case"] == "wgs-label-testcheckout-stub-fq"
+        assert row["case"] == run_label
         assert str(row["fastq_1"]) == str(paths.rna.fq_fw)
         assert str(row["fastq_2"]) == str(paths.rna.fq_rv)
         assert row["strandedness"] == "reverse"
@@ -209,7 +207,7 @@ def test_single_rna_const_run(
         assert row["phenotype"] == "2"
 
 
-def test_duo_run(
+def test_paired_tumor_run(
     monkeypatch: MonkeyPatch,
     base_dir: Path,
     get_run_config_paths: RunConfigs,
@@ -240,7 +238,6 @@ def test_duo_run(
         stub_run=True,
         run_profile=run_config.run_profile.run_profile,
         skip_confirmation=True,
-        queue=None,
         no_start=True,
         datestamp=False,
         verbose=False,
@@ -249,11 +246,8 @@ def test_duo_run(
         csv_base=csv_base,
     )
 
-    run_label = "panel-1-label-testcheckout-stub-fq"
+    run_label = "somatic-label-testcheckout-stub-fq"
     result_dir = base_dir / run_label
-
-    print("test")
-    print([f.name for f in result_dir.iterdir()])
 
     assert (result_dir / "run.log").exists()
     assert (result_dir / "nextflow.config").exists()
@@ -321,7 +315,6 @@ def test_trio_run(
         stub_run=True,
         run_profile="trio",
         skip_confirmation=True,
-        queue=None,
         no_start=True,
         datestamp=False,
         verbose=False,

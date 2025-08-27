@@ -65,6 +65,8 @@ class RunProfileConfig:
         self.config = ConfigParser()
         self.config.read(conf_path)
 
+        self.run_profile = run_profile
+
         if run_profile not in self.config.keys():
             available = ", ".join(self.config.keys())
             logger.error(
@@ -75,6 +77,7 @@ class RunProfileConfig:
         profile_section = self.config[run_profile]
         self.profile_section = profile_section
 
+        self.pipeline = parse_mandatory_section_argument(logger, profile_section, "pipeline")
         self.pipeline_profile = profile_section.get("pipeline_profile")
         self.csv_template = parse_mandatory_section_argument(
             logger, profile_section, "csv_template"

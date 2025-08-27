@@ -54,7 +54,6 @@ def main(
     stub_run: bool,
     run_profile: str,
     skip_confirmation: bool,
-    queue: Optional[str],
     no_start: bool,
     datestamp: bool,
     verbose: bool,
@@ -73,7 +72,9 @@ def main(
     do_repo_checkout(repo, checkout, verbose, skip_confirmation)
     (commit_hash, last_log) = get_git_commit_hash_and_log(logger, repo, verbose)
     logger.info(last_log)
+    print("Building label")
     run_label = build_run_label(run_profile, checkout, label, stub_run, start_data)
+    print("Label", run_label)
 
     if not datestamp:
         results_dir = base_dir / run_label
@@ -85,8 +86,9 @@ def main(
 
     results_dir.mkdir(exist_ok=True, parents=True)
 
+    print(">>> Inside")
+
     run_log_path = results_dir / "run.log"
-    print("Ready to write log to", run_log_path)
     write_run_log(
         run_log_path,
         run_profile,
@@ -329,7 +331,6 @@ def main_wrapper(args: argparse.Namespace):
             args.stub,
             args.run_profile,
             args.skip_confirmation,
-            args.queue,
             args.nostart,
             args.datestamp,
             args.verbose,
@@ -348,7 +349,6 @@ def main_wrapper(args: argparse.Namespace):
         args.stub,
         args.run_profile,
         args.skip_confirmation,
-        args.queue,
         args.nostart,
         args.datestamp,
         args.verbose,
@@ -407,10 +407,6 @@ def add_arguments(parser: argparse.ArgumentParser):
     parser.add_argument(
         "--samples_config",
         help="Config file in INI format with PipeEval samples info. Default path in commands/run/samples.config",
-    )
-    parser.add_argument(
-        "--queue",
-        help="Optionally specify in which queue to run (i.e. low, grace-normal etc.)",
     )
     parser.add_argument(
         "--datestamp",

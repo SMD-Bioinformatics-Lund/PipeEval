@@ -150,16 +150,10 @@ def get_csv(
             all_sample_types,
         )
 
-        print("replace map", replace_map)
-
         for key, val in replace_map.items():
             row = row.replace(key, val)
 
         updated_rows.append(row)
-
-    print("Updated rows")
-    print("\n".join(updated_rows))
-    print("---")
 
     return "\n".join(updated_rows)
 
@@ -172,6 +166,8 @@ def write_run_log(
     config: RunConfig,
     commit_hash: str,
 ):
+    print(">>> Writing run log to", run_log_path)
+
     with run_log_path.open("w") as out_fh:
         print("# Settings", file=out_fh)
         print(f"output dir: {run_log_path.parent}", file=out_fh)
