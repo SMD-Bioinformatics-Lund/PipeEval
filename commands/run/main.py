@@ -120,7 +120,10 @@ def main(
             stub_run,
             no_start,
             quote_pipeline_arguments,
-            config.general_settings.nextflow_configs,
+            [
+                config.general_settings.repo / conf
+                for conf in config.general_settings.nextflow_configs
+            ],
         )
         return command
 
@@ -242,7 +245,6 @@ def build_start_nextflow_analysis_cmd(
                 f"{runscript} -profile {profile}",
             ]
         )
-
 
     if stub_run:
         start_nextflow_command.append("--custom_flags")
