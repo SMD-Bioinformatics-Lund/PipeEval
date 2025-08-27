@@ -74,7 +74,7 @@ def get_csv(
     csv_template_name = config.run_profile.csv_template
     csv_template_path = csv_base / csv_template_name
 
-    csv_rows = csv_template_path.read_text().split("\n")
+    csv_rows = csv_template_path.read_text().strip().split("\n")
 
     print(csv_rows)
 
@@ -100,24 +100,68 @@ def get_csv(
         samples.append(sample)
 
     csv_header = csv_rows[0]
-    csv_body = csv_rows[1]
+    csv_body_rows = csv_rows[1:]
+
+    if len(csv_body_rows) == 1:
+        csv_body = csv_body_rows[0]
+        sample = list(config.all_samples.values())[0]
+        to_replace = {
+            "<id>": sample.id,
+            "<default_panel>": config.run_profile.default_panel,
+            "<group>": run_label,
+            "<read1>": sample.fq_fw,
+            "<read2>": sample.fq_rv,
+        }
+
+        for key, val in to_replace.items():
+            csv_body = csv_body.replace(key, val)
+
+        updated_rows = [
+            csv_header,
+            csv_body
+        ]
+    else:
+        updated_rows = [csv_header]
+
+        sample_ids = config.run_profile.samples
+        sample_types = config.run_profile.sample_types
+
+        type_to_id = dict(zip(sample_types, sample_ids))
+
+        for i, row in enumerate(csv_body_rows):
+
+            print("Iterating i", i, "for sample IDs", sample_ids)
+
+            sample_id = sample_ids[i]
+            sample = config.all_samples[sample_id]
+            sample_type = sample_types[i]
+
+            print("Working with sample_type", sample_type)
+
+            to_replace = {
+                f"<id {sample_type}>": sample.id,
+                f"<default_panel>": config.run_profile.default_panel,
+                f"<group>": run_label,
+                f"<group {sample_type}>": run_label,
+                f"<read1 {sample_type}>": sample.fq_fw,
+                f"<read2 {sample_type}>": sample.fq_rv,
+                f"<sex {sample_type}>": sample.sex,
+                "<father>": type_to_id["father"],
+                "<mother>": type_to_id["mother"],
+            }
+
+            for key, val in to_replace.items():
+                row = row.replace(key, val)
+
+            print("Processed row", row)
+
+            updated_rows.append(row)
+
+    print("Updated rows")
+    print("\n".join(updated_rows))
+    print("---")
 
 
-    to_replace = {
-        "<id>": "s_proband",
-        "<default_panel>": "itchy_nose",
-        "<group>": run_label,
-        "<read1>": list(config.all_samples.values())[0].fq_fw,
-        "<read2>": list(config.all_samples.values())[0].fq_rv,
-    }
-
-    for key, val in to_replace.items():
-        csv_body = csv_body.replace(key, val)
-
-    updated_rows = [
-        csv_header,
-        csv_body
-    ]
 
     # csv_body_updated = csv_body.replace("<id>", "ID").replace("")
 

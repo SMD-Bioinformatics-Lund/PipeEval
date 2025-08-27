@@ -3,6 +3,7 @@ import logging
 from pathlib import Path
 
 from pytest import MonkeyPatch
+import pytest
 
 from commands.run import main as run_main
 from commands.run.help_classes.config_classes import RunConfig
@@ -32,12 +33,20 @@ WGS_CSV_HEADERS = [
 ]
 
 
+@pytest.fixture
+def csv_base() -> Path:
+    parent_path = Path(__file__).resolve().parent
+    csv_base = parent_path.parent / "commands" / "run" / "config" / "csv_templates"
+    return csv_base
+
+
 def test_single_run(
     monkeypatch: MonkeyPatch,
     base_dir: Path,
     tmp_path: Path,
     get_run_config_paths: RunConfigs,
     config_sample_paths: ConfigSamplePathGroup,
+    csv_base: Path
 ):
     paths = config_sample_paths
 
@@ -55,8 +64,7 @@ def test_single_run(
         get_run_config_paths.samples,
     )
 
-    parent_path = Path(__file__).resolve().parent
-    csv_base = parent_path.parent / "commands" / "run" / "config" / "csv_templates"
+    # fixture?
 
     run_main.main(
         run_config,
@@ -110,6 +118,7 @@ def test_duo_run(
     base_dir: Path,
     get_run_config_paths: RunConfigs,
     config_sample_paths: ConfigSamplePathGroup,
+    csv_base: Path,
 ):
 
     paths = config_sample_paths
@@ -143,7 +152,7 @@ def test_duo_run(
         verbose=False,
         assay=None,
         analysis=None,
-        csv_base=None
+        csv_base=csv_base
     )
 
     run_label = "panel-1-label-testcheckout-stub-fq"
@@ -195,6 +204,7 @@ def test_trio_run(
     base_dir: Path,
     get_run_config_paths: RunConfigs,
     config_sample_paths: ConfigSamplePathGroup,
+    csv_base: Path,
 ):
 
     paths = config_sample_paths
@@ -229,7 +239,7 @@ def test_trio_run(
         verbose=False,
         assay=None,
         analysis=None,
-        csv_base=None
+        csv_base=csv_base,
     )
 
     run_label = "trio-label-testcheckout-stub-fq"
@@ -285,7 +295,7 @@ def test_trio_run(
 
 
 def test_override_assay(
-    monkeypatch: MonkeyPatch, base_dir: Path, get_run_config_paths: RunConfigs
+    monkeypatch: MonkeyPatch, base_dir: Path, get_run_config_paths: RunConfigs, csv_base: Path
 ):
 
     monkeypatch.setattr(run_main, "do_repo_checkout", lambda *a, **k: None)
@@ -318,7 +328,7 @@ def test_override_assay(
         verbose=False,
         assay="prod",
         analysis="analysis_test",
-        csv_base=None
+        csv_base=csv_base
     )
 
     result_dir = base_dir / "wgs-label-testcheckout-stub-fq"
