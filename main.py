@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import argparse
+import logging
 import sys
 
 from commands.eval.main import add_arguments as eval_add_arguments
@@ -13,6 +14,10 @@ from commands.vcf.main import main_wrapper as vcf_main_wrapper
 __version_info__ = ("2", "0", "0")
 __version__ = ".".join(__version_info__)
 
+logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
+logger = logging.getLogger(__name__)
+
+
 
 def main():
     args = parse_arguments()
@@ -24,9 +29,10 @@ def main():
     elif args.subcommand == "vcf":
         vcf_main_wrapper(args)
     else:
-        raise ValueError(
+        logger.info(
             f"Unknown sub command: {args.subcommand}. Check valid commands by running main.py --help"
         )
+        sys.exit(1)
 
 
 def parse_arguments():
