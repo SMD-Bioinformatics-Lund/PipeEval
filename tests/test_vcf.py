@@ -53,6 +53,7 @@ def test_main(caplog: LogCaptureFixture, tmp_path: Path):
     with caplog.at_level(logging.INFO):
 
         main(
+            "dna-const",
             vcf1_path,
             vcf2_path,
             is_sv,
@@ -75,11 +76,8 @@ def test_main(caplog: LogCaptureFixture, tmp_path: Path):
     expected_files = [
         "scored_snv_above_thres_17.txt",
         "scored_snv_presence.txt",
-        "scored_snv_all.txt",
+        "scored_snv_all_diffing.txt",
     ]
-
-    for f in results.iterdir():
-        LOG.warning(f)
 
     for filename in expected_files:
         file_path = results / filename

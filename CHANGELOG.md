@@ -1,3 +1,13 @@
+# 2.0.0
+
+* Generalized run module to allow any pipeline
+    * Splitting config into three configs - settings, samples and run profile
+    * Using a csv template to generate the csv rather than generating from scratch
+    * Setting up tentative profiles for RNA-seq const and somatic
+* Refactored eval module to reduce amount of code in main function
+* Generalized eval module to allow configuration for different pipelines
+* Added unit tests for somatic and RNA-seq pipelines
+
 # 1.4.0
 
 * Add run types for oncov1, myeloid-const, modycf

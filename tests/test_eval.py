@@ -6,8 +6,8 @@ from typing import List
 import pytest
 from pytest import LogCaptureFixture
 
+from commands.eval.classes.helpers import RunSettings
 from commands.eval.classes.run_object import RunObject
-from commands.eval.classes.run_settings import RunSettings
 from commands.eval.main import main
 
 
@@ -99,7 +99,7 @@ def test_eval_main(
     results1, results2, outdir = mock_results
 
     run_object = RunObject("r1", "r2", results1, results2)
-    run_settings = RunSettings(score_threshold=17)
+    run_settings = RunSettings("dna-const", score_threshold=17)
 
     with caplog.at_level(logging.INFO):
         main(run_object, run_settings, None, None, outdir)
@@ -111,11 +111,11 @@ def test_eval_main(
         "check_sample_files.txt",
         "scored_snv_presence.txt",
         "scored_snv_above_thres_17.txt",
-        "scored_snv_all.txt",
+        "scored_snv_all_diffing.txt",
         "scored_sv_presence.txt",
         "scored_sv_above_thres_17.txt",
-        "scored_sv_all.txt",
-        "yaml_diff.txt",
+        "scored_sv_all_diffing.txt",
+        "scout_yaml.diff",
     ]
 
     for fname in expected_files:
@@ -129,8 +129,8 @@ def test_eval_main(
         "G/T" in line for line in snv_score_thres
     ), "Expected SNV difference missing"
 
-    snv_score_all = (outdir / "scored_snv_all.txt").read_text().splitlines()
+    snv_score_all = (outdir / "scored_snv_all_diffing.txt").read_text().splitlines()
     assert len(snv_score_all) == 3
 
-    sv_score = (outdir / "scored_sv_all.txt").read_text().splitlines()
+    sv_score = (outdir / "scored_sv_all_diffing.txt").read_text().splitlines()
     assert any("<DEL>" in line for line in sv_score)

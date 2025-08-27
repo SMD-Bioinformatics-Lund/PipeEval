@@ -4,6 +4,10 @@ from logging import Logger
 from pathlib import Path
 from typing import Dict, List, Optional, Set, Tuple, Union
 
+from commands.eval.classes.helpers import VCFPair
+from shared.compare import do_comparison
+from shared.vcf.vcf import parse_scored_vcf
+
 from .classes.run_object import PathObj, RunObject
 
 
@@ -164,3 +168,58 @@ def get_ignored(
             non_ignored.append(path)
 
     return (nbr_ignored_per_pattern, non_ignored)
+
+
+def get_vcf_pair(
+    logger: Logger,
+    vcf_paths: List[str],
+    ro: RunObject,
+    r1_paths: List[PathObj],
+    r2_paths: List[PathObj],
+    verbose: bool,
+    vcf_type: str,
+) -> Optional[VCFPair]:
+    vcf_pair_paths = get_pair_match(
+        logger,
+        vcf_type,
+        vcf_paths,
+        ro,
+        r1_paths,
+        r2_paths,
+        verbose,
+    )
+
+    if vcf_pair_paths is None:
+        logger.warning(
+            f"Skipping {vcf_type} comparisons due to missing files ({vcf_pair_paths})"
+        )
+        return None
+
+    vcf_pair = parse_vcf_pair(logger, ro.run_ids, vcf_pair_paths, vcf_type)
+
+    return vcf_pair
+
+
+def parse_vcf_pair(
+    logger: Logger,
+    run_ids: Tuple[str, str],
+    vcf_paths: Tuple[Path, Path],
+    vcf_type: str,
+) -> VCFPair:
+    logger.info(f"# Parsing {vcf_type} VCFs ...")
+
+    vcf_r1 = parse_scored_vcf(vcf_paths[0], False)
+    logger.info(f"{run_ids[0]} number variants: {len(vcf_r1.variants)}")
+    vcf_r2 = parse_scored_vcf(vcf_paths[1], False)
+    logger.info(f"{run_ids[1]} number variants: {len(vcf_r2.variants)}")
+
+    comp_res = do_comparison(
+        set(vcf_r1.variants.keys()),
+        set(vcf_r2.variants.keys()),
+    )
+    logger.info(f"In common: {len(comp_res.shared)}")
+    logger.info(f"Only in {run_ids[0]}: {len(comp_res.r1)}")
+    logger.info(f"Only in {run_ids[1]}: {len(comp_res.r2)}")
+
+    vcf_pair = VCFPair(vcf_r1, vcf_r2, comp_res)
+    return vcf_pair

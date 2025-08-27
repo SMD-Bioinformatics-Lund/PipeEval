@@ -27,8 +27,7 @@ class AnnotComp:
 
 def compare_variant_annotation(
     logger: Logger,
-    run_id1: str,
-    run_id2: str,
+    run_ids: Tuple[str, str],
     shared_variant_keys: Set[str],
     variants_r1: Dict[str, ScoredVariant],
     variants_r2: Dict[str, ScoredVariant],
@@ -36,7 +35,7 @@ def compare_variant_annotation(
 ):
 
     (diffs_per_annot_key, r1_only_annots, r2_only_annots) = calculate_annotation_diffs(
-        shared_variant_keys, variants_r1, variants_r2, max_considered, run_id1, run_id2
+        shared_variant_keys, variants_r1, variants_r2, max_considered, run_ids
     )
 
     if max_considered < len(shared_variant_keys):
@@ -52,21 +51,21 @@ def compare_variant_annotation(
         if len(r1_only_annots) > 0:
             logger.info("")
             logger.info(
-                f"# Annotation keys only found in {run_id1} among {max_considered} variants"
+                f"# Annotation keys only found in {run_ids[0]} among {max_considered} variants"
             )
             for variant_key in sorted(r1_only_annots):
                 logger.info(f"{variant_key}: {r1_only_annots[variant_key]}")
         else:
-            logger.info(f"No annotation keys found only in {run_id1}")
+            logger.info(f"No annotation keys found only in {run_ids[0]}")
         if len(r2_only_annots) > 0:
             logger.info("")
             logger.info(
-                f"# Annotation keys only found in {run_id2} among {max_considered} variants"
+                f"# Annotation keys only found in {run_ids[1]} among {max_considered} variants"
             )
             for variant_key in sorted(r2_only_annots):
                 logger.info(f"{variant_key}: {r2_only_annots[variant_key]}")
         else:
-            logger.info(f"No annotation keys found only in {run_id2}")
+            logger.info(f"No annotation keys found only in {run_ids[1]}")
 
     if len(diffs_per_annot_key) == 0:
         logger.info("# Among shared annotation keys, all values were the same")
@@ -88,8 +87,7 @@ def calculate_annotation_diffs(
     variants_r1: Dict[str, ScoredVariant],
     variants_r2: Dict[str, ScoredVariant],
     max_considered: int,
-    run_id1: str,
-    run_id2: str,
+    run_ids: Tuple[str, str],
 ) -> Tuple[Dict[str, List[AnnotComp]], Dict[str, int], Dict[str, int]]:
     r1_only_annots: Dict[str, int] = defaultdict(int)
     r2_only_annots: Dict[str, int] = defaultdict(int)
@@ -110,10 +108,10 @@ def calculate_annotation_diffs(
 
         for shared_annot_key in comparison_results.shared:
             info_val_r1 = var_r1.info_dict[shared_annot_key].replace(
-                run_id1, RUN_ID_PLACEHOLDER
+                run_ids[0], RUN_ID_PLACEHOLDER
             )
             info_val_r2 = var_r2.info_dict[shared_annot_key].replace(
-                run_id2, RUN_ID_PLACEHOLDER
+                run_ids[1], RUN_ID_PLACEHOLDER
             )
 
             if info_val_r1 != info_val_r2:

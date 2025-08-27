@@ -1,7 +1,7 @@
 from typing import List, Optional
 
 
-class Case:
+class CSVRow:
     def __init__(
         self,
         id: str,
@@ -11,8 +11,8 @@ class Case:
         type: str,
         read1: str,
         read2: str,
-        father: Optional[str] = None,
         mother: Optional[str] = None,
+        father: Optional[str] = None,
         phenotype: str = "healthy",
     ):
         self.id = id
@@ -66,18 +66,18 @@ class CsvEntry:
     def __init__(
         self,
         group: str,
-        cases: List[Case],
+        cases: List[CSVRow],
         priority: Optional[str],
         assay: str,
         analysis: str,
-        diagnosis: str,
+        diagnosis: Optional[str],
     ):
         self.cases = cases
 
         self.assay = assay
         self.group = group
         self.clarity_pool_id = "NA"
-        self.diagnosis = diagnosis
+        self.diagnosis = diagnosis or "no_diagnosis"
         self.platform = "illumina"
         self.analysis = analysis
         self.priority = priority or "grace-lowest"
