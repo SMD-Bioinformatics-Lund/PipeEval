@@ -1,0 +1,4 @@
+clarity_sample_id,id,type,sex,assay,diagnosis,phenotype,group,father,mother,clarity_pool_id,platform,read1,read2,analysis,priority
+NA,<id proband>,proband,<sex proband>,dev,OMIM-AUTO,healthy,<group>,hg003,hg004,NA,illumina,<read1 proband>,<read2 proband>,wgs,grace-lowest
+NA,<id father>,father,<sex father>,dev,OMIM-AUTO,healthy,<group>,0,0,NA,illumina,<read1 father>,<read2 father>,wgs,grace-lowest
+NA,<id mother>,mother,<sex mother>,dev,OMIM-AUTO,healthy,<group>,0,0,NA,illumina,<read1 mother>,<read2 mother>,wgs,grace-lowest
