@@ -255,6 +255,8 @@ def build_start_nextflow_analysis_cmd(
             # start_nextflow_command.extend(["-c", str(conf)])
         custom_flags += "'"
 
+        start_nextflow_command.append(custom_flags)
+
         # start_nextflow_command.append("'-stub-run'")
 
     if no_start:
