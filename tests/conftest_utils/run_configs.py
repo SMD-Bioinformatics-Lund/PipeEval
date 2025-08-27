@@ -67,8 +67,8 @@ def get_run_profile_config() -> str:
         pipeline = dna-const
         profile = wgs
         samples = s_proband
-        sample_types = proband
         default_panel = itchy_nose
+        csv_template = dna_const_single.csv
 
         [duo]
         pipeline = somatic
@@ -77,6 +77,7 @@ def get_run_profile_config() -> str:
         samples = s_normal,s_tumor
         sample_types = N,T
         default_panel = pain_in_toe
+        csv_template = somatic.csv
 
         [trio]
         pipeline = dna-const
@@ -84,6 +85,13 @@ def get_run_profile_config() -> str:
         samples = s_proband,s_mother,s_father
         sample_types = proband,mother,father
         default_panel = stiff_neck
+        csv_template = dna_const_trio.csv
+
+        [rna]
+        pipeline = dna-const
+        profile = wgs
+        samples = s_rna
+        csv_template = rna_const_single.csv
         """
     )
     return pipeline_config_text

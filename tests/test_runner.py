@@ -55,6 +55,9 @@ def test_single_run(
         get_run_config_paths.samples,
     )
 
+    parent_path = Path(__file__).resolve().parent
+    csv_base = parent_path.parent / "commands" / "run" / "config" / "csv_templates"
+
     run_main.main(
         run_config,
         label="label",
@@ -71,6 +74,7 @@ def test_single_run(
         verbose=False,
         assay=None,
         analysis=None,
+        csv_base=csv_base
     )
 
     run_label = "wgs-label-testcheckout-stub-fq"
@@ -139,6 +143,7 @@ def test_duo_run(
         verbose=False,
         assay=None,
         analysis=None,
+        csv_base=None
     )
 
     run_label = "panel-1-label-testcheckout-stub-fq"
@@ -224,6 +229,7 @@ def test_trio_run(
         verbose=False,
         assay=None,
         analysis=None,
+        csv_base=None
     )
 
     run_label = "trio-label-testcheckout-stub-fq"
@@ -312,6 +318,7 @@ def test_override_assay(
         verbose=False,
         assay="prod",
         analysis="analysis_test",
+        csv_base=None
     )
 
     result_dir = base_dir / "wgs-label-testcheckout-stub-fq"

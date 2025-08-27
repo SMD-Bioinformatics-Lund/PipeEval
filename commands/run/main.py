@@ -60,13 +60,13 @@ def main(
     verbose: bool,
     assay: Optional[str],
     analysis: Optional[str],
-    csv_fp: Optional[Path],
+    csv_base: Path,
 ):
     logger.info(f"Preparing run, type: {run_profile}, data: {start_data}")
 
-    base_dir = base_dir if base_dir is not None else Path(config.pipeline_settings.base)
-    repo = repo if repo is not None else Path(config.pipeline_settings.repo)
-    datestamp = datestamp or config.pipeline_settings.datestamp
+    base_dir = base_dir if base_dir is not None else Path(config.general_settings.base)
+    repo = repo if repo is not None else Path(config.general_settings.repo)
+    datestamp = datestamp or config.general_settings.datestamp
 
     check_valid_repo(repo)
 
@@ -100,32 +100,34 @@ def main(
     analysis = analysis or config.run_profile.profile
 
     out_csv = results_dir / "run.csv"
-    if not csv_fp:
-        csv = get_csv(
-            logger,
-            config,
-            run_label,
-            start_data,
-            queue,
-            assay,
-            analysis,
-        )
-        csv.write_to_file(str(out_csv))
-    else:
-        shutil.copy(csv_fp, out_csv)
+    csv_content = get_csv(
+        logger,
+        config,
+        run_label,
+        start_data,
+        queue,
+        assay,
+        analysis,
+        csv_base
+    )
+
+    print("Writing CSV content")
+    print(csv_content)
+
+    out_csv.write_text(csv_content)
 
     def get_start_nextflow_command(quote_pipeline_arguments: bool) -> List[str]:
         command = build_start_nextflow_analysis_cmd(
-            config.pipeline_settings.start_nextflow_analysis,
+            config.general_settings.start_nextflow_analysis,
             out_csv,
             results_dir,
-            config.pipeline_settings.executor,
-            config.pipeline_settings.cluster,
-            config.pipeline_settings.queue,
-            config.pipeline_settings.singularity_version,
-            config.pipeline_settings.nextflow_version,
-            config.pipeline_settings.container,
-            str(repo / config.pipeline_settings.runscript),
+            config.general_settings.executor,
+            config.general_settings.cluster,
+            config.general_settings.queue,
+            config.general_settings.singularity_version,
+            config.general_settings.nextflow_version,
+            config.general_settings.container,
+            str(repo / config.general_settings.runscript),
             config.run_profile.profile,
             stub_run,
             no_start,
@@ -277,11 +279,13 @@ def start_run(start_nextflow_command: List[str], skip_confirmation: bool):
 def main_wrapper(args: argparse.Namespace):
 
     parent_path = Path(__file__).resolve().parent
-    profile_conf_path = args.run_profile_config or parent_path / "run_profile.config"
+    profile_conf_path = args.run_profile_config or parent_path / "config/run_profile.ini"
     pipeline_settings_path = (
-        args.pipeline_settings_config or parent_path / "pipeline_settings.config"
+        args.pipeline_settings_config or parent_path / "config/pipeline_settings.ini"
     )
-    samples_path = args.samples_config or parent_path / "samples.config"
+    samples_path = args.samples_config or parent_path / "config/samples.ini"
+
+    csv_base = args.csv_base or parent_path / "config/csv_templates"
 
     config = RunConfig(
         logger,
@@ -302,7 +306,7 @@ def main_wrapper(args: argparse.Namespace):
         if args.baseline_repo is not None:
             baseline_repo = str(args.baseline_repo)
         else:
-            baseline_repo = config.pipeline_settings.baseline_repo
+            baseline_repo = config.general_settings.baseline_repo
             if not baseline_repo:
                 logger.error(
                     "When running with --baseline a baseline repo must either be provided using --baseline_repo option or in the config"
@@ -325,7 +329,7 @@ def main_wrapper(args: argparse.Namespace):
             args.verbose,
             args.assay,
             args.analysis,
-            args.csv
+            csv_base
         )
         logger.info("Now proceeding with checking out the --checkout")
     main(
@@ -344,7 +348,7 @@ def main_wrapper(args: argparse.Namespace):
         args.verbose,
         args.assay,
         args.analysis,
-        args.csv
+        csv_base
     )
 
 
@@ -430,8 +434,8 @@ def add_arguments(parser: argparse.ArgumentParser):
         help="Specify a custom analysis in the CSV file (defaults to --run_profile argument)",
     )
     parser.add_argument(
-        "--csv",
-        help="Skip generating CSV and copy this target CSV instead."
+        "--csv_base",
+        help="Base folder for CSV templates."
     )
 
 

@@ -28,9 +28,9 @@ def setup_results_links(
     assay: str,
 ):
 
-    log_base_dir = config.pipeline_settings.log_base_dir
-    trace_base_dir = config.pipeline_settings.trace_base_dir
-    work_base_dir = config.pipeline_settings.work_base_dir
+    log_base_dir = config.general_settings.log_base_dir
+    trace_base_dir = config.general_settings.trace_base_dir
+    work_base_dir = config.general_settings.work_base_dir
 
     current_date = datetime.now()
     date_stamp = current_date.strftime("%Y-%m-%d")
@@ -68,7 +68,15 @@ def get_csv(
     queue: Optional[str],
     assay: str,
     analysis: str,
-) -> CsvEntry:
+    csv_base: Path,
+) -> str:
+
+    csv_template_name = config.run_profile.csv_template
+    csv_template_path = csv_base / csv_template_name
+
+    csv_rows = csv_template_path.read_text().split("\n")
+
+    print(csv_rows)
 
     sample_ids = config.run_profile.samples
     samples = []
@@ -91,15 +99,37 @@ def get_csv(
             )
         samples.append(sample)
 
-    default_panel = config.run_profile.default_panel
+    csv_header = csv_rows[0]
+    csv_body = csv_rows[1]
+
+
+    to_replace = {
+        "<id>": "s_proband",
+        "<default_panel>": "itchy_nose",
+        "<group>": run_label,
+        "<read1>": list(config.all_samples.values())[0].fq_fw,
+        "<read2>": list(config.all_samples.values())[0].fq_rv,
+    }
+
+    for key, val in to_replace.items():
+        csv_body = csv_body.replace(key, val)
+
+    updated_rows = [
+        csv_header,
+        csv_body
+    ]
+
+    # csv_body_updated = csv_body.replace("<id>", "ID").replace("")
+
+    # default_panel = config.run_profile.default_panel
 
     # if not default_panel:
     #     logger.error("Expected a default panel, found none")
     #     sys.exit(1)
 
-    run_csv = CsvEntry(run_label, samples, queue, assay, analysis, default_panel)
+    # run_csv = CsvEntry(run_label, samples, queue, assay, analysis, default_panel)
 
-    return run_csv
+    return "\n".join(updated_rows)
 
 
 def parse_sample(

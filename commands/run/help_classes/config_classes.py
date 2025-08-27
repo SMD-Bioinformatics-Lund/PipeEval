@@ -61,6 +61,8 @@ class RunProfileConfig:
     sample_types: List[str]
     default_panel: Optional[str]
 
+    csv_template: str
+
     def __init__(self, logger: Logger, run_profile: str, conf_path: Path):
 
         self.config = ConfigParser()
@@ -81,6 +83,9 @@ class RunProfileConfig:
         )
         self.profile = parse_mandatory_section_argument(
             logger, profile_section, "profile"
+        )
+        self.csv_template = parse_mandatory_section_argument(
+            logger, profile_section, "csv_template"
         )
 
         samples_str = parse_mandatory_section_argument(
@@ -256,7 +261,7 @@ class RunConfig:
 
     run_profile_key: str
     run_profile: RunProfileConfig
-    pipeline_settings: PipelineSettingsConfig
+    general_settings: PipelineSettingsConfig
     all_samples: Dict[str, SampleConfig] = {}
 
     def __init__(
@@ -270,7 +275,7 @@ class RunConfig:
         self.run_profile_key = run_profile
         self.run_profile = RunProfileConfig(logger, run_profile, profile_config_path)
 
-        self.pipeline_settings = PipelineSettingsConfig(
+        self.general_settings = PipelineSettingsConfig(
             logger,
             pipeline_config_path,
             self.run_profile.pipeline,
@@ -296,7 +301,7 @@ class RunConfig:
 
     def get_setting_entries(self) -> Dict[str, str]:
         key_vals = {}
-        for key, val in self.pipeline_settings.get_items():
+        for key, val in self.general_settings.get_items():
             key_vals[key] = val
         return key_vals
 
