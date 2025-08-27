@@ -100,16 +100,7 @@ def main(
     analysis = analysis or config.run_profile.profile
 
     out_csv = results_dir / "run.csv"
-    csv_content = get_csv(
-        logger,
-        config,
-        run_label,
-        start_data,
-        queue,
-        assay,
-        analysis,
-        csv_base
-    )
+    csv_content = get_csv(logger, config, run_label, start_data, queue, assay, analysis, csv_base)
 
     out_csv.write_text(csv_content)
 
@@ -129,6 +120,7 @@ def main(
             stub_run,
             no_start,
             quote_pipeline_arguments,
+            config.general_settings.nextflow_configs,
         )
         return command
 
@@ -136,7 +128,9 @@ def main(
         results_dir,
         get_start_nextflow_command(True),
     )
+    logger.info("Copying nextflow configs")
     copy_nextflow_configs(repo, results_dir, config.general_settings.nextflow_configs)
+    logger.info("Preparing results lists")
     setup_results_links(logger, config, results_dir, run_label, assay)
 
     start_run(get_start_nextflow_command(False), skip_confirmation)
@@ -190,9 +184,7 @@ def build_run_label(
     run_label = "-".join(label_parts)
 
     if run_label.find("/") != -1:
-        logger.warning(
-            f"Found '/' characters in run label: {run_label}, replacing with '-'"
-        )
+        logger.warning(f"Found '/' characters in run label: {run_label}, replacing with '-'")
         run_label = run_label.replace("/", "-")
 
     return run_label
@@ -213,6 +205,7 @@ def build_start_nextflow_analysis_cmd(
     stub_run: bool,
     no_start: bool,
     quote_pipeline_arguments: bool,
+    nextflow_configs: List[Path],
 ) -> List[str]:
 
     out_dir = results_dir
@@ -249,6 +242,9 @@ def build_start_nextflow_analysis_cmd(
                 f"{runscript} -profile {profile}",
             ]
         )
+
+        for conf in nextflow_configs:
+            start_nextflow_command.extend(["-c", str(conf)])
     if stub_run:
         start_nextflow_command.append("--custom_flags")
         start_nextflow_command.append("'-stub-run'")
@@ -262,9 +258,7 @@ def build_start_nextflow_analysis_cmd(
 def start_run(start_nextflow_command: List[str], skip_confirmation: bool):
     if not skip_confirmation:
         pretty_command = " \\\n    ".join(start_nextflow_command)
-        confirmation = input(
-            f"Do you want to run the following command:\n{pretty_command}\n(y/n) "
-        )
+        confirmation = input(f"Do you want to run the following command:\n{pretty_command}\n(y/n) ")
 
         if confirmation != "y":
             logger.info("Exiting ...")
@@ -296,9 +290,7 @@ def main_wrapper(args: argparse.Namespace):
         logger.setLevel(logging.WARNING)
 
     if args.baseline is not None:
-        logger.info(
-            "Performing additional baseline run as specified by --baseline flag"
-        )
+        logger.info("Performing additional baseline run as specified by --baseline flag")
 
         if args.baseline_repo is not None:
             baseline_repo = str(args.baseline_repo)
@@ -326,7 +318,7 @@ def main_wrapper(args: argparse.Namespace):
             args.verbose,
             args.assay,
             args.analysis,
-            csv_base
+            csv_base,
         )
         logger.info("Now proceeding with checking out the --checkout")
     main(
@@ -345,7 +337,7 @@ def main_wrapper(args: argparse.Namespace):
         args.verbose,
         args.assay,
         args.analysis,
-        csv_base
+        csv_base,
     )
 
 
@@ -413,12 +405,8 @@ def add_arguments(parser: argparse.ArgumentParser):
         action="store_true",
         help="Run start_nextflow_analysis.pl with nostart, printing the path to the SLURM job only",
     )
-    parser.add_argument(
-        "--baseline", help="Start a second baseline run and specified checkout"
-    )
-    parser.add_argument(
-        "--verbose", action="store_true", help="Print additional debug output"
-    )
+    parser.add_argument("--baseline", help="Start a second baseline run and specified checkout")
+    parser.add_argument("--verbose", action="store_true", help="Print additional debug output")
     parser.add_argument(
         "--silent", action="store_true", help="Run silently, produce only output files"
     )
@@ -430,10 +418,7 @@ def add_arguments(parser: argparse.ArgumentParser):
         "--analysis",
         help="Specify a custom analysis in the CSV file (defaults to --run_profile argument)",
     )
-    parser.add_argument(
-        "--csv_base",
-        help="Base folder for CSV templates."
-    )
+    parser.add_argument("--csv_base", help="Base folder for CSV templates.")
 
 
 if __name__ == "__main__":
