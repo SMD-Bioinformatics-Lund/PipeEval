@@ -33,8 +33,9 @@ def config_sample_paths(tmp_path: Path) -> ConfigSamplePathGroup:
     father = ConfigSamplePaths(tmp_path, "father")
     tumor = ConfigSamplePaths(tmp_path, "tumor")
     normal = ConfigSamplePaths(tmp_path, "normal")
+    rna = ConfigSamplePaths(tmp_path, "rna")
 
-    group = ConfigSamplePathGroup(proband, mother, father, tumor, normal)
+    group = ConfigSamplePathGroup(proband, mother, father, tumor, normal, rna)
     return group
 
 

@@ -13,6 +13,16 @@ from tests.conftest_utils.run_configs import ConfigSamplePathGroup
 LOG = logging.getLogger()
 
 
+RNASEQ_CONST_CSV_HEADERS = [
+    "sample",
+    "case",
+    "fastq_1",
+    "fastq_2",
+    "strandedness",
+    "sex",
+    "phenotype",
+]
+
 WGS_CSV_HEADERS = [
     "clarity_sample_id",
     "id",
@@ -56,25 +66,94 @@ def csv_base() -> Path:
     return csv_base
 
 
-def test_single_run(
+def test_single_dna_const_run(
     monkeypatch: MonkeyPatch,
     base_dir: Path,
-    tmp_path: Path,
     get_run_config_paths: RunConfigs,
     config_sample_paths: ConfigSamplePathGroup,
-    csv_base: Path
+    csv_base: Path,
 ):
     paths = config_sample_paths
 
     monkeypatch.setattr(run_main, "do_repo_checkout", lambda *a, **k: None)
     monkeypatch.setattr(run_main, "start_run", lambda *a, **k: None)
-    monkeypatch.setattr(
-        run_main, "get_git_commit_hash_and_log", lambda *a, **k: ("abcd", "abcd")
-    )
+    monkeypatch.setattr(run_main, "get_git_commit_hash_and_log", lambda *a, **k: ("abcd", "abcd"))
 
     run_config = RunConfig(
         LOG,
-        "single",
+        "dna_single_const",
+        get_run_config_paths.run_profile,
+        get_run_config_paths.pipeline_settings,
+        get_run_config_paths.samples,
+    )
+
+    run_main.main(
+        run_config,
+        label="label",
+        checkout="testcheckout",
+        base_dir=None,
+        repo=None,
+        start_data="fq",
+        stub_run=True,
+        run_profile=run_config.run_profile.profile,
+        skip_confirmation=True,
+        queue=None,
+        no_start=True,
+        datestamp=False,
+        verbose=False,
+        assay=None,
+        analysis=None,
+        csv_base=csv_base,
+    )
+
+    run_label = "wgs-label-testcheckout-stub-fq"
+
+    result_dir = base_dir / run_label
+
+    assert (result_dir / "run.log").exists()
+    assert (result_dir / "nextflow.config").exists()
+
+    run_csv = result_dir / "run.csv"
+    assert (run_csv).exists()
+
+    with open(run_csv, newline="") as csv_fh:
+        reader = csv.DictReader(csv_fh)
+        assert reader.fieldnames
+        for i in range(len(reader.fieldnames)):
+            assert (
+                reader.fieldnames[i] == WGS_CSV_HEADERS[i]
+            ), f"Fieldname in pos {i} should match expected"
+        rows = list(reader)
+        assert len(rows) == 1
+        row = rows[0]
+        assert row["id"] == "s_proband"
+        assert row["type"] == "proband"
+        assert row["sex"] == "M"
+        assert row["assay"] == "dev"
+        assert row["diagnosis"] == "itchy_nose"
+        assert row["group"] == run_label
+        assert row["father"] == "0"
+        assert row["mother"] == "0"
+        assert str(row["read1"]) == str(paths.proband.fq_fw)
+        assert str(row["read2"]) == str(paths.proband.fq_rv)
+
+
+def test_single_rna_const_run(
+    monkeypatch: MonkeyPatch,
+    base_dir: Path,
+    get_run_config_paths: RunConfigs,
+    config_sample_paths: ConfigSamplePathGroup,
+    csv_base: Path,
+):
+    paths = config_sample_paths
+
+    monkeypatch.setattr(run_main, "do_repo_checkout", lambda *a, **k: None)
+    monkeypatch.setattr(run_main, "start_run", lambda *a, **k: None)
+    monkeypatch.setattr(run_main, "get_git_commit_hash_and_log", lambda *a, **k: ("abcd", "abcd"))
+
+    run_config = RunConfig(
+        LOG,
+        "rna_single_const",
         get_run_config_paths.run_profile,
         get_run_config_paths.pipeline_settings,
         get_run_config_paths.samples,
@@ -98,7 +177,7 @@ def test_single_run(
         verbose=False,
         assay=None,
         analysis=None,
-        csv_base=csv_base
+        csv_base=csv_base,
     )
 
     run_label = "wgs-label-testcheckout-stub-fq"
@@ -113,20 +192,22 @@ def test_single_run(
 
     with open(run_csv, newline="") as csv_fh:
         reader = csv.DictReader(csv_fh)
-        assert reader.fieldnames == WGS_CSV_HEADERS
+        assert reader.fieldnames
+        for i in range(len(reader.fieldnames)):
+            assert (
+                reader.fieldnames[i] == RNASEQ_CONST_CSV_HEADERS[i]
+            ), f"Fieldname in pos {i} should match expected. Expected {reader.fieldnames[i]} found {WGS_CSV_HEADERS[i]}"
+
         rows = list(reader)
         assert len(rows) == 1
         row = rows[0]
-        assert row["id"] == "s_proband"
-        assert row["type"] == "proband"
+        assert row["sample"] == "s_rna"
+        assert row["case"] == "wgs-label-testcheckout-stub-fq"
+        assert str(row["fastq_1"]) == str(paths.rna.fq_fw)
+        assert str(row["fastq_2"]) == str(paths.rna.fq_rv)
+        assert row["strandedness"] == "reverse"
         assert row["sex"] == "M"
-        assert row["assay"] == "dev"
-        assert row["diagnosis"] == "itchy_nose"
-        assert row["group"] == run_label
-        assert row["father"] == "0"
-        assert row["mother"] == "0"
-        assert str(row["read1"]) == str(paths.proband.fq_fw)
-        assert str(row["read2"]) == str(paths.proband.fq_rv)
+        assert row["phenotype"] == "2"
 
 
 def test_duo_run(
@@ -140,13 +221,11 @@ def test_duo_run(
     paths = config_sample_paths
     monkeypatch.setattr(run_main, "do_repo_checkout", lambda *a, **k: None)
     monkeypatch.setattr(run_main, "start_run", lambda *a, **k: None)
-    monkeypatch.setattr(
-        run_main, "get_git_commit_hash_and_log", lambda *a, **k: ("abcd", "abcd")
-    )
+    monkeypatch.setattr(run_main, "get_git_commit_hash_and_log", lambda *a, **k: ("abcd", "abcd"))
 
     run_config = RunConfig(
         LOG,
-        "duo",
+        "somatic",
         get_run_config_paths.run_profile,
         get_run_config_paths.pipeline_settings,
         get_run_config_paths.samples,
@@ -168,7 +247,7 @@ def test_duo_run(
         verbose=False,
         assay=None,
         analysis=None,
-        csv_base=csv_base
+        csv_base=csv_base,
     )
 
     run_label = "panel-1-label-testcheckout-stub-fq"
@@ -223,13 +302,11 @@ def test_trio_run(
 
     monkeypatch.setattr(run_main, "do_repo_checkout", lambda *a, **k: None)
     monkeypatch.setattr(run_main, "start_run", lambda *a, **k: None)
-    monkeypatch.setattr(
-        run_main, "get_git_commit_hash_and_log", lambda *a, **k: ("abcd", "abcd")
-    )
+    monkeypatch.setattr(run_main, "get_git_commit_hash_and_log", lambda *a, **k: ("abcd", "abcd"))
 
     run_config = RunConfig(
         LOG,
-        "trio",
+        "dna_trio_const",
         get_run_config_paths.run_profile,
         get_run_config_paths.pipeline_settings,
         get_run_config_paths.samples,
@@ -304,5 +381,3 @@ def test_trio_run(
         assert father_row["mother"] == "0"
         assert str(father_row["read1"]) == str(paths.father.fq_fw)
         assert str(father_row["read2"]) == str(paths.father.fq_rv)
-
-

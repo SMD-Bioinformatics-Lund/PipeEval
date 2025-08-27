@@ -24,8 +24,6 @@ class SampleConfig:
     config: ConfigParser
 
     id: str
-    clarity_pool_id: str
-    clarity_sample_id: str
     sex: str
     fq_fw: Optional[str]
     fq_rv: Optional[str]
@@ -35,10 +33,6 @@ class SampleConfig:
     def __init__(self, logger: Logger, sample_section: SectionProxy):
 
         self.id = sample_section.name
-        self.clarity_pool_id = parse_mandatory_section_argument(logger, sample_section, "clarity_pool_id")
-        self.clarity_sample_id = parse_mandatory_section_argument(
-            logger, sample_section, "clarity_sample_id"
-        )
         self.sex = parse_mandatory_section_argument(logger, sample_section, "sex")
 
         self.fq_fw = sample_section.get("fq_fw")

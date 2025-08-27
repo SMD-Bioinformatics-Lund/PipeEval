@@ -60,6 +60,55 @@ def setup_results_links(
     work_link.symlink_to(work_link_target)
 
 
+def get_replace_map(
+    logger: Logger,
+    starting_run_from: str,
+    sample: SampleConfig,
+    run_label: str,
+    default_panel: Optional[str],
+    case_type: str,
+    all_sample_ids: List[str],
+    all_sample_types: List[str],
+) -> dict[str, str]:
+    replace_map = {
+        "<id>": sample.id,
+        "<group>": run_label,
+    }
+
+    if default_panel:
+        replace_map["<default_panel>"] = default_panel
+
+    if starting_run_from == "fq":
+        if not sample.fq_fw or not sample.fq_rv:
+            logger.error(
+                f"Start run from fastq but at least one file missing. Fw: {sample.fq_fw} Rv: {sample.fq_rv}"
+            )
+            sys.exit(1)
+        replace_map["<read1>"] = sample.fq_fw
+        replace_map["<read2>"] = sample.fq_rv
+    elif starting_run_from == "bam":
+        if not sample.bam:
+            logger.error(f"Start run from bam but bam is missing")
+            sys.exit(1)
+        replace_map["<read1>"] = sample.bam
+        replace_map["<read2>"] = f"{sample.bam}.bai"
+    elif starting_run_from == "vcf":
+        if not sample.vcf:
+            logger.error(f"Start run from vcf but vcf is missing")
+            sys.exit(1)
+        replace_map["<read1>"] = sample.vcf
+        replace_map["<read2>"] = f"{sample.vcf}.bai"
+    else:
+        raise ValueError(f"start_run_from should be fq, bam or vcf, found: '{starting_run_from}'")
+
+    if case_type == "trio":
+        type_to_id = dict(zip(all_sample_types, all_sample_ids))
+        replace_map["<father>"] = type_to_id["father"]
+        replace_map["<mother>"] = type_to_id["mother"]
+
+    return replace_map
+
+
 def get_csv(
     logger: Logger,
     config: RunConfig,
@@ -75,179 +124,42 @@ def get_csv(
     csv_template_path = csv_base / csv_template_name
 
     csv_rows = csv_template_path.read_text().strip().split("\n")
-
-    print(csv_rows)
-
-    sample_ids = config.run_profile.samples
-    samples = []
-
-    for i, sample_id in enumerate(sample_ids):
-        sample_type = config.run_profile.sample_types[i]
-        sample = parse_sample(
-            logger,
-            sample_id,
-            config.run_profile.samples,
-            sample_type,
-            config.all_samples,
-            starting_run_from,
-            config.run_profile.case_type,
-            config.run_profile.sample_types,
-        )
-        if not Path(sample.read1).exists() or not Path(sample.read2).exists():
-            raise FileNotFoundError(
-                f"One or both files missing: {sample.read1} {sample.read2}"
-            )
-        samples.append(sample)
+    all_sample_ids = config.run_profile.samples
 
     csv_header = csv_rows[0]
     csv_body_rows = csv_rows[1:]
 
-    if len(csv_body_rows) == 1:
-        csv_body = csv_body_rows[0]
-        sample = list(config.all_samples.values())[0]
-        to_replace = {
-            "<id>": sample.id,
-            "<default_panel>": config.run_profile.default_panel,
-            "<group>": run_label,
-            "<read1>": sample.fq_fw,
-            "<read2>": sample.fq_rv,
-        }
+    all_sample_ids = config.run_profile.samples
+    all_sample_types = config.run_profile.sample_types
 
-        for key, val in to_replace.items():
-            csv_body = csv_body.replace(key, val)
+    updated_rows = [csv_header]
 
-        updated_rows = [
-            csv_header,
-            csv_body
-        ]
-    else:
-        updated_rows = [csv_header]
+    for i, row in enumerate(csv_body_rows):
 
-        sample_ids = config.run_profile.samples
-        sample_types = config.run_profile.sample_types
+        sample_id = all_sample_ids[i]
+        sample = config.all_samples[sample_id]
 
-        type_to_id = dict(zip(sample_types, sample_ids))
+        replace_map = get_replace_map(
+            logger,
+            starting_run_from,
+            sample,
+            run_label,
+            config.run_profile.default_panel,
+            config.run_profile.case_type,
+            all_sample_ids,
+            all_sample_types,
+        )
 
-        for i, row in enumerate(csv_body_rows):
+        for key, val in replace_map.items():
+            row = row.replace(key, val)
 
-            sample_id = sample_ids[i]
-            sample = config.all_samples[sample_id]
-            sample_type = sample_types[i]
-
-            to_replace = {
-                f"<id {sample_type}>": sample.id,
-                f"<default_panel>": config.run_profile.default_panel,
-                f"<group>": run_label,
-                f"<group {sample_type}>": run_label,
-                f"<read1 {sample_type}>": sample.fq_fw,
-                f"<read2 {sample_type}>": sample.fq_rv,
-                f"<sex {sample_type}>": sample.sex,
-            }
-
-            if config.run_profile.case_type == "trio":
-                to_replace["<father>"] = type_to_id["father"]
-                to_replace["<mother>"] = type_to_id["mother"]
-
-
-            for key, val in to_replace.items():
-                row = row.replace(key, val)
-
-            updated_rows.append(row)
+        updated_rows.append(row)
 
     print("Updated rows")
     print("\n".join(updated_rows))
     print("---")
 
-
-
-    # csv_body_updated = csv_body.replace("<id>", "ID").replace("")
-
-    # default_panel = config.run_profile.default_panel
-
-    # if not default_panel:
-    #     logger.error("Expected a default panel, found none")
-    #     sys.exit(1)
-
-    # run_csv = CsvEntry(run_label, samples, queue, assay, analysis, default_panel)
-
     return "\n".join(updated_rows)
-
-
-def parse_sample(
-    logger: Logger,
-    sample_id: str,
-    case_sample_ids: List[str],
-    sample_type: str,
-    all_samples_dict: Dict[str, SampleConfig],
-    starting_run_from: str,
-    case_type: str,
-    sample_types: List[str],
-) -> CSVRow:
-
-    target_sample = all_samples_dict[sample_id]
-
-    if starting_run_from == "vcf":
-
-        if target_sample.vcf is None:
-            logger.error('Run mode is "vcf" but missing in config')
-            sys.exit(1)
-
-        fw = target_sample.vcf
-        rv = f"{fw}.tbi"
-    elif starting_run_from == "bam":
-
-        if target_sample.bam is None:
-            logger.error('Run mode is "bam" but missing in config')
-            sys.exit(1)
-
-        fw = target_sample.bam
-        rv = f"{fw}.bai"
-    elif starting_run_from == "fq":
-
-        if target_sample.fq_fw is None or target_sample.fq_rv is None:
-            logger.error(
-                f'Run mode is "fq" but missing at least one of fastq entries (fw: {target_sample.fq_fw} rv: {target_sample.fq_rv})'
-            )
-            sys.exit(1)
-
-        fw = target_sample.fq_fw
-        rv = target_sample.fq_rv
-    else:
-        raise ValueError(
-            f"Unknown start_data, found: {starting_run_from}, valid are vcf, bam, fq"
-        )
-
-    if case_type == "trio" and sample_type == "proband":
-        print("Hitting the if with sample types", sample_types)
-        mother_idx = [
-            i for (i, sample_type) in enumerate(sample_types) if sample_type == "mother"
-        ][0]
-        mother = case_sample_ids[mother_idx]
-        father_idx = [
-            i for (i, sample_type) in enumerate(sample_types) if sample_type == "father"
-        ][0]
-        father = case_sample_ids[father_idx]
-
-        print("mother and father", mother, father)
-    else:
-        mother = None
-        father = None
-
-    if len(case_sample_ids) == 1 and sample_type is None:
-        sample_type = "proband"
-
-    csv_row = CSVRow(
-        target_sample.id,
-        str(target_sample.clarity_pool_id),
-        target_sample.clarity_sample_id,
-        target_sample.sex,
-        sample_type,
-        fw,
-        rv,
-        mother,
-        father,
-    )
-    return csv_row
 
 
 def write_run_log(

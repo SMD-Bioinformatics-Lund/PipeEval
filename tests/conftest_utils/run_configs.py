@@ -34,10 +34,10 @@ def get_pipeline_config(base_dir: Path, tmp_path: Path) -> str:
         work_base_dir = {tmp_path}/work
         base = {base_dir}
         repo = {repo_dir}
+        datestamp = false
 
         [dna-const]
         runscript = main.nf
-        datestamp = false
         singularity_version = 3.8.0
         nextflow_version = 21.10.6
         queue = test
@@ -47,7 +47,15 @@ def get_pipeline_config(base_dir: Path, tmp_path: Path) -> str:
 
         [somatic]
         runscript = main.nf
-        datestamp = false
+        singularity_version = 3.8.0
+        nextflow_version = 21.10.6
+        queue = test
+        executor = local
+        cluster = local
+        container = container.sif
+
+        [rna-const]
+        runscript = main.nf
         singularity_version = 3.8.0
         nextflow_version = 21.10.6
         queue = test
@@ -63,14 +71,14 @@ def get_run_profile_config() -> str:
 
     pipeline_config_text = textwrap.dedent(
         """
-        [single]
+        [dna_single_const]
         pipeline = dna-const
         profile = wgs
         samples = s_proband
         default_panel = itchy_nose
         csv_template = dna_const_single.csv
 
-        [duo]
+        [somatic]
         pipeline = somatic
         profile = panel-1
         case_type = duo
@@ -79,7 +87,7 @@ def get_run_profile_config() -> str:
         default_panel = pain_in_toe
         csv_template = somatic.csv
 
-        [trio]
+        [dna_trio_const]
         pipeline = dna-const
         profile = wgs
         samples = s_proband,s_mother,s_father
@@ -87,8 +95,8 @@ def get_run_profile_config() -> str:
         default_panel = stiff_neck
         csv_template = dna_const_trio.csv
 
-        [rna]
-        pipeline = dna-const
+        [rna_single_const]
+        pipeline = rna-const
         profile = wgs
         samples = s_rna
         csv_template = rna_const_single.csv
@@ -103,6 +111,7 @@ class ConfigSamplePathGroup:
     father: ConfigSamplePaths
     tumor: ConfigSamplePaths
     normal: ConfigSamplePaths
+    rna: ConfigSamplePaths
 
     def __init__(
         self,
@@ -111,12 +120,14 @@ class ConfigSamplePathGroup:
         father: ConfigSamplePaths,
         tumor: ConfigSamplePaths,
         normal: ConfigSamplePaths,
+        rna: ConfigSamplePaths
     ):
         self.proband = proband
         self.mother = mother
         self.father = father
         self.tumor = tumor
         self.normal = normal
+        self.rna = rna
 
 
 def get_sample_config(config_sample_paths: ConfigSamplePathGroup) -> str:
@@ -126,12 +137,11 @@ def get_sample_config(config_sample_paths: ConfigSamplePathGroup) -> str:
     father = config_sample_paths.father
     tumor = config_sample_paths.tumor
     normal = config_sample_paths.normal
+    rna = config_sample_paths.rna
 
     sample_config_text = textwrap.dedent(
         f"""
         [s_proband]
-        clarity_pool_id = 0
-        clarity_sample_id = sample01
         sex = M
         fq_fw = {proband.fq_fw}
         fq_rv = {proband.fq_rv}
@@ -139,8 +149,6 @@ def get_sample_config(config_sample_paths: ConfigSamplePathGroup) -> str:
         vcf = {proband.vcf}
 
         [s_mother]
-        clarity_pool_id = 0
-        clarity_sample_id = sample02
         sex = F
         fq_fw = {mother.fq_fw}
         fq_rv = {mother.fq_rv}
@@ -148,8 +156,6 @@ def get_sample_config(config_sample_paths: ConfigSamplePathGroup) -> str:
         vcf = {mother.vcf}
 
         [s_father]
-        clarity_pool_id = 0
-        clarity_sample_id = sample03
         sex = M
         fq_fw = {father.fq_fw}
         fq_rv = {father.fq_rv}
@@ -157,8 +163,6 @@ def get_sample_config(config_sample_paths: ConfigSamplePathGroup) -> str:
         vcf = {father.vcf}
 
         [s_normal]
-        clarity_pool_id = 0
-        clarity_sample_id = sample05
         sex = F
         fq_fw = {normal.fq_fw}
         fq_rv = {normal.fq_rv}
@@ -166,13 +170,16 @@ def get_sample_config(config_sample_paths: ConfigSamplePathGroup) -> str:
         vcf = {normal.vcf}
 
         [s_tumor]
-        clarity_pool_id = 0
-        clarity_sample_id = sample04
         sex = F
         fq_fw = {tumor.fq_fw}
         fq_rv = {tumor.fq_rv}
         bam = {tumor.bam}
         vcf = {tumor.vcf}
+
+        [s_rna]
+        sex = M
+        fq_fw = {rna.fq_fw}
+        fq_rv = {rna.fq_rv}
         """
     )
 
