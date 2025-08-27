@@ -113,7 +113,7 @@ def main(
             config.general_settings.nextflow_version,
             config.general_settings.container,
             str(repo / config.general_settings.runscript),
-            config.run_profile.run_profile,
+            config.run_profile.pipeline_profile,
             stub_run,
             no_start,
             quote_pipeline_arguments,
