@@ -36,6 +36,14 @@ VALID_COMPARISONS = set(
         "qc",
         "annotation_snv",
         "annotation_sv",
+
+        # New
+        "filter_snv",
+        "filter_sv",
+        "sample_snv",
+        "sample_sv",
+        "custom_info_snv=key1,key2"
+        "custom_info_sv=key1,key2"
     ]
 )
 
@@ -181,7 +189,7 @@ def add_arguments(parser: argparse.ArgumentParser):
     parser.add_argument("--config", help="Additional configurations")
     parser.add_argument(
         "--comparisons",
-        help=f"Comma separated. Defaults to: default, run all by: {','.join(VALID_COMPARISONS)}",
+        help=f"Comma separated. Defaults to: default, available: {','.join(VALID_COMPARISONS)}",
         default="default",
     )
     parser.add_argument(
