@@ -5,7 +5,6 @@ from pathlib import Path
 from typing import Dict, List, Optional
 
 from commands.run.help_classes.config_classes import RunConfig, SampleConfig
-from commands.run.help_classes.help_classes import CsvEntry, CSVRow
 
 
 def write_resume_script(results_dir: Path, run_command: List[str]):
@@ -69,7 +68,7 @@ def get_replace_map(
     case_type: str,
     all_sample_ids: List[str],
     all_sample_types: List[str],
-) -> dict[str, str]:
+) -> Dict[str, str]:
 
     replace_map = {
         f"<id {sample.sample_type}>": sample.id,
