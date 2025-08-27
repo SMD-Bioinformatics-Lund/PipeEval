@@ -117,9 +117,6 @@ def get_csv(
     config: RunConfig,
     run_label: str,
     starting_run_from: str,
-    queue: Optional[str],
-    assay: str,
-    analysis: str,
     csv_base: Path,
 ) -> str:
 

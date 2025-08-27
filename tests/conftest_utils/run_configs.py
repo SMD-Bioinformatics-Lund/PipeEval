@@ -79,7 +79,7 @@ def get_run_profile_config() -> str:
         """
         [dna_single_const]
         pipeline = dna-const
-        profile = wgs
+        pipeline_profile = wgs
         samples = s_proband
         default_panel = itchy_nose
         csv_template = dna_const_single.csv
@@ -87,7 +87,7 @@ def get_run_profile_config() -> str:
 
         [somatic]
         pipeline = somatic
-        profile = panel-1
+        pipeline_profile = panel-1
         case_type = duo
         samples = s_normal,s_tumor
         sample_types = N,T
@@ -97,7 +97,7 @@ def get_run_profile_config() -> str:
 
         [dna_trio_const]
         pipeline = dna-const
-        profile = wgs
+        pipeline_profile = wgs
         samples = s_proband,s_mother,s_father
         sample_types = proband,mother,father
         default_panel = stiff_neck
@@ -106,7 +106,6 @@ def get_run_profile_config() -> str:
 
         [rna_single_const]
         pipeline = rna-const
-        profile = wgs
         samples = s_rna
         csv_template = rna_const_single.csv
         nextflow_configs = nextflow.config,tomte/nextflow.config

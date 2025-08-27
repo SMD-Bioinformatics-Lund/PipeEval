@@ -67,5 +67,5 @@ Some other style pointers:
 * Use clear (and if necessary verbose) variable names.
 
 PipeEval is built to run in an environment where a legacy version (3.6) of Python still is used.
-The most vivid consequence of this is that type hints aren't yet a built-in part of the language and must be imported. I.e. `list[str]` will crash, but `List[str]` (with `List` imported from `typing` library works).
+The most protruding consequence of this is that type hints aren't yet a built-in part of the language and must be imported. I.e. `list[str]` will crash, but `List[str]` (with `List` imported from `typing` library works).
 

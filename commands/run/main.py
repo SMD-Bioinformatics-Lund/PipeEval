@@ -97,10 +97,10 @@ def main(
     )
 
     assay = assay or ASSAY_PLACEHOLDER
-    analysis = analysis or config.run_profile.profile
+    analysis = analysis or config.run_profile.run_profile
 
     out_csv = results_dir / "run.csv"
-    csv_content = get_csv(logger, config, run_label, start_data, queue, assay, analysis, csv_base)
+    csv_content = get_csv(logger, config, run_label, start_data, csv_base)
 
     out_csv.write_text(csv_content)
 
@@ -116,7 +116,7 @@ def main(
             config.general_settings.nextflow_version,
             config.general_settings.container,
             str(repo / config.general_settings.runscript),
-            config.run_profile.profile,
+            config.run_profile.run_profile,
             stub_run,
             no_start,
             quote_pipeline_arguments,
