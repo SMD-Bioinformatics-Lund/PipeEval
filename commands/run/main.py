@@ -250,18 +250,18 @@ def build_start_nextflow_analysis_cmd(
                 f"{runscript}",
             )
 
+    start_nextflow_command.append("--custom_flags")
+    # Provide configs directly
+    # Normally autodetected as nextflow.config in the repo base
+    # This becomes important for instance for nf-core pipelines where we
+    # use multiple config files
+    custom_flags = ""
+    for conf in nextflow_configs:
+        custom_flags += f" -c {conf}"
     if stub_run:
-        start_nextflow_command.append("--custom_flags")
-
-        custom_flags = ""
         custom_flags += "-stub-run"
-        for conf in nextflow_configs:
-            custom_flags += f" -c {conf}"
-            # start_nextflow_command.extend(["-c", str(conf)])
 
-        start_nextflow_command.append(custom_flags)
-
-        # start_nextflow_command.append("'-stub-run'")
+    start_nextflow_command.append(custom_flags)
 
     if no_start:
         start_nextflow_command.append("--nostart")
