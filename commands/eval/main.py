@@ -68,7 +68,7 @@ def main(  # noqa: C901 (skipping complexity check)
     )
 
     parent_path = Path(__file__).resolve().parent
-    config_path = args_config_path or parent_path / "default.config"
+    config_path = args_config_path or parent_path / "default.ini"
     config = ConfigParser()
     config.read(config_path)
 

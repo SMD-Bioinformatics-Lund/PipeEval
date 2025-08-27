@@ -52,7 +52,7 @@ class RunProfileConfig:
     case_type: str
 
     pipeline: str
-    profile: str
+    profile: Optional[str]
     samples: List[str]
     sample_types: List[str]
     default_panel: Optional[str]
@@ -75,7 +75,7 @@ class RunProfileConfig:
         self.profile_section = profile_section
 
         self.pipeline = parse_mandatory_section_argument(logger, profile_section, "pipeline")
-        self.profile = parse_mandatory_section_argument(logger, profile_section, "profile")
+        self.profile = profile_section.get("profile")
         self.csv_template = parse_mandatory_section_argument(
             logger, profile_section, "csv_template"
         )
