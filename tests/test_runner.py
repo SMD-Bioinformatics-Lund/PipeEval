@@ -159,8 +159,6 @@ def test_single_rna_const_run(
         get_run_config_paths.samples,
     )
 
-    # fixture?
-
     run_main.main(
         run_config,
         label="label",
@@ -186,6 +184,7 @@ def test_single_rna_const_run(
 
     assert (result_dir / "run.log").exists()
     assert (result_dir / "nextflow.config").exists()
+    assert (result_dir / "child_nextflow.config").exists()
 
     run_csv = result_dir / "run.csv"
     assert (run_csv).exists()

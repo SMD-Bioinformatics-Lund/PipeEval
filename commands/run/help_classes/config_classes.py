@@ -267,6 +267,8 @@ class RunConfig:
         self.run_profile_key = run_profile
         self.run_profile = RunProfileConfig(logger, run_profile, profile_config_path)
 
+        print(pipeline_config_path)
+
         self.general_settings = PipelineSettingsConfig(
             logger,
             pipeline_config_path,

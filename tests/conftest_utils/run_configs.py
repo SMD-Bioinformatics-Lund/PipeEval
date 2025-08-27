@@ -24,6 +24,9 @@ def get_pipeline_config(base_dir: Path, tmp_path: Path) -> str:
     repo_dir.mkdir()
     (repo_dir / ".git").mkdir()
     (repo_dir / "nextflow.config").write_text("nextflow")
+    child_repo = repo_dir / "child_repo"
+    child_repo.mkdir()
+    (child_repo / "child_nextflow.config").write_text("nextflow")
 
     settings_config_text = textwrap.dedent(
         f"""
@@ -44,6 +47,7 @@ def get_pipeline_config(base_dir: Path, tmp_path: Path) -> str:
         executor = local
         cluster = local
         container = container.sif
+        nextflow_configs = nextflow.config
 
         [somatic]
         runscript = main.nf
@@ -53,6 +57,7 @@ def get_pipeline_config(base_dir: Path, tmp_path: Path) -> str:
         executor = local
         cluster = local
         container = container.sif
+        nextflow_configs = nextflow.config
 
         [rna-const]
         runscript = main.nf
@@ -62,6 +67,7 @@ def get_pipeline_config(base_dir: Path, tmp_path: Path) -> str:
         executor = local
         cluster = local
         container = container.sif
+        nextflow_configs = nextflow.config,child_repo/child_nextflow.config
         """
     )
     return settings_config_text
@@ -77,6 +83,7 @@ def get_run_profile_config() -> str:
         samples = s_proband
         default_panel = itchy_nose
         csv_template = dna_const_single.csv
+        nextflow_configs = nextflow.config
 
         [somatic]
         pipeline = somatic
@@ -86,6 +93,7 @@ def get_run_profile_config() -> str:
         sample_types = N,T
         default_panel = pain_in_toe
         csv_template = somatic.csv
+        nextflow_configs = nextflow.config
 
         [dna_trio_const]
         pipeline = dna-const
@@ -94,12 +102,14 @@ def get_run_profile_config() -> str:
         sample_types = proband,mother,father
         default_panel = stiff_neck
         csv_template = dna_const_trio.csv
+        nextflow_configs = nextflow.config
 
         [rna_single_const]
         pipeline = rna-const
         profile = wgs
         samples = s_rna
         csv_template = rna_const_single.csv
+        nextflow_configs = nextflow.config,tomte/nextflow.config
         """
     )
     return pipeline_config_text

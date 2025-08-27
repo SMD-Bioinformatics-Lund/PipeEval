@@ -204,7 +204,7 @@ def build_start_nextflow_analysis_cmd(
     nextflow_version: str,
     container: str,
     runscript: str,
-    profile: str,
+    profile: Optional[str],
     stub_run: bool,
     no_start: bool,
     quote_pipeline_arguments: bool,
@@ -239,12 +239,14 @@ def build_start_nextflow_analysis_cmd(
             f'--pipeline "{runscript} -profile {profile}"',
         )
     else:
-        start_nextflow_command.extend(
-            [
-                "--pipeline",
-                f"{runscript} -profile {profile}",
-            ]
+        start_nextflow_command.append(
+            f"{runscript}",
+            # f"{runscript} -profile {profile}",
         )
+        if profile:
+            start_nextflow_command.append(
+                "--pipeline",
+            )
 
     if stub_run:
         start_nextflow_command.append("--custom_flags")
