@@ -129,7 +129,7 @@ class ConfigSamplePathGroup:
         father: ConfigSamplePaths,
         tumor: ConfigSamplePaths,
         normal: ConfigSamplePaths,
-        rna: ConfigSamplePaths
+        rna: ConfigSamplePaths,
     ):
         self.proband = proband
         self.mother = mother

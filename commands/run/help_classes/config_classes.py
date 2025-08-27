@@ -7,7 +7,9 @@ from typing import Dict, List, Optional, Union
 DEFAULT_SECTION = "default"
 
 
-def parse_mandatory_section_argument(logger: Logger, section: SectionProxy, target_key: str) -> str:
+def parse_mandatory_section_argument(
+    logger: Logger, section: SectionProxy, target_key: str
+) -> str:
     if not section.get(target_key):
         existing_fields = section.keys()
         logger.error(
@@ -77,19 +79,25 @@ class RunProfileConfig:
         profile_section = self.config[run_profile]
         self.profile_section = profile_section
 
-        self.pipeline = parse_mandatory_section_argument(logger, profile_section, "pipeline")
+        self.pipeline = parse_mandatory_section_argument(
+            logger, profile_section, "pipeline"
+        )
         self.pipeline_profile = profile_section.get("pipeline_profile")
         self.csv_template = parse_mandatory_section_argument(
             logger, profile_section, "csv_template"
         )
 
-        samples_str = parse_mandatory_section_argument(logger, profile_section, "samples")
+        samples_str = parse_mandatory_section_argument(
+            logger, profile_section, "samples"
+        )
         self.samples = samples_str.split(",")
 
         sample_types_str = profile_section.get("sample_types")
 
         if not sample_types_str:
-            logger.info("No sample_types section in run_profile. Defaulting to 'proband'.")
+            logger.info(
+                "No sample_types section in run_profile. Defaulting to 'proband'."
+            )
             self.sample_types = ["proband"]
         else:
             self.sample_types = sample_types_str.split(",")
@@ -178,12 +186,16 @@ class PipelineSettingsConfig:
             )
             sys.exit(1)
 
-        self.singularity_version = str(self._parse_setting(logger, "singularity_version"))
+        self.singularity_version = str(
+            self._parse_setting(logger, "singularity_version")
+        )
         self.nextflow_version = str(self._parse_setting(logger, "nextflow_version"))
         self.container = str(self._parse_setting(logger, "container"))
         self.runscript = str(self._parse_setting(logger, "runscript"))
 
-        self.start_nextflow_analysis = str(self._parse_setting(logger, "start_nextflow_analysis"))
+        self.start_nextflow_analysis = str(
+            self._parse_setting(logger, "start_nextflow_analysis")
+        )
         self.log_base_dir = str(self._parse_setting(logger, "log_base_dir"))
         self.trace_base_dir = str(self._parse_setting(logger, "trace_base_dir"))
         self.work_base_dir = str(self._parse_setting(logger, "work_base_dir"))
@@ -200,7 +212,9 @@ class PipelineSettingsConfig:
             logger, "datestamp", data_type="bool"
         )  # type: ignore[assignment]
 
-        self.nextflow_configs = [Path(p) for p in self._parse_list(logger, "nextflow_configs")]
+        self.nextflow_configs = [
+            Path(p) for p in self._parse_list(logger, "nextflow_configs")
+        ]
 
         self.queue = str(self._parse_setting(logger, "queue"))
         self.executor = str(self._parse_setting(logger, "executor"))
@@ -217,7 +231,9 @@ class PipelineSettingsConfig:
 
         return combined_settings.items()
 
-    def _parse_list(self, logger: Logger, setting_key: str, mandatory: bool = True) -> List[str]:
+    def _parse_list(
+        self, logger: Logger, setting_key: str, mandatory: bool = True
+    ) -> List[str]:
         raw_str = str(self._parse_setting(logger, setting_key, "string", mandatory))
         return raw_str.split(",")
 
@@ -249,7 +265,9 @@ class PipelineSettingsConfig:
             parsed_bool = bool(target_section.getboolean(setting_key))
             return parsed_bool
         else:
-            raise ValueError(f"Unknown data_type: {data_type}, known are string and bool")
+            raise ValueError(
+                f"Unknown data_type: {data_type}, known are string and bool"
+            )
 
 
 class RunConfig:
@@ -286,7 +304,9 @@ class RunConfig:
         for i, sample in enumerate(self.run_profile.samples):
             if sample not in sample_config_parser.keys():
                 sections = ", ".join(sample_config_parser.keys())
-                logger.error(f'Expected to find "{sample}", found sections: "{sections}"')
+                logger.error(
+                    f'Expected to find "{sample}", found sections: "{sections}"'
+                )
                 sys.exit(1)
             section = sample_config_parser[sample]
             sample_config = SampleConfig(logger, section, sample_types[i])

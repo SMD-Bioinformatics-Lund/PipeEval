@@ -74,7 +74,7 @@ def get_replace_map(
 
     replace_map = {
         f"<id {sample.sample_type}>": sample.id,
-        f"<group>": run_label,
+        "<group>": run_label,
         f"<sex {sample.sample_type}>": sample.sex,
     }
 
@@ -91,18 +91,20 @@ def get_replace_map(
         replace_map[f"<read2 {sample.sample_type}>"] = sample.fq_rv
     elif starting_run_from == "bam":
         if not sample.bam:
-            logger.error(f"Start run from bam but bam is missing")
+            logger.error("Start run from bam but bam is missing")
             sys.exit(1)
         replace_map[f"<read1 {sample.sample_type}>"] = sample.bam
         replace_map[f"<read2 {sample.sample_type}>"] = f"{sample.bam}.bai"
     elif starting_run_from == "vcf":
         if not sample.vcf:
-            logger.error(f"Start run from vcf but vcf is missing")
+            logger.error("Start run from vcf but vcf is missing")
             sys.exit(1)
         replace_map[f"<read1 {sample.sample_type}>"] = sample.vcf
         replace_map[f"<read2 {sample.sample_type}>"] = f"{sample.vcf}.bai"
     else:
-        raise ValueError(f"start_run_from should be fq, bam or vcf, found: '{starting_run_from}'")
+        raise ValueError(
+            f"start_run_from should be fq, bam or vcf, found: '{starting_run_from}'"
+        )
 
     if case_type == "trio":
         type_to_id = dict(zip(all_sample_types, all_sample_ids))

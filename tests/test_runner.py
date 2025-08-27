@@ -2,8 +2,8 @@ import csv
 import logging
 from pathlib import Path
 
-from pytest import MonkeyPatch
 import pytest
+from pytest import MonkeyPatch
 
 from commands.run import main as run_main
 from commands.run.help_classes.config_classes import RunConfig
@@ -77,7 +77,9 @@ def test_single_dna_const_run(
 
     monkeypatch.setattr(run_main, "do_repo_checkout", lambda *a, **k: None)
     monkeypatch.setattr(run_main, "start_run", lambda *a, **k: None)
-    monkeypatch.setattr(run_main, "get_git_commit_hash_and_log", lambda *a, **k: ("abcd", "abcd"))
+    monkeypatch.setattr(
+        run_main, "get_git_commit_hash_and_log", lambda *a, **k: ("abcd", "abcd")
+    )
 
     run_config = RunConfig(
         LOG,
@@ -148,7 +150,9 @@ def test_single_rna_const_run(
 
     monkeypatch.setattr(run_main, "do_repo_checkout", lambda *a, **k: None)
     monkeypatch.setattr(run_main, "start_run", lambda *a, **k: None)
-    monkeypatch.setattr(run_main, "get_git_commit_hash_and_log", lambda *a, **k: ("abcd", "abcd"))
+    monkeypatch.setattr(
+        run_main, "get_git_commit_hash_and_log", lambda *a, **k: ("abcd", "abcd")
+    )
 
     run_config = RunConfig(
         LOG,
@@ -218,7 +222,9 @@ def test_paired_tumor_run(
     paths = config_sample_paths
     monkeypatch.setattr(run_main, "do_repo_checkout", lambda *a, **k: None)
     monkeypatch.setattr(run_main, "start_run", lambda *a, **k: None)
-    monkeypatch.setattr(run_main, "get_git_commit_hash_and_log", lambda *a, **k: ("abcd", "abcd"))
+    monkeypatch.setattr(
+        run_main, "get_git_commit_hash_and_log", lambda *a, **k: ("abcd", "abcd")
+    )
 
     run_config = RunConfig(
         LOG,
@@ -295,7 +301,9 @@ def test_trio_run(
 
     monkeypatch.setattr(run_main, "do_repo_checkout", lambda *a, **k: None)
     monkeypatch.setattr(run_main, "start_run", lambda *a, **k: None)
-    monkeypatch.setattr(run_main, "get_git_commit_hash_and_log", lambda *a, **k: ("abcd", "abcd"))
+    monkeypatch.setattr(
+        run_main, "get_git_commit_hash_and_log", lambda *a, **k: ("abcd", "abcd")
+    )
 
     run_config = RunConfig(
         LOG,
