@@ -24,6 +24,7 @@ class ScoredVariant:
         info_dict: Dict[str, str],
         filters: str,
         line_number: int,
+        sample_dict: Dict[str, str],
     ):
         self.chr = chr
         self.pos = pos
@@ -36,6 +37,7 @@ class ScoredVariant:
         self.info_dict = info_dict
         self.filters = filters
         self.line_number = line_number
+        self.sample_dict = sample_dict
 
     def get_trunc_ref(self) -> str:
         trunc_ref = (
@@ -182,6 +184,8 @@ def parse_scored_vcf(vcf: Path, is_sv: bool) -> ScoredVCF:
             alt = fields[4]
             filters = fields[6]
             info = fields[7]
+            fmt = fields[8] if len(fields) > 8 else None
+            sample_field = fields[9] if len(fields) > 9 else None
 
             # Some INFO fields are not in the expected format key=value
             info_fields = [
@@ -214,6 +218,15 @@ def parse_scored_vcf(vcf: Path, is_sv: bool) -> ScoredVCF:
                     rank_sub_scores
                 ), f"Length of sub score names and values should match, found {rank_sub_score_names} and {rank_sub_scores} in line: {line}"
                 sub_scores_dict = dict(zip(rank_sub_score_names, rank_sub_scores))
+            # Parse sample FORMAT values (first sample column if present)
+            sample_dict: Dict[str, str] = {}
+            if fmt and sample_field:
+                fmt_keys = fmt.split(":")
+                fmt_values = sample_field.split(":")
+                # Map keys to values, missing values become empty strings
+                for i, key in enumerate(fmt_keys):
+                    sample_dict[key] = fmt_values[i] if i < len(fmt_values) else ""
+
             variant = ScoredVariant(
                 chr,
                 pos,
@@ -226,6 +239,7 @@ def parse_scored_vcf(vcf: Path, is_sv: bool) -> ScoredVCF:
                 info_dict,
                 filters,
                 line_nbr,
+                sample_dict,
             )
             key = variant.get_simple_key()
             variants[key] = variant

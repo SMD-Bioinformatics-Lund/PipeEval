@@ -58,6 +58,7 @@ def show_numerical_comparisons(
     run_ids: Tuple[str, str],
     info_key: str,
     numeric_pairs: List[Tuple[Decimal, Decimal]],
+    width: int = 60,
 ) -> None:
     """Summarize numerical INFO field values across runs.
 
@@ -94,6 +95,79 @@ def show_numerical_comparisons(
     )
     logger.info(f"Identical pairs: {ident_count} Differing pairs: {diff_count}")
 
+    # Render simple horizontal boxplot-style bars for each run
+    def _safe_quantiles(vals: List[Decimal]):
+        if len(vals) < 2:
+            md = statistics.median(vals) if len(vals) == 1 else None
+            return (min(vals) if vals else None, md, md, md, max(vals) if vals else None)
+        try:
+            q1, q2, q3 = statistics.quantiles(vals, n=4, method="inclusive")
+        except Exception:
+            # Fallback: approximate using median splits
+            sorted_vals = sorted(vals)
+            md = statistics.median(sorted_vals)
+            mid = len(sorted_vals) // 2
+            lower = sorted_vals[:mid]
+            upper = sorted_vals[-mid:]
+            q1 = statistics.median(lower) if lower else md
+            q3 = statistics.median(upper) if upper else md
+            return (sorted_vals[0], q1, md, q3, sorted_vals[-1])
+        md = statistics.median(vals)
+        return (min(vals), q1, md, q3, max(vals))
+
+    def _scale(val: Decimal, vmin: Decimal, vmax: Decimal, w: int) -> int:
+        if vmin == vmax:
+            return w // 2
+        # Clamp within [0, w-1]
+        pos = int(round((float(val - vmin) / float(vmax - vmin)) * (w - 1)))
+        return max(0, min(w - 1, pos))
+
+    def _render_bar(vals: List[Decimal], vmin_all: Decimal, vmax_all: Decimal, w: int) -> str:
+        if len(vals) == 0:
+            return "".ljust(w)
+        vmin, q1, md, q3, vmax = _safe_quantiles(vals)
+        # If any are None (empty list handled above), just show median
+        chars = [" "] * w
+        # Whiskers: min..max as '-'
+        l = _scale(vmin, vmin_all, vmax_all, w)
+        r = _scale(vmax, vmin_all, vmax_all, w)
+        if l > r:
+            l, r = r, l
+        for i in range(l, r + 1):
+            chars[i] = "-"
+        # IQR: q1..q3 as '='
+        if q1 is not None and q3 is not None:
+            i1 = _scale(q1, vmin_all, vmax_all, w)
+            i3 = _scale(q3, vmin_all, vmax_all, w)
+            if i1 > i3:
+                i1, i3 = i3, i1
+            for i in range(i1, i3 + 1):
+                chars[i] = "="
+        # Median as '|'
+        if md is not None:
+            im = _scale(md, vmin_all, vmax_all, w)
+            chars[im] = "|"
+        return "".join(chars)
+
+    if len(v1_vals) and len(v2_vals):
+        global_min = min(min(v1_vals), min(v2_vals))
+        global_max = max(max(v1_vals), max(v2_vals))
+    elif len(v1_vals):
+        global_min = min(v1_vals)
+        global_max = max(v1_vals)
+    elif len(v2_vals):
+        global_min = min(v2_vals)
+        global_max = max(v2_vals)
+    else:
+        global_min = Decimal(0)
+        global_max = Decimal(0)
+
+    bar1 = _render_bar(v1_vals, global_min, global_max, width)
+    bar2 = _render_bar(v2_vals, global_min, global_max, width)
+
+    logger.info(f"{run_ids[0]} |{bar1}|")
+    logger.info(f"{run_ids[1]} |{bar2}|")
+
 
 def check_vcf_filter_differences(
     logger: Logger, run_ids: Tuple[str, str], vcfs: VCFPair, shared_variant_keys: Set[str]
@@ -120,7 +194,81 @@ def check_vcf_filter_differences(
 def check_vcf_sample_differences(
     logger: Logger, run_ids: Tuple[str, str], vcfs: VCFPair, shared_variant_keys: Set[str]
 ):
-    logger.info("To be implemented")
+    """Compare values in the sample column (FORMAT fields) across runs.
+
+    For each FORMAT key found among shared variants, detect if values are numeric
+    and, if so, show numeric summaries; otherwise, show categorical transitions.
+    """
+    # Discover all sample FORMAT keys present across shared variants in both runs
+    sample_keys: Set[str] = set()
+    for key in shared_variant_keys:
+        v1 = vcfs.vcf1.variants[key]
+        v2 = vcfs.vcf2.variants[key]
+        sample_keys.update(v1.sample_dict.keys())
+        sample_keys.update(v2.sample_dict.keys())
+
+    if not sample_keys:
+        logger.info("No sample FORMAT fields found")
+        return
+
+    for sample_key in sorted(sample_keys):
+        none_present = 0
+        v1_present = 0
+        v2_present = 0
+        both_present = 0
+        nbr_same = 0
+
+        shared_key_values: List[Tuple[str, str]] = []
+
+        for key in shared_variant_keys:
+            v1 = vcfs.vcf1.variants[key]
+            v2 = vcfs.vcf2.variants[key]
+
+            v1_val = v1.sample_dict.get(sample_key)
+            v2_val = v2.sample_dict.get(sample_key)
+
+            if not v1_val and not v2_val:
+                none_present += 1
+            elif not v2_val:
+                v1_present += 1
+            elif not v1_val:
+                v2_present += 1
+            else:
+                pair = (v1_val, v2_val)
+                shared_key_values.append(pair)
+
+                both_present += 1
+                if v1_val == v2_val:
+                    nbr_same += 1
+
+        logger.info("")
+        logger.info(f"Sample field: {sample_key}")
+        logger.info(
+            f"{both_present} present in both, {nbr_same} identical ({v1_present} v1 only, {v2_present} v2 only)"
+        )
+
+        # Determine numeric vs categorical
+        def _parse_decimal(val: str):
+            try:
+                d = Decimal(val)
+            except (InvalidOperation, TypeError):
+                return None
+            return d if d.is_finite() else None
+
+        all_numeric = True
+        numeric_pairs: List[Tuple[Decimal, Decimal]] = []
+        for s1, s2 in shared_key_values:
+            d1 = _parse_decimal(s1)
+            d2 = _parse_decimal(s2)
+            if d1 is None or d2 is None:
+                all_numeric = False
+                break
+            numeric_pairs.append((d1, d2))
+
+        if all_numeric and len(numeric_pairs) > 0:
+            show_numerical_comparisons(logger, run_ids, sample_key, numeric_pairs)
+        else:
+            show_categorical_comparisons(logger, run_ids, shared_key_values)
 
 
 def check_custom_info_field_differences(
