@@ -184,7 +184,7 @@ def parse_scored_vcf(vcf: Path, is_sv: bool) -> ScoredVCF:
             alt = fields[4]
             filters = fields[6]
             info = fields[7]
-            fmt = fields[8] if len(fields) > 8 else None
+            format = fields[8] if len(fields) > 8 else None
             sample_field = fields[9] if len(fields) > 9 else None
 
             # Some INFO fields are not in the expected format key=value
@@ -218,12 +218,11 @@ def parse_scored_vcf(vcf: Path, is_sv: bool) -> ScoredVCF:
                     rank_sub_scores
                 ), f"Length of sub score names and values should match, found {rank_sub_score_names} and {rank_sub_scores} in line: {line}"
                 sub_scores_dict = dict(zip(rank_sub_score_names, rank_sub_scores))
-            # Parse sample FORMAT values (first sample column if present)
+
             sample_dict: Dict[str, str] = {}
-            if fmt and sample_field:
-                fmt_keys = fmt.split(":")
+            if format and sample_field:
+                fmt_keys = format.split(":")
                 fmt_values = sample_field.split(":")
-                # Map keys to values, missing values become empty strings
                 for i, key in enumerate(fmt_keys):
                     sample_dict[key] = fmt_values[i] if i < len(fmt_values) else ""
 

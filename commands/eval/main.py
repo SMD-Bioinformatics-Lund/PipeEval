@@ -123,7 +123,7 @@ def main(  # noqa: C901 (skipping complexity check)
     )
 
     scout_yaml_check = "scout_yaml"
-    if (not comparisons) or (scout_yaml_check in comparisons and pipe_conf.get(scout_yaml_check)):
+    if not comparisons or scout_yaml_check in comparisons:
         do_simple_diff(
             logger,
             ro,
@@ -136,11 +136,11 @@ def main(  # noqa: C901 (skipping complexity check)
         )
 
     qc_check = "qc"
-    if (not comparisons) or (qc_check in comparisons and pipe_conf.get(qc_check)):
+    if not comparisons or qc_check in comparisons:
         do_simple_diff(logger, ro, r1_paths, r2_paths, pipe_conf, qc_check, outdir, rs.verbose)
 
     version_check = "versions"
-    if (not comparisons) or (version_check in comparisons and pipe_conf.get(version_check)):
+    if not comparisons or version_check in comparisons:
         do_simple_diff(logger, ro, r1_paths, r2_paths, pipe_conf, version_check, outdir, rs.verbose)
 
 

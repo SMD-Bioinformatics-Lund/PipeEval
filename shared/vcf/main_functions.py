@@ -14,12 +14,11 @@ from shared.vcf.vcf import DiffScoredVariant, ScoredVariant
 
 
 def show_categorical_comparisons(
-    logger: Logger, run_ids: Tuple[str, str], category_entries: List[Tuple[str, str]]
+    logger: Logger, run_ids: Tuple[str, str], category_entries: List[Tuple[str, str]], max_thres=10
 ):
     nbr_identical = 0
 
-    vcf1_to_vcf2: Dict[str, int] = defaultdict(int)
-    vcf2_to_vcf1: Dict[str, int] = defaultdict(int)
+    nbr_differences: Dict[str, int] = defaultdict(int)
 
     for entry1, entry2 in category_entries:
         if entry1 == entry2:
@@ -27,25 +26,17 @@ def show_categorical_comparisons(
             continue
 
         combined_key = f"{entry1}___{entry2}"
+        nbr_differences[combined_key] += 1
 
-        vcf1_to_vcf2[combined_key] += 1
-        vcf2_to_vcf1[combined_key] += 1
-
-    # FIXME: Show first line numbers / variant with this combination as well?
-    # Requires a small counter class retaining this info
-
-
-    max_thres = 10
-
-    logger.info(f"{run_ids[0]} to {run_ids[1]}, falling sorting")
+    logger.info(f"{run_ids[0]} to {run_ids[1]}")
     rows_1_to_2: List[List[str]] = [["From", "To", "Count"]]
     for key, value in islice(sorted(
-        vcf1_to_vcf2.items(), key=lambda pair: pair[1], reverse=True
+        nbr_differences.items(), key=lambda pair: pair[1], reverse=True
     ), max_thres):
         from_cat, to_cat = key.split("___", 1)
         rows_1_to_2.append([from_cat, to_cat, str(value)])
-    if len(vcf1_to_vcf2) > max_thres:
-        logger.info(f"Truncated at {max_thres}")
+    if len(nbr_differences) > max_thres:
+        logger.info(f"Showing first {max_thres}")
     if len(rows_1_to_2) > 1:
         for row in prettify_rows(rows_1_to_2):
             logger.info(row)
@@ -60,24 +51,20 @@ def show_numerical_comparisons(
     numeric_pairs: List[Tuple[Decimal, Decimal]],
     width: int = 60,
 ) -> None:
-    """Summarize numerical INFO field values across runs.
 
-    Reports per-run median and stdev, plus identical/differing counts.
-    """
     v1_vals = [a for a, _ in numeric_pairs]
     v2_vals = [b for _, b in numeric_pairs]
 
-    # Counts
     ident_count = sum(1 for a, b in numeric_pairs if a == b)
     diff_count = len(numeric_pairs) - ident_count
 
-    # Helpers to safely compute median/stdev
-    def _median(vals: List[Decimal]) -> str:
+    # FIXME: Move to util location
+    def median(vals: List[Decimal]) -> str:
         if len(vals) == 0:
             return "NA"
         return str(statistics.median(vals))
 
-    def _stdev(vals: List[Decimal]) -> str:
+    def stdev(vals: List[Decimal]) -> str:
         if len(vals) < 2:
             return "NA"
         try:
@@ -88,15 +75,17 @@ def show_numerical_comparisons(
     logger.info("")
     logger.info(f"{info_key} (numeric)")
     logger.info(
-        f"{run_ids[0]} -> N={len(v1_vals)} median={_median(v1_vals)} stdev={_stdev(v1_vals)}"
+        f"{run_ids[0]} -> N={len(v1_vals)} median={median(v1_vals)} stdev={stdev(v1_vals)}"
     )
     logger.info(
-        f"{run_ids[1]} -> N={len(v2_vals)} median={_median(v2_vals)} stdev={_stdev(v2_vals)}"
+        f"{run_ids[1]} -> N={len(v2_vals)} median={median(v2_vals)} stdev={stdev(v2_vals)}"
     )
     logger.info(f"Identical pairs: {ident_count} Differing pairs: {diff_count}")
 
-    # Render simple horizontal boxplot-style bars for each run
-    def _safe_quantiles(vals: List[Decimal]):
+    # FIXME: OK, these parts will need some hands-on touch
+
+    # FIXME: Move to util
+    def safe_quantiles(vals: List[Decimal]):
         if len(vals) < 2:
             md = statistics.median(vals) if len(vals) == 1 else None
             return (min(vals) if vals else None, md, md, md, max(vals) if vals else None)
@@ -115,7 +104,7 @@ def show_numerical_comparisons(
         md = statistics.median(vals)
         return (min(vals), q1, md, q3, max(vals))
 
-    def _scale(val: Decimal, vmin: Decimal, vmax: Decimal, w: int) -> int:
+    def scale_to_range(val: Decimal, vmin: Decimal, vmax: Decimal, w: int) -> int:
         if vmin == vmax:
             return w // 2
         # Clamp within [0, w-1]
@@ -125,30 +114,31 @@ def show_numerical_comparisons(
     def _render_bar(vals: List[Decimal], vmin_all: Decimal, vmax_all: Decimal, w: int) -> str:
         if len(vals) == 0:
             return "".ljust(w)
-        vmin, q1, md, q3, vmax = _safe_quantiles(vals)
+        vmin, q1, md, q3, vmax = safe_quantiles(vals)
         # If any are None (empty list handled above), just show median
         chars = [" "] * w
         # Whiskers: min..max as '-'
-        l = _scale(vmin, vmin_all, vmax_all, w)
-        r = _scale(vmax, vmin_all, vmax_all, w)
+        l = scale_to_range(vmin, vmin_all, vmax_all, w)
+        r = scale_to_range(vmax, vmin_all, vmax_all, w)
         if l > r:
             l, r = r, l
         for i in range(l, r + 1):
             chars[i] = "-"
         # IQR: q1..q3 as '='
         if q1 is not None and q3 is not None:
-            i1 = _scale(q1, vmin_all, vmax_all, w)
-            i3 = _scale(q3, vmin_all, vmax_all, w)
+            i1 = scale_to_range(q1, vmin_all, vmax_all, w)
+            i3 = scale_to_range(q3, vmin_all, vmax_all, w)
             if i1 > i3:
                 i1, i3 = i3, i1
             for i in range(i1, i3 + 1):
                 chars[i] = "="
         # Median as '|'
         if md is not None:
-            im = _scale(md, vmin_all, vmax_all, w)
+            im = scale_to_range(md, vmin_all, vmax_all, w)
             chars[im] = "|"
         return "".join(chars)
 
+    # FIXME: Util?
     if len(v1_vals) and len(v2_vals):
         global_min = min(min(v1_vals), min(v2_vals))
         global_max = max(max(v1_vals), max(v2_vals))
@@ -194,7 +184,8 @@ def check_vcf_filter_differences(
 def check_vcf_sample_differences(
     logger: Logger, run_ids: Tuple[str, str], vcfs: VCFPair, shared_variant_keys: Set[str]
 ):
-    """Compare values in the sample column (FORMAT fields) across runs.
+    """
+    Compare values in the sample column (FORMAT fields) across runs.
 
     For each FORMAT key found among shared variants, detect if values are numeric
     and, if so, show numeric summaries; otherwise, show categorical transitions.

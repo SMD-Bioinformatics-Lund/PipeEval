@@ -78,8 +78,6 @@ def test_main(caplog: LogCaptureFixture, tmp_path: Path):
         "scored_snv_all_diffing.txt",
     ]
 
-    print(list(results.iterdir()))
-
     for filename in expected_files:
         file_path = results / filename
         assert file_path.exists(), f"Expected file {filename} does not exist"

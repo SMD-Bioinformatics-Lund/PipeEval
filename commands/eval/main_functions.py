@@ -292,6 +292,12 @@ def do_simple_diff(
     verbose: bool,
 ):
     logger.info("")
+    
+    file_pattern_str = pipe_conf[analysis]
+    if not file_pattern_str:
+        logger.warning(f"Skipping {analysis}, not found in config")
+        return
+
     logger.info(f"--- Comparing: {analysis} ---")
     matched_pair = get_pair_match(
         logger,
