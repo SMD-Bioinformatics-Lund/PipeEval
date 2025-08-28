@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import List
+from typing import List, Set
 
 from shared.compare import Comparison
 from shared.vcf.vcf import ScoredVCF
@@ -27,6 +27,8 @@ class RunSettings:
         show_line_numbers: bool = False,
         extra_annot_keys: List[str] = [],
         output_all_variants: bool = False,
+        custom_info_keys_snv: Set[str] = set(),
+        custom_info_keys_sv: Set[str] = set()
     ):
         self.pipeline = pipeline
         self.score_threshold = score_threshold
@@ -36,6 +38,8 @@ class RunSettings:
         self.show_line_numbers = show_line_numbers
         self.annotation_info_keys = extra_annot_keys
         self.output_all_variants = output_all_variants
+        self.custom_info_keys_snv = custom_info_keys_snv
+        self.custom_info_keys_sv = custom_info_keys_sv
 
 
 class PathObj:

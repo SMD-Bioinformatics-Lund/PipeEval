@@ -1,14 +1,17 @@
 import argparse
 import logging
 from pathlib import Path
-from typing import List, Optional
+from typing import List, Optional, Set
 
 from commands.eval.classes.helpers import RunSettings
-from commands.eval.main import vcf_comparisons
+from commands.eval.main import do_vcf_comparisons
+from commands.eval.main_functions import VCFComparison
 from commands.eval.utils import parse_vcf_pair
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
+
+ALL_VCF_COMPARISONS = {member.value for member in VCFComparison}
 
 
 def main(
@@ -24,6 +27,8 @@ def main(
     results_folder: Optional[Path],
     extra_annot_keys: List[str],
     output_all_variants: bool,
+    comparisons: Set[str],
+    custom_info_keys: Set[str],
 ):
     if results_folder is not None:
         if not results_folder.exists():
@@ -41,7 +46,6 @@ def main(
 
     run_ids = (run_id1, run_id2)
 
-    comparisons = None
     verbose = False
     show_line_numbers = True
 
@@ -56,15 +60,22 @@ def main(
         output_all_variants,
     )
 
+    vcf_comparisons = {VCFComparison(comp) for comp in comparisons}
+
     vcf_type = "snv"
     vcfs = parse_vcf_pair(logger, run_ids, (vcf1, vcf2), vcf_type)
-    vcf_comparisons(logger, comparisons, run_ids, results_folder, rs, vcf_type, vcfs)
+    do_vcf_comparisons(
+        logger, vcf_comparisons, run_ids, results_folder, rs, vcf_type, vcfs, custom_info_keys
+    )
 
 
 def main_wrapper(args: argparse.Namespace):
 
     if args.silent:
         logger.setLevel(logging.WARNING)
+
+    comparisons = ALL_VCF_COMPARISONS if not args.comparisons else set(args.comparisons.split(","))
+    custom_info_keys = set() if not args.custom_info_keys else set(args.custom_info_keys.split(","))
 
     main(
         args.pipeline,
@@ -79,6 +90,8 @@ def main_wrapper(args: argparse.Namespace):
         args.results if args.results is not None else None,
         args.annotations.split(",") if args.annotations is not None else [],
         args.all_variants,
+        comparisons,
+        custom_info_keys,
     )
 
 
@@ -133,9 +146,7 @@ def add_arguments(parser: argparse.ArgumentParser):
         action="store_true",
         help="Write a comparison file including non-differing variants",
     )
-    parser.add_argument(
-        "--comparisons"
-    )
+    parser.add_argument("--comparisons")
 
 
 if __name__ == "__main__":

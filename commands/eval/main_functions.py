@@ -48,7 +48,7 @@ class VCFComparison(Enum):
     score = "score"
 
 
-def vcf_comparisons(
+def do_vcf_comparisons(
     logger: Logger,
     comparisons: Set[VCFComparison],
     run_ids: Tuple[str, str],

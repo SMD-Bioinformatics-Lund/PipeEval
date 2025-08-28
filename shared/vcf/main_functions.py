@@ -15,8 +15,8 @@ def show_categorical_comparisons(
 ):
     nbr_identical = 0
 
-    vcf1_to_vcf2 = defaultdict(int)
-    vcf2_to_vcf1 = defaultdict(int)
+    vcf1_to_vcf2: Dict[str, int] = defaultdict(int)
+    vcf2_to_vcf1: Dict[str, int] = defaultdict(int)
 
     for entry1, entry2 in category_entries:
         if entry1 == entry2:
