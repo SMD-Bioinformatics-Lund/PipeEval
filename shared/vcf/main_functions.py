@@ -1,5 +1,7 @@
 from collections import defaultdict
 from itertools import islice
+from decimal import Decimal, InvalidOperation
+import statistics
 from logging import Logger
 from pathlib import Path
 from typing import Dict, List, Optional, Set, Tuple
@@ -35,7 +37,7 @@ def show_categorical_comparisons(
 
     max_thres = 10
 
-    logger.info(f"Transitions {run_ids[0]} to {run_ids[1]}, falling sorting")
+    logger.info(f"{run_ids[0]} to {run_ids[1]}, falling sorting")
     rows_1_to_2: List[List[str]] = [["From", "To", "Count"]]
     for key, value in islice(sorted(
         vcf1_to_vcf2.items(), key=lambda pair: pair[1], reverse=True
@@ -49,6 +51,48 @@ def show_categorical_comparisons(
             logger.info(row)
     else:
         logger.info("No differences found")
+
+
+def show_numerical_comparisons(
+    logger: Logger,
+    run_ids: Tuple[str, str],
+    info_key: str,
+    numeric_pairs: List[Tuple[Decimal, Decimal]],
+) -> None:
+    """Summarize numerical INFO field values across runs.
+
+    Reports per-run median and stdev, plus identical/differing counts.
+    """
+    v1_vals = [a for a, _ in numeric_pairs]
+    v2_vals = [b for _, b in numeric_pairs]
+
+    # Counts
+    ident_count = sum(1 for a, b in numeric_pairs if a == b)
+    diff_count = len(numeric_pairs) - ident_count
+
+    # Helpers to safely compute median/stdev
+    def _median(vals: List[Decimal]) -> str:
+        if len(vals) == 0:
+            return "NA"
+        return str(statistics.median(vals))
+
+    def _stdev(vals: List[Decimal]) -> str:
+        if len(vals) < 2:
+            return "NA"
+        try:
+            return str(statistics.stdev(vals))
+        except statistics.StatisticsError:
+            return "NA"
+
+    logger.info("")
+    logger.info(f"{info_key} (numeric)")
+    logger.info(
+        f"{run_ids[0]} -> N={len(v1_vals)} median={_median(v1_vals)} stdev={_stdev(v1_vals)}"
+    )
+    logger.info(
+        f"{run_ids[1]} -> N={len(v2_vals)} median={_median(v2_vals)} stdev={_stdev(v2_vals)}"
+    )
+    logger.info(f"Identical pairs: {ident_count} Differing pairs: {diff_count}")
 
 
 def check_vcf_filter_differences(
@@ -69,7 +113,8 @@ def check_vcf_filter_differences(
         pair = (v1_info, v2_info)
         pairs.append(pair)
 
-    show_categorical_comparisons(logger, run_ids, pairs)
+    if len(pairs) > 0:
+        show_categorical_comparisons(logger, run_ids, pairs)
 
 
 def check_vcf_sample_differences(
@@ -117,13 +162,36 @@ def check_custom_info_field_differences(
 
         logger.info("")
         logger.info(info_key)
-        logger.info(f"{both_present} present in both, {nbr_same} identical ({v1_present} v1 only, {v2_present} v2 only)")
-        # logger.info(
-        #     f"Both {both_present} ({nbr_same} same) v1 only {v1_present} v2 only {v2_present} none present {none_present}"
-        # )
-        show_categorical_comparisons(logger, run_ids, shared_key_values)
+        if both_present > 0:
+            logger.info(
+                f"{both_present} present in both, {nbr_same} identical ({v1_present} v1 only, {v2_present} v2 only)"
+            )
 
+        # Detect if all shared values are numeric; if so, show numeric summary
+        def _parse_decimal(val: str):
+            try:
+                d = Decimal(val)
+            except (InvalidOperation, TypeError):
+                return None
+            return d if d.is_finite() else None
 
+        all_numeric = True
+        numeric_pairs: List[Tuple[Decimal, Decimal]] = []
+        for s1, s2 in shared_key_values:
+            d1 = _parse_decimal(s1)
+            d2 = _parse_decimal(s2)
+            if d1 is None or d2 is None:
+                all_numeric = False
+                break
+            numeric_pairs.append((d1, d2))
+
+        if all_numeric and len(numeric_pairs) > 0:
+            show_numerical_comparisons(logger, run_ids, info_key, numeric_pairs)
+        else:
+            if len(shared_key_values) > 0:
+                show_categorical_comparisons(logger, run_ids, shared_key_values)
+            else:
+                logger.info("No entries found for this key")
 
 
 def compare_variant_presence(
