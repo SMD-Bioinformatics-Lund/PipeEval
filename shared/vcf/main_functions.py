@@ -1,3 +1,4 @@
+from collections import defaultdict
 from logging import Logger
 from pathlib import Path
 from typing import Dict, List, Optional, Set, Tuple
@@ -9,34 +10,83 @@ from shared.vcf.score import get_table, get_table_header
 from shared.vcf.vcf import DiffScoredVariant, ScoredVariant
 
 
+def show_categorical_comparisons(
+    logger: Logger, run_ids: Tuple[str, str], category_entries: List[Tuple[str, str]]
+):
+    logger.info("Hi")
+
+    nbr_identical = 0
+
+    # vcf1_to_vcf2: Dict[str, Dict[str, int]] = defaultdict(lambda: defaultdict(int))
+    # vcf2_to_vcf1: Dict[str, Dict[str, int]] = defaultdict(lambda: defaultdict(int))
+
+    vcf1_to_vcf2 = defaultdict(int)
+    vcf2_to_vcf1 = defaultdict(int)
+
+    for entry1, entry2 in category_entries:
+        if entry1 == entry2:
+            nbr_identical += 1
+
+        combined_key = f"{entry1}___{entry2}"
+
+        vcf1_to_vcf2[combined_key] += 1
+        vcf2_to_vcf1[combined_key] += 1
+
+    logger.info("Transitions vcf1 to vcf2, falling sorting")
+    for key, value in sorted(vcf1_to_vcf2.items(), key=lambda pair: pair[1]):
+        logger.info(f"Entry {key} {value}")
+
+    logger.info("Transition vcf2 to vcf1, falling sorting")
+    for key, value in sorted(vcf2_to_vcf1.items(), key=lambda pair: pair[1]):
+        logger.info(f"Entry {key} {value}")
+
+        # if entry1 not in source1_to_source2:
+        #     source1_to_source2[entry1] = {}
+        
+        # if entry2 not in source1_to_source2[entry1]:
+        #     source1_to_source2[entry1][entry2] = 0
+
+        # if entry2 not in source2_to_source1:
+        #     source2_to_source1[entry2][entry1] = 0
+
+
+        
+
+
+        
+        
+
+
+
+
 def check_vcf_filter_differences(
     logger: Logger, run_ids: Tuple[str, str], vcfs: VCFPair, shared_variant_keys: Set[str]
 ):
-    
+
     # FIXME: Continue
-    filters = {}
+    # filters = {}
+
+    pairs = []
 
     for key in shared_variant_keys:
         v1 = vcfs.vcf1.variants[key]
         v2 = vcfs.vcf2.variants[key]
 
-        v1_info = v1
-        v2_info = v2.info_dict.get(info_key)
+        v1_info = v1.filters
+        v2_info = v2.filters
 
-        if not v1_info and not v2_info:
-            none_present += 1
-        elif v1_info:
-            v1_present += 1
-        elif v2_info:
-            v2_present += 1
-        else:
-            both_present += 1
-            if v1_info == v2_info:
-                nbr_same += 1
+        pair = (v1_info, v2_info)
+        pairs.append(pair)
+        show_categorical_comparisons(logger, run_ids, pairs)
 
-    logger.info(
-        f"Both {both_present} ({nbr_same} same) v1 only {v1_present} v2 only {v2_present} none present {none_present}"
-    )
+        # else:
+        #     both_present += 1
+        #     if v1_info == v2_info:
+        #         nbr_same += 1
+
+    # logger.info(
+    #     f"Both {both_present} ({nbr_same} same) v1 only {v1_present} v2 only {v2_present} none present {none_present}"
+    # )
 
 
 def check_vcf_sample_differences(

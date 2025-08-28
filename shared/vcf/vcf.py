@@ -22,7 +22,7 @@ class ScoredVariant:
         is_sv: bool,
         sv_length: Optional[int],
         info_dict: Dict[str, str],
-        filters: List[str],
+        filters: str,
         line_number: int,
     ):
         self.chr = chr
@@ -180,7 +180,7 @@ def parse_scored_vcf(vcf: Path, is_sv: bool) -> ScoredVCF:
             pos = int(fields[1])
             ref = fields[3]
             alt = fields[4]
-            filters = fields[6].split(";")
+            filters = fields[6]
             info = fields[7]
 
             # Some INFO fields are not in the expected format key=value
