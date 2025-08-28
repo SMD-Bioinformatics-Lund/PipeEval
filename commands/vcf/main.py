@@ -18,7 +18,6 @@ ALL_VCF_COMPARISONS = {member.value for member in VCFComparison}
 def main(
     vcf1: Path,
     vcf2: Path,
-    is_sv: bool,
     max_display: int,
     max_checked_annots: int,
     score_threshold: int,
@@ -87,7 +86,6 @@ def main_wrapper(args: argparse.Namespace):
     main(
         args.vcf1,
         args.vcf2,
-        args.is_sv,
         args.max_display,
         args.max_checked_annots,
         args.score_threshold,
@@ -118,7 +116,6 @@ def add_arguments(parser: argparse.ArgumentParser):
     )
     parser.add_argument("--id1", help="Optional run ID for first vcf")
     parser.add_argument("--id2", help="Optional run ID for second vcf")
-    parser.add_argument("--is_sv", action="store_true", help="Process VCF in SV mode")
     parser.add_argument("--results", type=Path, help="Optional results folder")
     parser.add_argument(
         "--score_threshold",

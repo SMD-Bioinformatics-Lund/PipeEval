@@ -40,7 +40,6 @@ def test_main(caplog: LogCaptureFixture, tmp_path: Path):
     vcf1_path = Path("tests/testdata/hg002_chr21.vcf.gz")
     vcf2_path = Path("tests/testdata/hg004_chr21.vcf.gz")
 
-    is_sv = False
     max_display = 10
     max_checked_annots = 1000
     score_threshold = 17
@@ -53,10 +52,8 @@ def test_main(caplog: LogCaptureFixture, tmp_path: Path):
     with caplog.at_level(logging.INFO):
 
         main(
-            "dna-const",
             vcf1_path,
             vcf2_path,
-            is_sv,
             max_display,
             max_checked_annots,
             score_threshold,
@@ -65,7 +62,6 @@ def test_main(caplog: LogCaptureFixture, tmp_path: Path):
             results,
             annotations,
             output_all_variants=True,
-            # FIXME: More work here, will need the comparisons to perform
             comparisons=set(),
             custom_info_keys=set(),
         )
