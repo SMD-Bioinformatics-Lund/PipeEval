@@ -1,6 +1,7 @@
 import argparse
 import logging
 from pathlib import Path
+import sys
 from typing import List, Optional, Set
 
 from commands.eval.classes.helpers import RunSettings
@@ -15,7 +16,6 @@ ALL_VCF_COMPARISONS = {member.value for member in VCFComparison}
 
 
 def main(
-    pipeline: str,
     vcf1: Path,
     vcf2: Path,
     is_sv: bool,
@@ -77,8 +77,14 @@ def main_wrapper(args: argparse.Namespace):
     comparisons = ALL_VCF_COMPARISONS if not args.comparisons else set(args.comparisons.split(","))
     custom_info_keys = set() if not args.custom_info_keys else set(args.custom_info_keys.split(","))
 
+    if len(custom_info_keys) == 0 and "custom_info" in comparisons:
+        logger.warning("custom_info comparison specified but no --custom_info_keys arguments. Skipping.")
+        comparisons.remove("custom_info")
+        if len(comparisons) == 0:
+            logger.error("No remaining comparisons after removing custom_info. Stopping.")
+            sys.exit(1)
+
     main(
-        args.pipeline,
         args.vcf1,
         args.vcf2,
         args.is_sv,
@@ -96,8 +102,6 @@ def main_wrapper(args: argparse.Namespace):
 
 
 def add_arguments(parser: argparse.ArgumentParser):
-    # FIXME: Document
-    parser.add_argument("--pipeline")
     parser.add_argument(
         "--vcf1",
         "-1",
@@ -146,7 +150,10 @@ def add_arguments(parser: argparse.ArgumentParser):
         action="store_true",
         help="Write a comparison file including non-differing variants",
     )
-    parser.add_argument("--comparisons")
+    parser.add_argument(
+        "--comparisons", help=f"Comparisons to do. Available are: {",".join(ALL_VCF_COMPARISONS)}. Default is to run all."
+    )
+    parser.add_argument("--custom_info_keys", help="INFO keys to inspect separately. Used together with custom_info seting.")
 
 
 if __name__ == "__main__":

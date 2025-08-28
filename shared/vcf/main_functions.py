@@ -1,4 +1,5 @@
 from collections import defaultdict
+from itertools import islice
 from logging import Logger
 from pathlib import Path
 from typing import Dict, List, Optional, Set, Tuple
@@ -21,6 +22,7 @@ def show_categorical_comparisons(
     for entry1, entry2 in category_entries:
         if entry1 == entry2:
             nbr_identical += 1
+            continue
 
         combined_key = f"{entry1}___{entry2}"
 
@@ -31,12 +33,24 @@ def show_categorical_comparisons(
     # Requires a small counter class retaining this info
 
     logger.info(f"Transitions {run_ids[0]} to {run_ids[1]}, falling sorting")
-    for key, value in sorted(vcf1_to_vcf2.items(), key=lambda pair: pair[1]):
-        logger.info(f"Entry {key} {value}")
+    rows_1_to_2: List[List[str]] = [["From", "To", "Count"]]
+    for key, value in islice(sorted(
+        vcf1_to_vcf2.items(), key=lambda pair: pair[1], reverse=True
+    ), 10):
+        from_cat, to_cat = key.split("___", 1)
+        rows_1_to_2.append([from_cat, to_cat, str(value)])
+    for row in prettify_rows(rows_1_to_2):
+        logger.info(row)
 
     logger.info(f"Transition {run_ids[1]} to {run_ids[0]}, falling sorting")
-    for key, value in sorted(vcf2_to_vcf1.items(), key=lambda pair: pair[1]):
-        logger.info(f"Entry {key} {value}")
+    rows_2_to_1: List[List[str]] = [["From", "To", "Count"]]
+    for key, value in islice(sorted(
+        vcf2_to_vcf1.items(), key=lambda pair: pair[1], reverse=True
+    ), 10):
+        from_cat, to_cat = key.split("___", 1)
+        rows_2_to_1.append([from_cat, to_cat, str(value)])
+    for row in prettify_rows(rows_2_to_1):
+        logger.info(row)
 
 
 def check_vcf_filter_differences(
@@ -56,13 +70,13 @@ def check_vcf_filter_differences(
 
         pair = (v1_info, v2_info)
         pairs.append(pair)
-    
+
     show_categorical_comparisons(logger, run_ids, pairs)
 
 
 def check_vcf_sample_differences(
     logger: Logger, run_ids: Tuple[str, str], vcfs: VCFPair, shared_variant_keys: Set[str]
-): 
+):
     logger.info("To be implemented")
 
 
@@ -104,8 +118,8 @@ def check_custom_info_field_differences(
                 if v1_info == v2_info:
                     nbr_same += 1
 
-                logger.info("Showing comparison for key", key)
-                show_categorical_comparisons(logger, run_ids, shared_key_values)
+        logger.info(f"Showing comparison for key {info_key}")
+        show_categorical_comparisons(logger, run_ids, shared_key_values)
 
         logger.info(
             f"Both {both_present} ({nbr_same} same) v1 only {v1_present} v2 only {v2_present} none present {none_present}"
