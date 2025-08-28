@@ -74,7 +74,7 @@ def do_vcf_comparisons(
             logger.warning("No custom info keys supplied, skipping custom_info_keys comparison")
         else:
             logger.info("")
-            logger.info(f"### Checking custom info keys {', '.join(custom_info_keys)} ###")
+            logger.info(f"### Checking custom info keys ###")
             check_custom_info_field_differences(
                 logger, run_ids, vcfs, vcfs.comp.shared, custom_info_keys
             )

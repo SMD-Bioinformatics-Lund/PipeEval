@@ -32,25 +32,23 @@ def show_categorical_comparisons(
     # FIXME: Show first line numbers / variant with this combination as well?
     # Requires a small counter class retaining this info
 
+
+    max_thres = 10
+
     logger.info(f"Transitions {run_ids[0]} to {run_ids[1]}, falling sorting")
     rows_1_to_2: List[List[str]] = [["From", "To", "Count"]]
     for key, value in islice(sorted(
         vcf1_to_vcf2.items(), key=lambda pair: pair[1], reverse=True
-    ), 10):
+    ), max_thres):
         from_cat, to_cat = key.split("___", 1)
         rows_1_to_2.append([from_cat, to_cat, str(value)])
-    for row in prettify_rows(rows_1_to_2):
-        logger.info(row)
-
-    logger.info(f"Transition {run_ids[1]} to {run_ids[0]}, falling sorting")
-    rows_2_to_1: List[List[str]] = [["From", "To", "Count"]]
-    for key, value in islice(sorted(
-        vcf2_to_vcf1.items(), key=lambda pair: pair[1], reverse=True
-    ), 10):
-        from_cat, to_cat = key.split("___", 1)
-        rows_2_to_1.append([from_cat, to_cat, str(value)])
-    for row in prettify_rows(rows_2_to_1):
-        logger.info(row)
+    if len(vcf1_to_vcf2) > max_thres:
+        logger.info(f"Truncated at {max_thres}")
+    if len(rows_1_to_2) > 1:
+        for row in prettify_rows(rows_1_to_2):
+            logger.info(row)
+    else:
+        logger.info("No differences found")
 
 
 def check_vcf_filter_differences(
@@ -88,7 +86,6 @@ def check_custom_info_field_differences(
     info_keys: Set[str],
 ):
     for info_key in info_keys:
-        logger.info(f"Checking info key {info_key}")
         none_present = 0
         v1_present = 0
         v2_present = 0
@@ -118,12 +115,15 @@ def check_custom_info_field_differences(
                 if v1_info == v2_info:
                     nbr_same += 1
 
-        logger.info(f"Showing comparison for key {info_key}")
+        logger.info("")
+        logger.info(info_key)
+        logger.info(f"{both_present} present in both, {nbr_same} identical ({v1_present} v1 only, {v2_present} v2 only)")
+        # logger.info(
+        #     f"Both {both_present} ({nbr_same} same) v1 only {v1_present} v2 only {v2_present} none present {none_present}"
+        # )
         show_categorical_comparisons(logger, run_ids, shared_key_values)
 
-        logger.info(
-            f"Both {both_present} ({nbr_same} same) v1 only {v1_present} v2 only {v2_present} none present {none_present}"
-        )
+
 
 
 def compare_variant_presence(
