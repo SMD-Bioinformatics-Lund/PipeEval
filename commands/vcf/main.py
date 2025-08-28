@@ -59,6 +59,9 @@ def main(
         output_all_variants,
     )
 
+    # Default to all comparisons when none are explicitly provided
+    if not comparisons:
+        comparisons = ALL_VCF_COMPARISONS
     vcf_comparisons = {VCFComparison(comp) for comp in comparisons}
 
     vcf_type = "snv"

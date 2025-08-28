@@ -58,6 +58,9 @@ def do_vcf_comparisons(
     vcfs: VCFPair,
     custom_info_keys: Optional[Set[str]],
 ):
+    # By default (empty set), run all comparisons
+    if not comparisons:
+        comparisons = set(VCFComparison)
     if VCFComparison.filter in comparisons:
         logger.info("")
         logger.info("### Checking filter differences ###")

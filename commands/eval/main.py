@@ -93,14 +93,15 @@ def main(  # noqa: C901 (skipping complexity check)
 
     run_ids = (ro.r1_id, ro.r2_id)
 
-    snv_patterns =  set(pipe_conf["snv_vcf"].split()) if pipe_conf.get("snv_vcf") else set()
+    # Config uses comma-separated patterns; split on ',' not whitespace
+    snv_patterns = set(pipe_conf["snv_vcf"].split(",")) if pipe_conf.get("snv_vcf") else set()
     main_vcf_comparisons(run_ids, comparisons, ro, r1_paths, r2_paths, rs, snv_patterns, outdir, "snv")
 
-    sv_patterns =  set(pipe_conf["sv_vcf"].split()) if pipe_conf.get("sv_vcf") else set()
+    sv_patterns = set(pipe_conf["sv_vcf"].split(",")) if pipe_conf.get("sv_vcf") else set()
     main_vcf_comparisons(run_ids, comparisons, ro, r1_paths, r2_paths, rs, sv_patterns, outdir, "sv")
 
     scout_yaml_check = "scout_yaml"
-    if comparisons is None or scout_yaml_check in comparisons and pipe_conf.get(scout_yaml_check):
+    if (not comparisons) or (scout_yaml_check in comparisons and pipe_conf.get(scout_yaml_check)):
         do_simple_diff(
             logger,
             ro,
@@ -113,11 +114,11 @@ def main(  # noqa: C901 (skipping complexity check)
         )
 
     qc_check = "qc"
-    if comparisons is None or qc_check in comparisons and pipe_conf.get(qc_check):
+    if (not comparisons) or (qc_check in comparisons and pipe_conf.get(qc_check)):
         do_simple_diff(logger, ro, r1_paths, r2_paths, pipe_conf, qc_check, outdir, rs.verbose)
 
     version_check = "versions"
-    if comparisons is None or version_check in comparisons and pipe_conf.get(version_check):
+    if (not comparisons) or (version_check in comparisons and pipe_conf.get(version_check)):
         do_simple_diff(logger, ro, r1_paths, r2_paths, pipe_conf, version_check, outdir, rs.verbose)
 
 
@@ -137,7 +138,7 @@ def main_vcf_comparisons(
         vcf_comparisons = {
             VCFComparison(comp.replace(f"_{vcf_type}", ""))
             for comp in comparisons
-            if comp in SNV_COMPARISONS
+            if comp in (SNV_COMPARISONS if vcf_type == "snv" else SV_COMPARISONS)
         }
 
     if not comparisons or len(vcf_comparisons) > 0:
@@ -147,6 +148,10 @@ def main_vcf_comparisons(
                 logger, list(vcf_path_patterns), ro, r1_paths, r2_paths, rs.verbose, vcf_type
             )
             if vcfs:
+                # Select custom info keys for current VCF type
+                custom_info_keys = (
+                    rs.custom_info_keys_snv if vcf_type == "snv" else rs.custom_info_keys_sv
+                )
                 do_vcf_comparisons(
                     logger,
                     vcf_comparisons,
@@ -155,10 +160,10 @@ def main_vcf_comparisons(
                     rs,
                     vcf_type,
                     vcfs,
-                    rs.custom_info_keys_snv,
+                    custom_info_keys,
                 )
         else:
-            logger.warning("No SNV patterns matched, skipping")
+            logger.warning(f"No {vcf_type.upper()} patterns matched, skipping")
 
 
 def add_arguments(parser: argparse.ArgumentParser):
