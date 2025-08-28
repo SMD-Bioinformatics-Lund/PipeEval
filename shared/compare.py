@@ -1,4 +1,7 @@
-from typing import Generic, Set, Tuple, TypeVar
+from decimal import Decimal
+from typing import Generic, List, Optional, Set, Tuple, TypeVar
+
+from shared.util import parse_decimal
 
 T = TypeVar("T")
 
@@ -10,6 +13,48 @@ class Comparison(Generic[T]):
         self.r1 = r1
         self.r2 = r2
         self.shared = shared
+
+
+class ColumnComparison:
+
+    none_present = 0
+    v1_present = 0
+    v2_present = 0
+    both_present = 0
+    nbr_same = 0
+
+    all_numeric = False
+    numeric_pairs: List[Tuple[Decimal, Decimal]] = []
+    categorical_pairs: List[Tuple[str, str]] = []
+
+    def __init__(self, val_pairs: List[Tuple[Optional[str], Optional[str]]]):
+
+        self.categorical_pairs: List[Tuple[str, str]] = []
+
+        for v1_val, v2_val in val_pairs:
+
+            if not v1_val and not v2_val:
+                self.none_present += 1
+            elif not v2_val:
+                self.v1_present += 1
+            elif not v1_val:
+                self.v2_present += 1
+            else:
+                pair = (v1_val, v2_val)
+                self.categorical_pairs.append(pair)
+
+                if self.all_numeric:
+                    d1 = parse_decimal(v1_val)
+                    d2 = parse_decimal(v2_val)
+
+                    if d1 is None or d2 is None:
+                        self.all_numeric = False
+                    else:
+                        self.numeric_pairs.append((d1, d2))
+
+                self.both_present += 1
+                if v1_val == v2_val:
+                    self.nbr_same += 1
 
 
 def do_comparison(set_1: Set[T], set_2: Set[T]) -> Comparison[T]:

@@ -1,6 +1,7 @@
 from configparser import ConfigParser
+from decimal import Decimal, InvalidOperation
 from pathlib import Path
-from typing import Any, List
+from typing import Any, List, Optional
 
 
 def prettify_rows(rows: List[List[Any]], padding: int = 4) -> List[str]:
@@ -34,3 +35,12 @@ def truncate_string(text: str, max_len: int) -> str:
         return text[0:max_len] + "..."
     else:
         return text
+
+
+def parse_decimal(val: str) -> Optional[Decimal]:
+    """Return value if number, else return None"""
+    try:
+        d = Decimal(val)
+    except (InvalidOperation, TypeError):
+        return None
+    return d if d.is_finite() else None
