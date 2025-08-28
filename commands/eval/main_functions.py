@@ -1,6 +1,7 @@
 import difflib
 from collections import Counter
 from configparser import SectionProxy
+from enum import Enum
 from io import TextIOWrapper
 from logging import Logger
 from pathlib import Path
@@ -38,42 +39,47 @@ def log_and_write(logger: Logger, text: str, fh: Optional[TextIOWrapper]):
         print(text, file=fh)
 
 
+class VCFComparison(Enum):
+    filter = "filter"
+    sample = "sample"
+    custom_info = "custom_info"
+    presence = "presence"
+    annotation = "annotation"
+    score = "score"
+
+
 def vcf_comparisons(
     logger: Logger,
-    comparisons: Optional[Set[str]],
+    comparisons: Set[VCFComparison],
     run_ids: Tuple[str, str],
     outdir: Optional[Path],
     rs: RunSettings,
     vcf_type: str,
     vcfs: VCFPair,
+    custom_info_keys: Optional[Set[str]],
 ):
-
-    if check_comparison(comparisons, f"filter_{vcf_type}") and vcfs is not None:
+    if VCFComparison.filter in comparisons:
         logger.info("")
         logger.info("### Checking filter differences ###")
         check_vcf_filter_differences(logger, run_ids, vcfs, vcfs.comp.shared)
 
-    if check_comparison(comparisons, f"sample_{vcf_type}") and vcfs is not None:
+    if VCFComparison.sample in comparisons:
         logger.info("")
         logger.info("### Checking sample differences ###")
         check_vcf_sample_differences(logger, run_ids, vcfs, vcfs.comp.shared)
 
-    if (
-        comparisons is not None
-        and check_comparison(comparisons, f"custom_info_{vcf_type}")
-        and vcfs is not None
-    ):
-        custom_info_keys_field = [
-            comp for comp in comparisons if comp.startswith(f"custom_info_{vcf_type}")
-        ][0]
-        info_keys = custom_info_keys_field.split("=")[1].split(",")
+    if VCFComparison.custom_info in comparisons:
 
-        logger.info("")
-        logger.info(f"### Checking custom info keys {', '.join(info_keys)} ###")
+        if not custom_info_keys:
+            logger.warning("No custom info keys supplied, skipping custom_info_keys comparison")
+        else:
+            logger.info("")
+            logger.info(f"### Checking custom info keys {', '.join(custom_info_keys)} ###")
+            check_custom_info_field_differences(
+                logger, run_ids, vcfs, vcfs.comp.shared, custom_info_keys
+            )
 
-        check_custom_info_field_differences(logger, run_ids, vcfs, vcfs.comp.shared, info_keys)
-
-    if check_comparison(comparisons, f"presence_{vcf_type}") and vcfs is not None:
+    if VCFComparison.presence in comparisons:
         logger.info("")
         logger.info("### Variants only present in one ###")
         presence_path = outdir / f"scored_{vcf_type}_presence.txt" if outdir else None
@@ -89,7 +95,7 @@ def vcf_comparisons(
             rs.annotation_info_keys,
         )
 
-    if check_comparison(comparisons, f"annotation_{vcf_type}") and vcfs:
+    if VCFComparison.annotation in comparisons:
         logger.info("")
         logger.info("### Comparing annotations ###")
         compare_variant_annotation(
@@ -101,7 +107,7 @@ def vcf_comparisons(
             rs.max_checked_annots,
         )
 
-    if check_comparison(comparisons, f"score_{vcf_type}") and vcfs:
+    if VCFComparison.score in comparisons:
         logger.info("")
         logger.info("### Comparing score ###")
         score_thres_path = (

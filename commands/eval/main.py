@@ -24,6 +24,11 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 VCF_SUFFIX = [".vcf", ".vcf.gz"]
+
+VCF_COMPARISONS = [
+
+]
+
 VALID_COMPARISONS = set(
     [
         "default",

@@ -56,7 +56,8 @@ def check_vcf_filter_differences(
 
         pair = (v1_info, v2_info)
         pairs.append(pair)
-        show_categorical_comparisons(logger, run_ids, pairs)
+    
+    show_categorical_comparisons(logger, run_ids, pairs)
 
 
 def check_vcf_sample_differences(
@@ -70,7 +71,7 @@ def check_custom_info_field_differences(
     run_ids: Tuple[str, str],
     vcfs: VCFPair,
     shared_variant_keys: Set[str],
-    info_keys: List[str],
+    info_keys: Set[str],
 ):
     for info_key in info_keys:
         logger.info(f"Checking info key {info_key}")
