@@ -13,12 +13,7 @@ from shared.vcf.vcf import DiffScoredVariant, ScoredVariant
 def show_categorical_comparisons(
     logger: Logger, run_ids: Tuple[str, str], category_entries: List[Tuple[str, str]]
 ):
-    logger.info("Hi")
-
     nbr_identical = 0
-
-    # vcf1_to_vcf2: Dict[str, Dict[str, int]] = defaultdict(lambda: defaultdict(int))
-    # vcf2_to_vcf1: Dict[str, Dict[str, int]] = defaultdict(lambda: defaultdict(int))
 
     vcf1_to_vcf2 = defaultdict(int)
     vcf2_to_vcf1 = defaultdict(int)
@@ -32,39 +27,23 @@ def show_categorical_comparisons(
         vcf1_to_vcf2[combined_key] += 1
         vcf2_to_vcf1[combined_key] += 1
 
-    logger.info("Transitions vcf1 to vcf2, falling sorting")
+    # FIXME: Show first line numbers / variant with this combination as well?
+    # Requires a small counter class retaining this info
+
+    logger.info(f"Transitions {run_ids[0]} to {run_ids[1]}, falling sorting")
     for key, value in sorted(vcf1_to_vcf2.items(), key=lambda pair: pair[1]):
         logger.info(f"Entry {key} {value}")
 
-    logger.info("Transition vcf2 to vcf1, falling sorting")
+    logger.info(f"Transition {run_ids[1]} to {run_ids[0]}, falling sorting")
     for key, value in sorted(vcf2_to_vcf1.items(), key=lambda pair: pair[1]):
         logger.info(f"Entry {key} {value}")
-
-        # if entry1 not in source1_to_source2:
-        #     source1_to_source2[entry1] = {}
-        
-        # if entry2 not in source1_to_source2[entry1]:
-        #     source1_to_source2[entry1][entry2] = 0
-
-        # if entry2 not in source2_to_source1:
-        #     source2_to_source1[entry2][entry1] = 0
-
-
-        
-
-
-        
-        
-
-
 
 
 def check_vcf_filter_differences(
     logger: Logger, run_ids: Tuple[str, str], vcfs: VCFPair, shared_variant_keys: Set[str]
 ):
 
-    # FIXME: Continue
-    # filters = {}
+    logger.info("Comparing filter differences")
 
     pairs = []
 
@@ -79,19 +58,11 @@ def check_vcf_filter_differences(
         pairs.append(pair)
         show_categorical_comparisons(logger, run_ids, pairs)
 
-        # else:
-        #     both_present += 1
-        #     if v1_info == v2_info:
-        #         nbr_same += 1
-
-    # logger.info(
-    #     f"Both {both_present} ({nbr_same} same) v1 only {v1_present} v2 only {v2_present} none present {none_present}"
-    # )
-
 
 def check_vcf_sample_differences(
     logger: Logger, run_ids: Tuple[str, str], vcfs: VCFPair, shared_variant_keys: Set[str]
-): ...
+): 
+    logger.info("To be implemented")
 
 
 def check_custom_info_field_differences(
@@ -108,6 +79,9 @@ def check_custom_info_field_differences(
         v2_present = 0
         both_present = 0
         nbr_same = 0
+
+        shared_key_values: List[Tuple[str, str]] = []
+
         for key in shared_variant_keys:
             v1 = vcfs.vcf1.variants[key]
             v2 = vcfs.vcf2.variants[key]
@@ -117,14 +91,20 @@ def check_custom_info_field_differences(
 
             if not v1_info and not v2_info:
                 none_present += 1
-            elif v1_info:
+            elif not v2_info:
                 v1_present += 1
-            elif v2_info:
+            elif not v1_info:
                 v2_present += 1
             else:
+                pair = (v1_info, v2_info)
+                shared_key_values.append(pair)
+
                 both_present += 1
                 if v1_info == v2_info:
                     nbr_same += 1
+
+                logger.info("Showing comparison for key", key)
+                show_categorical_comparisons(logger, run_ids, shared_key_values)
 
         logger.info(
             f"Both {both_present} ({nbr_same} same) v1 only {v1_present} v2 only {v2_present} none present {none_present}"
