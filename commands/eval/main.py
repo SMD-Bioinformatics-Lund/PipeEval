@@ -2,11 +2,11 @@
 
 import argparse
 import logging
-from configparser import ConfigParser
+from configparser import ConfigParser, SectionProxy
 from pathlib import Path
-from typing import List, Optional, Set
+from typing import List, Optional, Set, Tuple
 
-from commands.eval.classes.helpers import RunSettings
+from commands.eval.classes.helpers import PathObj, RunSettings
 from commands.eval.classes.run_object import (
     RunObject,
     get_files_in_dir,
@@ -60,7 +60,7 @@ def main(  # noqa: C901 (skipping complexity check)
     ro: RunObject,
     rs: RunSettings,
     args_config_path: Optional[str],
-    comparisons: Optional[Set[str]],
+    comparisons: Set[str],
     outdir: Optional[Path],
 ):
 
@@ -80,7 +80,7 @@ def main(  # noqa: C901 (skipping complexity check)
 
     pipe_conf = config[rs.pipeline]
 
-    if comparisons is not None and len(comparisons & VALID_COMPARISONS) == 0:
+    if comparisons and len(comparisons & VALID_COMPARISONS) == 0:
         raise ValueError(f"Valid comparisons are: {VALID_COMPARISONS}, found: {comparisons}")
 
     verify_pair_exists("result dirs", ro.r1_results, ro.r2_results)
@@ -88,72 +88,16 @@ def main(  # noqa: C901 (skipping complexity check)
     if outdir is not None:
         outdir.mkdir(parents=True, exist_ok=True)
 
-    if comparisons is None or "file" in comparisons:
+    if not comparisons or "file" in comparisons:
         do_file_diff(logger, outdir, pipe_conf, ro, r1_paths, r2_paths)
 
     run_ids = (ro.r1_id, ro.r2_id)
 
-    # FIXME: Another layer of refactoring needed here?
-    # One high-level VCF function I think
+    snv_patterns =  set(pipe_conf["snv_vcf"].split()) if pipe_conf.get("snv_vcf") else set()
+    main_vcf_comparisons(run_ids, comparisons, ro, r1_paths, r2_paths, rs, snv_patterns, outdir, "snv")
 
-    # SNV comparisons
-    snv_vcf_path_patterns = (pipe_conf["snv_vcf"] or "").split(",")
-    snv_comparisons = set()
-    if comparisons:
-        snv_comparisons = {
-            VCFComparison(comp.replace("_snv", ""))
-            for comp in comparisons
-            if comp in SNV_COMPARISONS
-        }
-
-    if not comparisons or len(snv_comparisons) > 0:
-        if snv_vcf_path_patterns:
-
-            snv_vcfs = get_vcf_pair(
-                logger, snv_vcf_path_patterns, ro, r1_paths, r2_paths, rs.verbose, "snv"
-            )
-            if snv_vcfs:
-                do_vcf_comparisons(
-                    logger,
-                    snv_comparisons,
-                    run_ids,
-                    outdir,
-                    rs,
-                    "snv",
-                    snv_vcfs,
-                    rs.custom_info_keys_snv,
-                )
-        else:
-            logger.warning("No SNV patterns matched, skipping")
-
-    # SV comparisons
-    sv_vcf_path_patterns = (pipe_conf["sv_vcf"] or "").split(",")
-    sv_comparisons = set()
-    if comparisons:
-        sv_comparisons = {
-            VCFComparison(comp.replace("_snv", ""))
-            for comp in comparisons
-            if comp in SNV_COMPARISONS
-        }
-
-    if not comparisons or len(sv_comparisons) > 0:
-        if sv_vcf_path_patterns:
-            sv_vcfs = get_vcf_pair(
-                logger, sv_vcf_path_patterns, ro, r1_paths, r2_paths, rs.verbose, "sv"
-            )
-            if sv_vcfs:
-                do_vcf_comparisons(
-                    logger,
-                    sv_comparisons,
-                    run_ids,
-                    outdir,
-                    rs,
-                    "sv",
-                    sv_vcfs,
-                    rs.custom_info_keys_sv,
-                )
-        else:
-            logger.warning("No SV patterns matched, skipping")
+    sv_patterns =  set(pipe_conf["sv_vcf"].split()) if pipe_conf.get("sv_vcf") else set()
+    main_vcf_comparisons(run_ids, comparisons, ro, r1_paths, r2_paths, rs, sv_patterns, outdir, "sv")
 
     scout_yaml_check = "scout_yaml"
     if comparisons is None or scout_yaml_check in comparisons and pipe_conf.get(scout_yaml_check):
@@ -175,6 +119,46 @@ def main(  # noqa: C901 (skipping complexity check)
     version_check = "versions"
     if comparisons is None or version_check in comparisons and pipe_conf.get(version_check):
         do_simple_diff(logger, ro, r1_paths, r2_paths, pipe_conf, version_check, outdir, rs.verbose)
+
+
+def main_vcf_comparisons(
+    run_ids: Tuple[str, str],
+    comparisons: Set[str],
+    ro: RunObject,
+    r1_paths: List[PathObj],
+    r2_paths: List[PathObj],
+    rs: RunSettings,
+    vcf_path_patterns: Set[str],
+    outdir: Optional[Path],
+    vcf_type: str
+):
+    vcf_comparisons = set()
+    if comparisons:
+        vcf_comparisons = {
+            VCFComparison(comp.replace(f"_{vcf_type}", ""))
+            for comp in comparisons
+            if comp in SNV_COMPARISONS
+        }
+
+    if not comparisons or len(vcf_comparisons) > 0:
+        if vcf_path_patterns:
+
+            vcfs = get_vcf_pair(
+                logger, list(vcf_path_patterns), ro, r1_paths, r2_paths, rs.verbose, vcf_type
+            )
+            if vcfs:
+                do_vcf_comparisons(
+                    logger,
+                    vcf_comparisons,
+                    run_ids,
+                    outdir,
+                    rs,
+                    vcf_type,
+                    vcfs,
+                    rs.custom_info_keys_snv,
+                )
+        else:
+            logger.warning("No SNV patterns matched, skipping")
 
 
 def add_arguments(parser: argparse.ArgumentParser):
@@ -272,7 +256,7 @@ def main_wrapper(args: argparse.Namespace):
         custom_info_keys_sv,
     )
 
-    comparisons = None if args.comparisons == "default" else set(args.comparisons.split(","))
+    comparisons = set() if args.comparisons == "default" else set(args.comparisons.split(","))
     if comparisons and len(custom_info_keys_snv) > 0:
         comparisons.add("custom_info_snv")
     if comparisons and len(custom_info_keys_sv) > 0:
