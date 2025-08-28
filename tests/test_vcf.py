@@ -65,6 +65,9 @@ def test_main(caplog: LogCaptureFixture, tmp_path: Path):
             results,
             annotations,
             output_all_variants=True,
+            # FIXME: More work here, will need the comparisons to perform
+            comparisons=set(),
+            custom_info_keys=set(),
         )
 
     assert len(caplog.records) > 0, "No logs were captured"
