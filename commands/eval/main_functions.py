@@ -11,6 +11,7 @@ from commands.eval.classes.helpers import PathObj, RunSettings, VCFPair
 from commands.eval.classes.run_object import RunObject
 from commands.eval.constants import FILE_NAMES
 from commands.eval.utils import get_ignored, get_pair_match
+from commands.vcf.main import VCFType
 from shared.compare import do_comparison
 from shared.constants import RUN_ID_PLACEHOLDER
 from shared.file import check_valid_file, get_filehandle
@@ -54,7 +55,7 @@ def do_vcf_comparisons(
     run_ids: Tuple[str, str],
     outdir: Optional[Path],
     rs: RunSettings,
-    vcf_type: str,
+    vcf_type: VCFType,
     vcfs: VCFPair,
     custom_info_keys: Optional[Set[str]],
 ):

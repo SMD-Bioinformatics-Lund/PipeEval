@@ -6,6 +6,7 @@ import pytest
 from pytest import LogCaptureFixture
 
 from commands.vcf.main import main
+from shared.constants import VCFType
 
 LOG = logging.getLogger(__name__)
 
@@ -64,6 +65,7 @@ def test_main(caplog: LogCaptureFixture, tmp_path: Path):
             output_all_variants=True,
             comparisons=set(),
             custom_info_keys=set(),
+            vcf_type=VCFType.snv,
         )
 
     assert len(caplog.records) > 0, "No logs were captured"
@@ -156,6 +158,7 @@ def test_vcf_filter_sample_and_custom_info(tmp_path: Path, caplog: LogCaptureFix
             output_all_variants=False,
             comparisons={"filter", "sample", "custom_info"},
             custom_info_keys={"MYNUM", "MYSTAT"},
+            vcf_type=VCFType.snv,
         )
 
     # Basic sanity: no errors in logs

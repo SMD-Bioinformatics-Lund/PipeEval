@@ -2,7 +2,7 @@
 
 import argparse
 import logging
-from configparser import ConfigParser, SectionProxy
+from configparser import ConfigParser
 from pathlib import Path
 from typing import List, Optional, Set, Tuple
 
@@ -18,8 +18,7 @@ from commands.eval.main_functions import (
     do_simple_diff,
     do_vcf_comparisons,
 )
-from commands.vcf.main import ALL_VCF_COMPARISONS
-from shared.constants import RUN_ID_PLACEHOLDER
+from shared.constants import RUN_ID_PLACEHOLDER, VCFType
 
 from .utils import (
     get_vcf_pair,
@@ -102,7 +101,7 @@ def main(  # noqa: C901 (skipping complexity check)
         rs,
         snv_patterns,
         outdir,
-        "snv",
+        VCFType.snv,
         rs.custom_info_keys_snv,
         SNV_COMPARISONS,
     )
@@ -117,7 +116,7 @@ def main(  # noqa: C901 (skipping complexity check)
         rs,
         sv_patterns,
         outdir,
-        "sv",
+        VCFType.sv,
         rs.custom_info_keys_sv,
         SV_COMPARISONS,
     )
@@ -153,7 +152,7 @@ def main_vcf_comparisons(
     rs: RunSettings,
     vcf_path_patterns: Set[str],
     outdir: Optional[Path],
-    vcf_type: str,
+    vcf_type: VCFType,
     custom_info_keys: Set[str],
     all_comparisons: List[str],
 ):
@@ -183,7 +182,7 @@ def main_vcf_comparisons(
                     custom_info_keys,
                 )
         else:
-            logger.warning(f"No {vcf_type.upper()} patterns matched, skipping")
+            logger.warning(f"No {vcf_type.value.upper()} patterns matched, skipping")
 
 
 def add_arguments(parser: argparse.ArgumentParser):
