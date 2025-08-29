@@ -139,7 +139,7 @@ def main(
 def confirm_run_if_results_exists(results_dir: Path, skip_confirmation: bool):
     if results_dir.exists() and not skip_confirmation:
         confirmation = input(
-            f"The results dir {results_dir} already exists. Do you want to proceed? (y/n) "
+            f"The results dir {results_dir} already exists. Do you want to proceed? (y/N) "
         )
 
         if confirmation != "y":
@@ -160,7 +160,7 @@ def do_repo_checkout(repo: Path, checkout: str, verbose: bool, skip_confirmation
             confirmation = "y"
         else:
             confirmation = input(
-                f"You have checked out the branch {branch} in {repo}. Do you want to pull? (y/n) "
+                f"You have checked out the branch {branch} in {repo}. Do you want to pull? (y/N) "
             )
         if confirmation == "y":
             logger.info("Pulling from origin")
@@ -273,7 +273,7 @@ def start_run(start_nextflow_command: List[str], skip_confirmation: bool):
     if not skip_confirmation:
         pretty_command = " \\\n    ".join(start_nextflow_command)
         confirmation = input(
-            f"Do you want to run the following command:\n{pretty_command}\n(y/n) "
+            f"Do you want to run the following command:\n{pretty_command}\n(y/N) "
         )
 
         if confirmation != "y":
