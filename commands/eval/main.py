@@ -55,7 +55,7 @@ Performs all or a subset of the comparisons:
 """
 
 
-def main(  # noqa: C901 (skipping complexity check)
+def main(
     ro: RunObject,
     rs: RunSettings,
     args_config_path: Optional[str],
