@@ -4,6 +4,7 @@ import argparse
 import logging
 from configparser import ConfigParser
 from pathlib import Path
+import sys
 from typing import List, Optional, Set, Tuple
 
 from commands.eval.classes.helpers import PathObj, RunSettings
@@ -62,12 +63,8 @@ def main(  # noqa: C901 (skipping complexity check)
     outdir: Optional[Path],
 ):
 
-    r1_paths = get_files_in_dir(
-        ro.r1_results, ro.r1_id, RUN_ID_PLACEHOLDER, ro.r1_results
-    )
-    r2_paths = get_files_in_dir(
-        ro.r2_results, ro.r2_id, RUN_ID_PLACEHOLDER, ro.r2_results
-    )
+    r1_paths = get_files_in_dir(ro.r1_results, ro.r1_id, RUN_ID_PLACEHOLDER, ro.r1_results)
+    r2_paths = get_files_in_dir(ro.r2_results, ro.r2_id, RUN_ID_PLACEHOLDER, ro.r2_results)
 
     parent_path = Path(__file__).resolve().parent
     config_path = args_config_path or parent_path / "default.ini"
@@ -83,9 +80,7 @@ def main(  # noqa: C901 (skipping complexity check)
     pipe_conf = config[rs.pipeline]
 
     if comparisons and len(comparisons & VALID_COMPARISONS) == 0:
-        raise ValueError(
-            f"Valid comparisons are: {VALID_COMPARISONS}, found: {comparisons}"
-        )
+        raise ValueError(f"Valid comparisons are: {VALID_COMPARISONS}, found: {comparisons}")
 
     verify_pair_exists("result dirs", ro.r1_results, ro.r2_results)
 
@@ -97,9 +92,7 @@ def main(  # noqa: C901 (skipping complexity check)
 
     run_ids = (ro.r1_id, ro.r2_id)
 
-    snv_patterns = (
-        set(pipe_conf["snv_vcf"].split(",")) if pipe_conf.get("snv_vcf") else set()
-    )
+    snv_patterns = set(pipe_conf["snv_vcf"].split(",")) if pipe_conf.get("snv_vcf") else set()
     main_vcf_comparisons(
         run_ids,
         comparisons,
@@ -114,9 +107,7 @@ def main(  # noqa: C901 (skipping complexity check)
         SNV_COMPARISONS,
     )
 
-    sv_patterns = (
-        set(pipe_conf["sv_vcf"].split(",")) if pipe_conf.get("sv_vcf") else set()
-    )
+    sv_patterns = set(pipe_conf["sv_vcf"].split(",")) if pipe_conf.get("sv_vcf") else set()
     main_vcf_comparisons(
         run_ids,
         comparisons,
@@ -146,15 +137,11 @@ def main(  # noqa: C901 (skipping complexity check)
 
     qc_check = "qc"
     if not comparisons or qc_check in comparisons:
-        do_simple_diff(
-            logger, ro, r1_paths, r2_paths, pipe_conf, qc_check, outdir, rs.verbose
-        )
+        do_simple_diff(logger, ro, r1_paths, r2_paths, pipe_conf, qc_check, outdir, rs.verbose)
 
     version_check = "versions"
     if not comparisons or version_check in comparisons:
-        do_simple_diff(
-            logger, ro, r1_paths, r2_paths, pipe_conf, version_check, outdir, rs.verbose
-        )
+        do_simple_diff(logger, ro, r1_paths, r2_paths, pipe_conf, version_check, outdir, rs.verbose)
 
 
 def main_vcf_comparisons(
@@ -208,8 +195,10 @@ def main_vcf_comparisons(
 def add_arguments(parser: argparse.ArgumentParser):
     parser.add_argument(
         "--pipeline",
-        help="The target pipeline. Currently only 'rd-const' is available",
-        required=True,
+        help=(
+            "The target pipeline (e.g. dna-const, rna-const). If not provided,"
+            " eval attempts to read it from 'pipeline_info' in the results folders."
+        ),
     )
     parser.add_argument(
         "--run_id1",
@@ -264,12 +253,31 @@ def add_arguments(parser: argparse.ArgumentParser):
         action="store_true",
         help="Write score comparison including non-differing variants",
     )
-    parser.add_argument(
-        "--custom_info_keys_snv", help="INFO keys to investigate closer in SNV vcf"
-    )
-    parser.add_argument(
-        "--custom_info_keys_sv", help="INFO keys to investigate closer in SV vcf"
-    )
+    parser.add_argument("--custom_info_keys_snv", help="INFO keys to investigate closer in SNV vcf")
+    parser.add_argument("--custom_info_keys_sv", help="INFO keys to investigate closer in SV vcf")
+
+
+def get_pipeline_from_run_folders(logger: logging.Logger, results1: Path, results2: Path):
+    """Checks for file pipeline_info in the results dir if pipeline"""
+    pipeline1 = None
+    pipeline2 = None
+    try:
+        info1 = (results1 / "pipeline_info").read_text().strip()
+        pipeline1 = info1 if info1 else None
+    except Exception:
+        pipeline1 = None
+    try:
+        info2 = (results2 / "pipeline_info").read_text().strip()
+        pipeline2 = info2 if info2 else None
+    except Exception:
+        pipeline2 = None
+
+    if pipeline1 and pipeline2 and pipeline1 != pipeline2:
+        logger.error(
+            f"Found differing pipelines in the run dirs ({pipeline1} and {pipeline2}). Specify pipeline using the --pipeline flag"
+        )
+
+    return pipeline1 or pipeline2
 
 
 def main_wrapper(args: argparse.Namespace):
@@ -286,17 +294,22 @@ def main_wrapper(args: argparse.Namespace):
         extra_annot_keys = args.annotations.split(",")
 
     custom_info_keys_snv = (
-        set()
-        if not args.custom_info_keys_snv
-        else set(args.custom_info_keys_snv.split(","))
+        set() if not args.custom_info_keys_snv else set(args.custom_info_keys_snv.split(","))
     )
     custom_info_keys_sv = (
-        set()
-        if not args.custom_info_keys_sv
-        else set(args.custom_info_keys_sv.split(","))
+        set() if not args.custom_info_keys_sv else set(args.custom_info_keys_sv.split(","))
     )
+
+    pipeline_name = args.pipeline or get_pipeline_from_run_folders(
+        logger, run_object.r1_results, run_object.r2_results
+    )
+
+    if not pipeline_name:
+        logger.error("No pipline name set. Set it either using --pipeline flag or pipeline_info file in results folders")
+        sys.exit(1)
+
     run_settings = RunSettings(
-        args.pipeline,
+        pipeline_name,
         args.score_threshold,
         args.max_display,
         args.verbose,
@@ -308,9 +321,7 @@ def main_wrapper(args: argparse.Namespace):
         custom_info_keys_sv,
     )
 
-    comparisons = (
-        set() if args.comparisons == "default" else set(args.comparisons.split(","))
-    )
+    comparisons = set() if args.comparisons == "default" else set(args.comparisons.split(","))
     if comparisons and len(custom_info_keys_snv) > 0:
         comparisons.add("custom_info_snv")
     if comparisons and len(custom_info_keys_sv) > 0:
@@ -323,4 +334,3 @@ def main_wrapper(args: argparse.Namespace):
         comparisons,
         Path(args.outdir) if args.outdir is not None else None,
     )
-

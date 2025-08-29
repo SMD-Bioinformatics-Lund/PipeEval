@@ -21,6 +21,8 @@ RNASEQ_CONST_CSV_HEADERS = [
     "strandedness",
     "sex",
     "phenotype",
+    "assay",
+    "group",
 ]
 
 WGS_CSV_HEADERS = [

@@ -93,6 +93,13 @@ def main(
         commit_hash,
     )
 
+    try:
+        pipeline_info_path = results_dir / "pipeline_info"
+        pipeline_name = config.run_profile.pipeline
+        pipeline_info_path.write_text(pipeline_name)
+    except Exception:
+        logger.warning("Could not write pipeline_info file")
+
     assay = assay or ASSAY_PLACEHOLDER
     analysis = analysis or config.run_profile.run_profile
 
