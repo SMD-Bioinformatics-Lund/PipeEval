@@ -169,8 +169,6 @@ def test_vcf_filter_sample_and_custom_info(tmp_path: Path, caplog: LogCaptureFix
     assert "PASS" in text and "LowQual" in text
 
     # Verify sample comparison ran; numeric summary for DP and categorical for GT
-    import pdb
-    pdb.set_trace()
     assert "### Checking sample differences ###" in text
     assert "Sample field: DP" in text
     assert "DP (numerical)" in text or "(numerical)" in text
