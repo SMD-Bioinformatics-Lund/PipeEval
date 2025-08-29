@@ -1,15 +1,18 @@
+import statistics
 from collections import defaultdict
 from decimal import Decimal
 from itertools import islice
 from logging import Logger
-import statistics
 from typing import Dict, List, Tuple
 
-from shared.util import render_bar, prettify_rows
+from shared.util import prettify_rows, render_bar
 
 
 def show_categorical_comparisons(
-    logger: Logger, run_ids: Tuple[str, str], category_entries: List[Tuple[str, str]], max_thres=5
+    logger: Logger,
+    run_ids: Tuple[str, str],
+    category_entries: List[Tuple[str, str]],
+    max_thres=5,
 ):
     nbr_identical = 0
     nbr_differences: Dict[str, int] = defaultdict(int)
@@ -24,9 +27,10 @@ def show_categorical_comparisons(
 
     logger.info(f"{run_ids[0]} to {run_ids[1]}")
     rows_1_to_2: List[List[str]] = [["From", "To", "Count"]]
-    for key, value in islice(sorted(
-        nbr_differences.items(), key=lambda pair: pair[1], reverse=True
-    ), max_thres):
+    for key, value in islice(
+        sorted(nbr_differences.items(), key=lambda pair: pair[1], reverse=True),
+        max_thres,
+    ):
         from_cat, to_cat = key.split("___", 1)
         rows_1_to_2.append([from_cat, to_cat, str(value)])
     if len(nbr_differences) > max_thres:
@@ -60,8 +64,22 @@ def show_numerical_comparisons(
     v1_max = max(v1_vals)
     v2_max = max(v2_vals)
 
-    v1_stats_row = [f"{run_ids[0]}", f"N={len(v1_vals)}", f"median={v1_median}", f"stdev={v1_stdev}", f"min={v1_min}", f"max={v1_max}"]
-    v2_stats_row = [f"{run_ids[1]}", f"N={len(v2_vals)}", f"median={v2_median}", f"stdev={v2_stdev}", f"min={v2_min}", f"max={v2_max}"]
+    v1_stats_row = [
+        f"{run_ids[0]}",
+        f"N={len(v1_vals)}",
+        f"median={v1_median}",
+        f"stdev={v1_stdev}",
+        f"min={v1_min}",
+        f"max={v1_max}",
+    ]
+    v2_stats_row = [
+        f"{run_ids[1]}",
+        f"N={len(v2_vals)}",
+        f"median={v2_median}",
+        f"stdev={v2_stdev}",
+        f"min={v2_min}",
+        f"max={v2_max}",
+    ]
 
     pretty_stats_rows = prettify_rows([v1_stats_row, v2_stats_row])
     for row in pretty_stats_rows:

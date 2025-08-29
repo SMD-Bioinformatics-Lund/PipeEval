@@ -62,8 +62,12 @@ def main(  # noqa: C901 (skipping complexity check)
     outdir: Optional[Path],
 ):
 
-    r1_paths = get_files_in_dir(ro.r1_results, ro.r1_id, RUN_ID_PLACEHOLDER, ro.r1_results)
-    r2_paths = get_files_in_dir(ro.r2_results, ro.r2_id, RUN_ID_PLACEHOLDER, ro.r2_results)
+    r1_paths = get_files_in_dir(
+        ro.r1_results, ro.r1_id, RUN_ID_PLACEHOLDER, ro.r1_results
+    )
+    r2_paths = get_files_in_dir(
+        ro.r2_results, ro.r2_id, RUN_ID_PLACEHOLDER, ro.r2_results
+    )
 
     parent_path = Path(__file__).resolve().parent
     config_path = args_config_path or parent_path / "default.ini"
@@ -79,7 +83,9 @@ def main(  # noqa: C901 (skipping complexity check)
     pipe_conf = config[rs.pipeline]
 
     if comparisons and len(comparisons & VALID_COMPARISONS) == 0:
-        raise ValueError(f"Valid comparisons are: {VALID_COMPARISONS}, found: {comparisons}")
+        raise ValueError(
+            f"Valid comparisons are: {VALID_COMPARISONS}, found: {comparisons}"
+        )
 
     verify_pair_exists("result dirs", ro.r1_results, ro.r2_results)
 
@@ -91,7 +97,9 @@ def main(  # noqa: C901 (skipping complexity check)
 
     run_ids = (ro.r1_id, ro.r2_id)
 
-    snv_patterns = set(pipe_conf["snv_vcf"].split(",")) if pipe_conf.get("snv_vcf") else set()
+    snv_patterns = (
+        set(pipe_conf["snv_vcf"].split(",")) if pipe_conf.get("snv_vcf") else set()
+    )
     main_vcf_comparisons(
         run_ids,
         comparisons,
@@ -106,7 +114,9 @@ def main(  # noqa: C901 (skipping complexity check)
         SNV_COMPARISONS,
     )
 
-    sv_patterns = set(pipe_conf["sv_vcf"].split(",")) if pipe_conf.get("sv_vcf") else set()
+    sv_patterns = (
+        set(pipe_conf["sv_vcf"].split(",")) if pipe_conf.get("sv_vcf") else set()
+    )
     main_vcf_comparisons(
         run_ids,
         comparisons,
@@ -136,11 +146,15 @@ def main(  # noqa: C901 (skipping complexity check)
 
     qc_check = "qc"
     if not comparisons or qc_check in comparisons:
-        do_simple_diff(logger, ro, r1_paths, r2_paths, pipe_conf, qc_check, outdir, rs.verbose)
+        do_simple_diff(
+            logger, ro, r1_paths, r2_paths, pipe_conf, qc_check, outdir, rs.verbose
+        )
 
     version_check = "versions"
     if not comparisons or version_check in comparisons:
-        do_simple_diff(logger, ro, r1_paths, r2_paths, pipe_conf, version_check, outdir, rs.verbose)
+        do_simple_diff(
+            logger, ro, r1_paths, r2_paths, pipe_conf, version_check, outdir, rs.verbose
+        )
 
 
 def main_vcf_comparisons(
@@ -168,7 +182,13 @@ def main_vcf_comparisons(
         if vcf_path_patterns:
 
             vcfs = get_vcf_pair(
-                logger, list(vcf_path_patterns), ro, r1_paths, r2_paths, rs.verbose, vcf_type
+                logger,
+                list(vcf_path_patterns),
+                ro,
+                r1_paths,
+                r2_paths,
+                rs.verbose,
+                vcf_type,
             )
             if vcfs:
                 do_vcf_comparisons(
@@ -244,8 +264,12 @@ def add_arguments(parser: argparse.ArgumentParser):
         action="store_true",
         help="Write score comparison including non-differing variants",
     )
-    parser.add_argument("--custom_info_keys_snv", help="INFO keys to investigate closer in SNV vcf")
-    parser.add_argument("--custom_info_keys_sv", help="INFO keys to investigate closer in SV vcf")
+    parser.add_argument(
+        "--custom_info_keys_snv", help="INFO keys to investigate closer in SNV vcf"
+    )
+    parser.add_argument(
+        "--custom_info_keys_sv", help="INFO keys to investigate closer in SV vcf"
+    )
 
 
 def main_wrapper(args: argparse.Namespace):
@@ -262,10 +286,14 @@ def main_wrapper(args: argparse.Namespace):
         extra_annot_keys = args.annotations.split(",")
 
     custom_info_keys_snv = (
-        set() if not args.custom_info_keys_snv else set(args.custom_info_keys_snv.split(","))
+        set()
+        if not args.custom_info_keys_snv
+        else set(args.custom_info_keys_snv.split(","))
     )
     custom_info_keys_sv = (
-        set() if not args.custom_info_keys_snv else set(args.custom_info_keys_snv.split(","))
+        set()
+        if not args.custom_info_keys_snv
+        else set(args.custom_info_keys_snv.split(","))
     )
     run_settings = RunSettings(
         args.pipeline,
@@ -280,7 +308,9 @@ def main_wrapper(args: argparse.Namespace):
         custom_info_keys_sv,
     )
 
-    comparisons = set() if args.comparisons == "default" else set(args.comparisons.split(","))
+    comparisons = (
+        set() if args.comparisons == "default" else set(args.comparisons.split(","))
+    )
     if comparisons and len(custom_info_keys_snv) > 0:
         comparisons.add("custom_info_snv")
     if comparisons and len(custom_info_keys_sv) > 0:

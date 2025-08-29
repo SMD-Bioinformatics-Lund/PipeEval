@@ -1,7 +1,7 @@
 import argparse
 import logging
-from pathlib import Path
 import sys
+from pathlib import Path
 from typing import List, Optional, Set
 
 from commands.eval.classes.helpers import RunSettings
@@ -75,7 +75,14 @@ def main(
 
     vcfs = parse_vcf_pair(logger, run_ids, (vcf1, vcf2), vcf_type)
     do_vcf_comparisons(
-        logger, vcf_comparisons, run_ids, results_folder, rs, vcf_type, vcfs, custom_info_keys
+        logger,
+        vcf_comparisons,
+        run_ids,
+        results_folder,
+        rs,
+        vcf_type,
+        vcfs,
+        custom_info_keys,
     )
 
 
@@ -84,8 +91,14 @@ def main_wrapper(args: argparse.Namespace):
     if args.silent:
         logger.setLevel(logging.WARNING)
 
-    comparisons = ALL_VCF_COMPARISONS if not args.comparisons else set(args.comparisons.split(","))
-    custom_info_keys = set() if not args.custom_info_keys else set(args.custom_info_keys.split(","))
+    comparisons = (
+        ALL_VCF_COMPARISONS
+        if not args.comparisons
+        else set(args.comparisons.split(","))
+    )
+    custom_info_keys = (
+        set() if not args.custom_info_keys else set(args.custom_info_keys.split(","))
+    )
 
     if len(custom_info_keys) == 0 and "custom_info" in comparisons and args.comparisons:
         logger.warning(
@@ -93,7 +106,9 @@ def main_wrapper(args: argparse.Namespace):
         )
         comparisons.remove("custom_info")
         if len(comparisons) == 0:
-            logger.error("No remaining comparisons after removing custom_info. Stopping.")
+            logger.error(
+                "No remaining comparisons after removing custom_info. Stopping."
+            )
             sys.exit(1)
 
     main(
@@ -170,7 +185,10 @@ def add_arguments(parser: argparse.ArgumentParser):
         help='INFO keys to inspect separately. Used together with "info" setting.',
     )
     parser.add_argument(
-        "--vcf_type", type=VCFType, help="Specify if running an SNV or SV", required=True
+        "--vcf_type",
+        type=VCFType,
+        help="Specify if running an SNV or SV",
+        required=True,
     )
 
 

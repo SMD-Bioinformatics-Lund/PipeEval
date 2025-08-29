@@ -26,7 +26,9 @@ from shared.vcf.main_functions import (
 from shared.vcf.vcf import count_variants
 
 
-def check_comparison(all_comparisons: Optional[Set[str]], target_comparison: str) -> bool:
+def check_comparison(
+    all_comparisons: Optional[Set[str]], target_comparison: str
+) -> bool:
     if all_comparisons is None:
         return True
     comparison_keys = [comp.split("=")[0] for comp in all_comparisons]
@@ -74,7 +76,9 @@ def do_vcf_comparisons(
     if VCFComparison.custom_info in comparisons:
 
         if not custom_info_keys:
-            logger.warning("No custom info keys supplied, skipping custom_info_keys comparison")
+            logger.warning(
+                "No custom info keys supplied, skipping custom_info_keys comparison"
+            )
         else:
             logger.info("")
             logger.info("### Checking custom info keys ###")
@@ -114,9 +118,13 @@ def do_vcf_comparisons(
         logger.info("")
         logger.info("### Comparing score ###")
         score_thres_path = (
-            outdir / f"scored_{vcf_type}_above_thres_{rs.score_threshold}.txt" if outdir else None
+            outdir / f"scored_{vcf_type}_above_thres_{rs.score_threshold}.txt"
+            if outdir
+            else None
         )
-        all_diffing_path = outdir / f"scored_{vcf_type}_all_diffing.txt" if outdir else None
+        all_diffing_path = (
+            outdir / f"scored_{vcf_type}_all_diffing.txt" if outdir else None
+        )
         is_sv = False
 
         compare_variant_score(
@@ -163,18 +171,26 @@ def check_same_files(
 
     out_fh = open(out_path, "w") if out_path else None
 
-    (r1_nbr_ignored_per_pattern, r1_non_ignored) = get_ignored(comparison.r1, ignore_files)
-    (r2_nbr_ignored_per_pattern, r2_non_ignored) = get_ignored(comparison.r2, ignore_files)
+    (r1_nbr_ignored_per_pattern, r1_non_ignored) = get_ignored(
+        comparison.r1, ignore_files
+    )
+    (r2_nbr_ignored_per_pattern, r2_non_ignored) = get_ignored(
+        comparison.r2, ignore_files
+    )
 
     ignored = Counter(r1_nbr_ignored_per_pattern) + Counter(r2_nbr_ignored_per_pattern)
 
     if len(r1_non_ignored) > 0:
-        log_and_write(logger, f"Files present in {ro.r1_id} but missing in {ro.r2_id}:", out_fh)
+        log_and_write(
+            logger, f"Files present in {ro.r1_id} but missing in {ro.r2_id}:", out_fh
+        )
         for path in sorted(r1_non_ignored):
             log_and_write(logger, f"  {path}", out_fh)
 
     if len(r2_non_ignored) > 0:
-        log_and_write(logger, f"Files present in {ro.r2_id} but missing in {ro.r1_id}:", out_fh)
+        log_and_write(
+            logger, f"Files present in {ro.r2_id} but missing in {ro.r1_id}:", out_fh
+        )
         for path in sorted(r2_non_ignored):
             log_and_write(logger, f"  {path}", out_fh)
 
@@ -243,7 +259,9 @@ def compare_all_vcfs(
     max_path_length = max(len(path) for path in paths)
 
     out_fh = open(out_path, "w") if out_path else None
-    log_and_write(logger, f"{'Path':<{max_path_length}} {ro.r1_id:>10} {ro.r2_id:>10}", out_fh)
+    log_and_write(
+        logger, f"{'Path':<{max_path_length}} {ro.r1_id:>10} {ro.r2_id:>10}", out_fh
+    )
     for path in sorted(paths):
         r1_val = r1_counts.get(path) or "-"
         r2_val = r2_counts.get(path) or "-"
@@ -267,8 +285,12 @@ def diff_compare_files(
 ):
 
     with get_filehandle(file1) as r1_fh, get_filehandle(file2) as r2_fh:
-        r1_lines = [line.replace(run_id1, RUN_ID_PLACEHOLDER) for line in r1_fh.readlines()]
-        r2_lines = [line.replace(run_id2, RUN_ID_PLACEHOLDER) for line in r2_fh.readlines()]
+        r1_lines = [
+            line.replace(run_id1, RUN_ID_PLACEHOLDER) for line in r1_fh.readlines()
+        ]
+        r2_lines = [
+            line.replace(run_id2, RUN_ID_PLACEHOLDER) for line in r2_fh.readlines()
+        ]
 
     out_fh = open(out_path, "w") if out_path else None
     diff = list(difflib.unified_diff(r1_lines, r2_lines))
@@ -292,7 +314,7 @@ def do_simple_diff(
     verbose: bool,
 ):
     logger.info("")
-    
+
     file_pattern_str = pipe_conf[analysis]
     if not file_pattern_str:
         logger.warning(f"Skipping {analysis}, not found in config")
@@ -312,4 +334,6 @@ def do_simple_diff(
         logger.warning(f"At least one file missing ({matched_pair})")
     else:
         out_path = outdir / FILE_NAMES[analysis] if outdir else None
-        diff_compare_files(logger, ro.r1_id, ro.r2_id, matched_pair[0], matched_pair[1], out_path)
+        diff_compare_files(
+            logger, ro.r1_id, ro.r2_id, matched_pair[0], matched_pair[1], out_path
+        )

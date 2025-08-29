@@ -1,7 +1,7 @@
+import statistics
 from configparser import ConfigParser
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
-import statistics
 from typing import Any, List, Optional
 
 
@@ -17,7 +17,9 @@ def prettify_rows(rows: List[List[Any]], padding: int = 4) -> List[str]:
 
     pretty_rows: List[str] = []
     for row in rows:
-        adjusted_cells = [str(cell).ljust(column_widths[i]) for (i, cell) in enumerate(row)]
+        adjusted_cells = [
+            str(cell).ljust(column_widths[i]) for (i, cell) in enumerate(row)
+        ]
         adjusted_row = "".join(adjusted_cells)
         pretty_rows.append(adjusted_row)
     return pretty_rows
@@ -44,7 +46,9 @@ def parse_decimal(val: str) -> Optional[Decimal]:
     return d if d.is_finite() else None
 
 
-def scale_value_to_screen(val: Decimal, min_value: Decimal, max_value: Decimal, screen_width: int) -> int:
+def scale_value_to_screen(
+    val: Decimal, min_value: Decimal, max_value: Decimal, screen_width: int
+) -> int:
 
     if min_value == max_value:
         return screen_width // 2
@@ -87,7 +91,9 @@ def render_bar(
 
     # Median as '|'
     if median_value is not None:
-        median_view_pos = scale_value_to_screen(median_value, view_min, view_max, screen_width)
+        median_view_pos = scale_value_to_screen(
+            median_value, view_min, view_max, screen_width
+        )
         view_chars[median_view_pos] = "|"
 
     return "".join(view_chars)

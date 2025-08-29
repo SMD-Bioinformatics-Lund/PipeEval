@@ -6,13 +6,19 @@ from typing import Dict, List, Optional, Set, Tuple
 from commands.eval.classes.helpers import VCFPair
 from shared.compare import ColumnComparison, Comparison, parse_var_key_for_sort
 from shared.util import parse_decimal, prettify_rows
-from shared.vcf.field_comparison import show_categorical_comparisons, show_numerical_comparisons
+from shared.vcf.field_comparison import (
+    show_categorical_comparisons,
+    show_numerical_comparisons,
+)
 from shared.vcf.score import get_table, get_table_header
 from shared.vcf.vcf import DiffScoredVariant, ScoredVariant
 
 
 def check_vcf_filter_differences(
-    logger: Logger, run_ids: Tuple[str, str], vcfs: VCFPair, shared_variant_keys: Set[str]
+    logger: Logger,
+    run_ids: Tuple[str, str],
+    vcfs: VCFPair,
+    shared_variant_keys: Set[str],
 ):
     logger.info("Comparing filter differences")
     pairs = []
@@ -29,7 +35,10 @@ def check_vcf_filter_differences(
 
 
 def check_vcf_sample_differences(
-    logger: Logger, run_ids: Tuple[str, str], vcfs: VCFPair, shared_variant_keys: Set[str]
+    logger: Logger,
+    run_ids: Tuple[str, str],
+    vcfs: VCFPair,
+    shared_variant_keys: Set[str],
 ):
     all_sample_keys: Set[str] = set()
     for key in shared_variant_keys:
@@ -57,9 +66,9 @@ def check_vcf_sample_differences(
 
         comp = ColumnComparison(shared_key_values)
 
-        is_numerical = comp.all_numeric and len(comp.numeric_pairs) > 0 
+        is_numerical = comp.all_numeric and len(comp.numeric_pairs) > 0
         column_type = "numerical" if is_numerical else "categorical"
- 
+
         logger.info("")
         logger.info(f"Sample field: {sample_key} ({column_type})")
         logger.info(
@@ -70,6 +79,7 @@ def check_vcf_sample_differences(
             show_numerical_comparisons(logger, run_ids, comp.numeric_pairs)
         else:
             show_categorical_comparisons(logger, run_ids, comp.categorical_pairs)
+
 
 def check_custom_info_field_differences(
     logger: Logger,
@@ -194,13 +204,17 @@ def get_variant_presence_summary(
 
     if len(r1_only) > 0:
         if max_display is not None:
-            output.append(f"# First {min(len(r1_only), max_display)} only found in {run_ids[0]}")
+            output.append(
+                f"# First {min(len(r1_only), max_display)} only found in {run_ids[0]}"
+            )
         else:
             output.append(f"Only found in {run_ids[0]}")
 
         r1_table: List[List[str]] = []
         for key in sorted(list(r1_only), key=parse_var_key_for_sort)[0:max_display]:
-            row_fields = variants_r1[key].get_row(show_line_numbers, additional_annotations)
+            row_fields = variants_r1[key].get_row(
+                show_line_numbers, additional_annotations
+            )
             r1_table.append(row_fields)
         pretty_rows = prettify_rows(r1_table)
         for row in pretty_rows:
@@ -208,13 +222,17 @@ def get_variant_presence_summary(
 
     if len(r2_only) > 0:
         if max_display is not None:
-            output.append(f"# First {min(len(r2_only), max_display)} only found in {run_ids[1]}")
+            output.append(
+                f"# First {min(len(r2_only), max_display)} only found in {run_ids[1]}"
+            )
         else:
             output.append(f"Only found in {run_ids[1]}")
 
         r2_table: List[List[str]] = []
         for key in sorted(list(r2_only), key=parse_var_key_for_sort)[0:max_display]:
-            row_fields = variants_r2[key].get_row(show_line_numbers, additional_annotations)
+            row_fields = variants_r2[key].get_row(
+                show_line_numbers, additional_annotations
+            )
             r2_table.append(row_fields)
         pretty_rows = prettify_rows(r2_table)
         for row in pretty_rows:
@@ -372,7 +390,8 @@ def write_full_score_table(
 ) -> None:
 
     all_variants: list[DiffScoredVariant] = [
-        DiffScoredVariant(variants_r1[key], variants_r2[key]) for key in shared_variant_keys
+        DiffScoredVariant(variants_r1[key], variants_r2[key])
+        for key in shared_variant_keys
     ]
 
     all_variants.sort(key=lambda var: var.r1.get_rank_score(), reverse=True)

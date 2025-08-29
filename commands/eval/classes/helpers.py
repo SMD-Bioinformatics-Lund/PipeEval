@@ -28,7 +28,7 @@ class RunSettings:
         extra_annot_keys: List[str] = [],
         output_all_variants: bool = False,
         custom_info_keys_snv: Set[str] = set(),
-        custom_info_keys_sv: Set[str] = set()
+        custom_info_keys_sv: Set[str] = set(),
     ):
         self.pipeline = pipeline
         self.score_threshold = score_threshold

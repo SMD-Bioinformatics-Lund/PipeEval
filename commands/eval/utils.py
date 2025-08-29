@@ -207,7 +207,7 @@ def parse_vcf_pair(
     vcf_paths: Tuple[Path, Path],
     vcf_type: VCFType,
 ) -> VCFPair:
-    
+
     if vcf_type.value == "sv":
         is_sv = True
     elif vcf_type.value == "snv":
