@@ -65,12 +65,6 @@ class RunProfileConfig:
         self.config = ConfigParser()
         self.config.read(conf_path)
 
-        if not self.config.has_section(run_profile):
-            avail_run_profiles = self.config.sections()
-            logger.error(
-                f'Run profile {run_profile} not available among settings. Available: {", ".join(avail_run_profiles)}'
-            )
-
         self.run_profile = run_profile
 
         if run_profile not in self.config.keys():
