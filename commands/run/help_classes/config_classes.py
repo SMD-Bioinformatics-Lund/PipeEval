@@ -71,7 +71,7 @@ class RunProfileConfig:
 
         if run_profile not in self.config.keys():
             ignore = {"DEFAULT"}
-            available = [key for key in ", ".join(self.config.keys()) if key not in ignore]
+            available = ", ".join(set(self.config.keys()) - ignore)
             logger.error(
                 f"Provided run profile not present among available entries in the run profile config. Provided: {run_profile}, available: {available}"
             )
