@@ -1,4 +1,4 @@
-# 2.0.0 (pre release)
+# 2.0.0
 
 * Generalized run module to allow any pipeline
     * Splitting config into three configs - settings, samples and run profile
