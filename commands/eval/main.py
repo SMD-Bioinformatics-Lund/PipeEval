@@ -300,13 +300,12 @@ def main_wrapper(args: argparse.Namespace):
         set() if not args.custom_info_keys_sv else set(args.custom_info_keys_sv.split(","))
     )
 
-    pipeline_name = args.pipeline or get_pipeline_from_run_folders(
-        logger, run_object.r1_results, run_object.r2_results
+    # The placeholder allows of a later graceful exit after the base config has been loaded
+    pipeline_name = (
+        args.pipeline
+        or get_pipeline_from_run_folders(logger, run_object.r1_results, run_object.r2_results)
+        or "No pipeline found"
     )
-
-    if not pipeline_name:
-        logger.error("No pipline name set. Set it either using --pipeline flag or pipeline_info file in results folders")
-        sys.exit(1)
 
     run_settings = RunSettings(
         pipeline_name,
