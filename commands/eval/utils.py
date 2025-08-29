@@ -48,7 +48,7 @@ def verify_pair_exists(
     label: str,
     file1: Optional[Union[Path, PathObj]],
     file2: Optional[Union[Path, PathObj]],
-    pattern: str,
+    pattern: Optional[str],
 ):
 
     r1_exists = file1 and file1.exists()
