@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import Dict, List, Optional, Set, Tuple
 
 from commands.eval.classes.helpers import VCFPair
-from shared.compare import ColumnComparison, Comparison, parse_var_key_for_sort
+from shared.compare import ColumnComparison, Comparison
 from shared.util import prettify_rows
 from shared.vcf.field_comparison import (
     show_categorical_comparisons,

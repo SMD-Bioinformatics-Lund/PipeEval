@@ -12,7 +12,7 @@ from commands.eval.classes.run_object import RunObject
 from commands.eval.constants import FILE_NAMES
 from commands.eval.utils import get_ignored, get_pair_match
 from shared.compare import do_comparison
-from shared.constants import RUN_ID_PLACEHOLDER, VCFType
+from shared.constants import RUN_ID_PLACEHOLDER
 from shared.file import check_valid_file, get_filehandle
 from shared.vcf.annotation import compare_variant_annotation
 from shared.vcf.main_functions import (
