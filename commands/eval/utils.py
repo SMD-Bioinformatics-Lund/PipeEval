@@ -195,7 +195,7 @@ def get_vcf_pair(
 
     if vcf_pair_paths is None:
         logger.warning(
-            f"Skipping {vcf_type} comparisons due to missing files ({vcf_pair_paths})"
+            f"Skipping {vcf_type.value} comparisons due to missing files"
         )
         return None
 
