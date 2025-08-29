@@ -1,4 +1,4 @@
-# 2.0.0
+# 2.0.0 (pre release)
 
 * Generalized run module to allow any pipeline
     * Splitting config into three configs - settings, samples and run profile
@@ -7,6 +7,7 @@
 * Refactored eval module to reduce amount of code in main function
 * Generalized eval module to allow configuration for different pipelines
 * Added unit tests for somatic and RNA-seq pipelines
+* Single-column comparisons for custom info keys, sample column and filter column
 
 # 1.4.0
 
