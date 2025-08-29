@@ -1,11 +1,10 @@
-from decimal import Decimal, InvalidOperation
 from logging import Logger
 from pathlib import Path
 from typing import Dict, List, Optional, Set, Tuple
 
 from commands.eval.classes.helpers import VCFPair
 from shared.compare import ColumnComparison, Comparison, parse_var_key_for_sort
-from shared.util import parse_decimal, prettify_rows
+from shared.util import prettify_rows
 from shared.vcf.field_comparison import (
     show_categorical_comparisons,
     show_numerical_comparisons,
@@ -89,57 +88,40 @@ def check_custom_info_field_differences(
     info_keys: Set[str],
 ):
     for info_key in info_keys:
-        none_present = 0
-        v1_present = 0
-        v2_present = 0
-        both_present = 0
-        nbr_same = 0
+        # none_present = 0
+        # v1_present = 0
+        # v2_present = 0
+        # both_present = 0
+        # nbr_same = 0
 
-        shared_key_values: List[Tuple[str, str]] = []
+        # shared_key_values: List[Tuple[str, str]] = []
+        shared_key_values: List[Tuple[Optional[str], Optional[str]]] = []
 
         for key in shared_variant_keys:
-            v1 = vcfs.vcf1.variants[key]
-            v2 = vcfs.vcf2.variants[key]
 
-            v1_info = v1.info_dict.get(info_key)
-            v2_info = v2.info_dict.get(info_key)
+            for key in shared_variant_keys:
+                v1 = vcfs.vcf1.variants[key]
+                v2 = vcfs.vcf2.variants[key]
 
-            if not v1_info and not v2_info:
-                none_present += 1
-            elif not v2_info:
-                v1_present += 1
-            elif not v1_info:
-                v2_present += 1
-            else:
-                pair = (v1_info, v2_info)
-                shared_key_values.append(pair)
+                v1_info = v1.info_dict.get(info_key)
+                v2_info = v2.info_dict.get(info_key)
 
-                both_present += 1
-                if v1_info == v2_info:
-                    nbr_same += 1
+                shared_key_values.append((v1_info, v2_info))
+
+        comp = ColumnComparison(shared_key_values)
 
         logger.info("")
         logger.info(info_key)
-        if both_present > 0:
+        if comp.both_present > 0:
             logger.info(
-                f"{both_present} present in both, {nbr_same} identical ({v1_present} v1 only, {v2_present} v2 only)"
+                f"{comp.both_present} present in both, {comp.nbr_same} identical ({comp.v1_present} v1 only, {comp.v2_present} v2 only)"
             )
 
-        all_numeric = True
-        numeric_pairs: List[Tuple[Decimal, Decimal]] = []
-        for s1, s2 in shared_key_values:
-            d1 = parse_decimal(s1)
-            d2 = parse_decimal(s2)
-            if d1 is None or d2 is None:
-                all_numeric = False
-                break
-            numeric_pairs.append((d1, d2))
-
-        if all_numeric and len(numeric_pairs) > 0:
-            show_numerical_comparisons(logger, run_ids, numeric_pairs)
+        if comp.all_numeric and len(comp.numeric_pairs) > 0:
+            show_numerical_comparisons(logger, run_ids, comp.numeric_pairs)
         else:
             if len(shared_key_values) > 0:
-                show_categorical_comparisons(logger, run_ids, shared_key_values)
+                show_categorical_comparisons(logger, run_ids, comp.categorical_pairs)
             else:
                 logger.info("No entries found for this key")
 
@@ -204,17 +186,13 @@ def get_variant_presence_summary(
 
     if len(r1_only) > 0:
         if max_display is not None:
-            output.append(
-                f"# First {min(len(r1_only), max_display)} only found in {run_ids[0]}"
-            )
+            output.append(f"# First {min(len(r1_only), max_display)} only found in {run_ids[0]}")
         else:
             output.append(f"Only found in {run_ids[0]}")
 
         r1_table: List[List[str]] = []
         for key in sorted(list(r1_only), key=parse_var_key_for_sort)[0:max_display]:
-            row_fields = variants_r1[key].get_row(
-                show_line_numbers, additional_annotations
-            )
+            row_fields = variants_r1[key].get_row(show_line_numbers, additional_annotations)
             r1_table.append(row_fields)
         pretty_rows = prettify_rows(r1_table)
         for row in pretty_rows:
@@ -222,17 +200,13 @@ def get_variant_presence_summary(
 
     if len(r2_only) > 0:
         if max_display is not None:
-            output.append(
-                f"# First {min(len(r2_only), max_display)} only found in {run_ids[1]}"
-            )
+            output.append(f"# First {min(len(r2_only), max_display)} only found in {run_ids[1]}")
         else:
             output.append(f"Only found in {run_ids[1]}")
 
         r2_table: List[List[str]] = []
         for key in sorted(list(r2_only), key=parse_var_key_for_sort)[0:max_display]:
-            row_fields = variants_r2[key].get_row(
-                show_line_numbers, additional_annotations
-            )
+            row_fields = variants_r2[key].get_row(show_line_numbers, additional_annotations)
             r2_table.append(row_fields)
         pretty_rows = prettify_rows(r2_table)
         for row in pretty_rows:
@@ -390,8 +364,7 @@ def write_full_score_table(
 ) -> None:
 
     all_variants: list[DiffScoredVariant] = [
-        DiffScoredVariant(variants_r1[key], variants_r2[key])
-        for key in shared_variant_keys
+        DiffScoredVariant(variants_r1[key], variants_r2[key]) for key in shared_variant_keys
     ]
 
     all_variants.sort(key=lambda var: var.r1.get_rank_score(), reverse=True)
