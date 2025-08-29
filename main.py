@@ -28,7 +28,7 @@ def main():
     elif args.subcommand == "vcf":
         vcf_main_wrapper(args)
     else:
-        logger.info(
+        logger.error(
             f"Unknown sub command: {args.subcommand}. Check valid commands by running main.py --help"
         )
         sys.exit(1)
