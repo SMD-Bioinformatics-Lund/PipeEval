@@ -1,3 +1,4 @@
+import math
 import statistics
 from configparser import ConfigParser
 from decimal import Decimal, InvalidOperation
@@ -17,9 +18,7 @@ def prettify_rows(rows: List[List[Any]], padding: int = 4) -> List[str]:
 
     pretty_rows: List[str] = []
     for row in rows:
-        adjusted_cells = [
-            str(cell).ljust(column_widths[i]) for (i, cell) in enumerate(row)
-        ]
+        adjusted_cells = [str(cell).ljust(column_widths[i]) for (i, cell) in enumerate(row)]
         adjusted_row = "".join(adjusted_cells)
         pretty_rows.append(adjusted_row)
     return pretty_rows
@@ -60,12 +59,36 @@ def scale_value_to_screen(
     return pos
 
 
+# Workaround to support Python3.6
+# When updated to beyond 3.8, statistics.quantiles is the way to go
+def _pct(data: List[float], fraction: float) -> float:  # p in [0,1]
+    data = sorted(data)
+    if not data:
+        raise ValueError("no data")
+    position = (len(data) - 1) * fraction
+    floor = math.floor(position)
+    ceil = math.ceil(position)
+    return (
+        data[int(position)]
+        if floor == ceil
+        else data[floor] * (ceil - position) + data[ceil] * (position - floor)
+    )
+
+
+def quantiles(data: List[Decimal], n=4) -> List[Decimal]:
+    data_float = [float(d) for d in data]
+    return [Decimal(_pct(data_float, k / n)) for k in range(1, n)]
+
+
 def render_bar(
     values: List[Decimal], view_min: Decimal, view_max: Decimal, screen_width: int
 ) -> str:
     if len(values) == 0:
         return "".ljust(screen_width)
-    q1, _q2, q3 = statistics.quantiles(values, n=4, method="inclusive")
+
+    # FIXME: Not yet present
+    # q1, _q2, q3 = statistics.quantiles(values, n=4, method="inclusive")
+    q1, _q2, q3 = quantiles(values, n=4)
     min_value = min(values)
     max_value = max(values)
     median_value = statistics.median(values)
@@ -91,9 +114,7 @@ def render_bar(
 
     # Median as '|'
     if median_value is not None:
-        median_view_pos = scale_value_to_screen(
-            median_value, view_min, view_max, screen_width
-        )
+        median_view_pos = scale_value_to_screen(median_value, view_min, view_max, screen_width)
         view_chars[median_view_pos] = "|"
 
     return "".join(view_chars)
