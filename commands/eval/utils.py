@@ -146,7 +146,9 @@ def get_pair_match(
             )
 
     try:
-        verify_pair_exists(error_label, ro.run_ids, r1_matching, r2_matching, ", ".join(valid_patterns))
+        verify_pair_exists(
+            error_label, ro.run_ids, r1_matching, r2_matching, ", ".join(valid_patterns)
+        )
     except ValueError as e:
         logger.warning(e)
 
@@ -193,9 +195,7 @@ def get_vcf_pair(
     )
 
     if vcf_pair_paths is None:
-        logger.warning(
-            f"Skipping {vcf_type.value} comparisons due to missing files"
-        )
+        logger.warning(f"Skipping {vcf_type.value} comparisons due to missing files")
         return None
 
     vcf_pair = parse_vcf_pair(logger, ro.run_ids, vcf_pair_paths, vcf_type)

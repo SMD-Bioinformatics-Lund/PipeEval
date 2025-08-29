@@ -18,7 +18,9 @@ def prettify_rows(rows: List[List[Any]], padding: int = 4) -> List[str]:
 
     pretty_rows: List[str] = []
     for row in rows:
-        adjusted_cells = [str(cell).ljust(column_widths[i]) for (i, cell) in enumerate(row)]
+        adjusted_cells = [
+            str(cell).ljust(column_widths[i]) for (i, cell) in enumerate(row)
+        ]
         adjusted_row = "".join(adjusted_cells)
         pretty_rows.append(adjusted_row)
     return pretty_rows
@@ -57,8 +59,6 @@ def scale_value_to_screen(
     scaled_value = (value_from_min / total_range) * (screen_width - 1)
     pos = int(round(scaled_value))
     return pos
-
-
 
 
 def quantiles(data: List[Decimal], n=4) -> List[Decimal]:
@@ -116,7 +116,9 @@ def render_bar(
 
     # Median as '|'
     if median_value is not None:
-        median_view_pos = scale_value_to_screen(median_value, view_min, view_max, screen_width)
+        median_view_pos = scale_value_to_screen(
+            median_value, view_min, view_max, screen_width
+        )
         view_chars[median_view_pos] = "|"
 
     return "".join(view_chars)
