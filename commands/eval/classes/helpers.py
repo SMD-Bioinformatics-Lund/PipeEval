@@ -68,7 +68,7 @@ class PathObj:
         self.run_id = run_id
         self.id_placeholder = id_placeholder
 
-        self.is_gzipped = path.suffix.endswith(".gz")
+        self.is_gzipped = path.suffix == ".gz"
 
     def exists(self) -> bool:
         return self.real_path.exists()

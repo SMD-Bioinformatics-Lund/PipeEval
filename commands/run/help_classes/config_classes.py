@@ -258,7 +258,7 @@ class RunConfig:
     run_profile_key: str
     run_profile: RunProfileConfig
     general_settings: PipelineSettingsConfig
-    all_samples: Dict[str, SampleConfig] = {}
+    all_samples: Dict[str, SampleConfig]
 
     def __init__(
         self,
@@ -268,6 +268,7 @@ class RunConfig:
         pipeline_config_path: Path,
         sample_config_path: Path,
     ):
+        self.all_samples = {}
         self.run_profile_key = run_profile
         self.run_profile = RunProfileConfig(logger, run_profile, profile_config_path)
 

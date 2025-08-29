@@ -17,21 +17,30 @@ class Comparison(Generic[T]):
 
 class ColumnComparison:
 
-    none_present = 0
-    v1_present = 0
-    v2_present = 0
-    both_present = 0
-    nbr_same = 0
+    none_present: int
+    v1_present: int
+    v2_present: int
+    both_present: int
+    nbr_same: int
 
-    all_numeric = False
-    numeric_pairs: List[Tuple[Decimal, Decimal]] = []
-    categorical_pairs: List[Tuple[str, str]] = []
+    all_numeric: bool
+    numeric_pairs: List[Tuple[Decimal, Decimal]]
+    categorical_pairs: List[Tuple[str, str]]
 
     def __str__(self) -> str:
         return f"{self.none_present} {self.v1_present} {self.v2_present} {self.both_present} {self.nbr_same} {self.all_numeric} nbr numeric {len(self.numeric_pairs)}"
 
     def __init__(self, val_pairs: List[Tuple[Optional[str], Optional[str]]]):
 
+        self.none_present = 0
+        self.v1_present = 0
+        self.v2_present = 0
+        self.both_present = 0
+        self.nbr_same = 0
+        self.all_numeric = False
+
+        self.numeric_pairs = []
+        self.categorical_pairs = []
         self.categorical_pairs: List[Tuple[str, str]] = []
 
         all_numeric = True

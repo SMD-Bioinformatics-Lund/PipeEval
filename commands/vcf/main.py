@@ -65,7 +65,7 @@ def main(
         comparisons = ALL_VCF_COMPARISONS
     vcf_comparisons: Set[VCFComparison] = set()
     for comp in comparisons:
-        if comp not in VCFComparison:
+        if comp not in ALL_VCF_COMPARISONS:
             all_valid = [member.value for member in VCFComparison]
             logger.warning(
                 f'{comp} is not a valid comparison. Skipping. Valid are: {", ".join(all_valid)}'

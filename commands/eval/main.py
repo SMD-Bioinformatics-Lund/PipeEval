@@ -38,7 +38,7 @@ for comp in SNV_COMPARISONS:
     VALID_COMPARISONS.add(comp)
 for comp in SV_COMPARISONS:
     VALID_COMPARISONS.add(comp)
-for comp in {"default", "file", "yaml", "qc"}:
+for comp in {"default", "file", "yaml", "qc", "versions"}:
     VALID_COMPARISONS.add(comp)
 
 description = """
@@ -292,8 +292,8 @@ def main_wrapper(args: argparse.Namespace):
     )
     custom_info_keys_sv = (
         set()
-        if not args.custom_info_keys_snv
-        else set(args.custom_info_keys_snv.split(","))
+        if not args.custom_info_keys_sv
+        else set(args.custom_info_keys_sv.split(","))
     )
     run_settings = RunSettings(
         args.pipeline,
@@ -324,8 +324,3 @@ def main_wrapper(args: argparse.Namespace):
         Path(args.outdir) if args.outdir is not None else None,
     )
 
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    add_arguments(parser)
-    args = parser.parse_args()

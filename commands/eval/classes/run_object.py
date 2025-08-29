@@ -67,7 +67,7 @@ def get_run_object(
 
     if id2 is None:
         id2 = detect_run_id(logger, results2.name, verbose)
-        logger.info(f"# --run_id1 not set, assigned: {id2}")
+        logger.info(f"# --run_id2 not set, assigned: {id2}")
 
     run_object = RunObject(
         id1,

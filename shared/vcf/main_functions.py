@@ -92,15 +92,13 @@ def check_custom_info_field_differences(
         shared_key_values: List[Tuple[Optional[str], Optional[str]]] = []
 
         for key in shared_variant_keys:
+            v1 = vcfs.vcf1.variants[key]
+            v2 = vcfs.vcf2.variants[key]
 
-            for key in shared_variant_keys:
-                v1 = vcfs.vcf1.variants[key]
-                v2 = vcfs.vcf2.variants[key]
+            v1_info = v1.info_dict.get(info_key)
+            v2_info = v2.info_dict.get(info_key)
 
-                v1_info = v1.info_dict.get(info_key)
-                v2_info = v2.info_dict.get(info_key)
-
-                shared_key_values.append((v1_info, v2_info))
+            shared_key_values.append((v1_info, v2_info))
 
         comp = ColumnComparison(shared_key_values)
 
