@@ -88,13 +88,7 @@ def check_custom_info_field_differences(
     info_keys: Set[str],
 ):
     for info_key in info_keys:
-        # none_present = 0
-        # v1_present = 0
-        # v2_present = 0
-        # both_present = 0
-        # nbr_same = 0
 
-        # shared_key_values: List[Tuple[str, str]] = []
         shared_key_values: List[Tuple[Optional[str], Optional[str]]] = []
 
         for key in shared_variant_keys:

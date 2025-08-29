@@ -100,6 +100,7 @@ def test_parse_scored_vcf_counts():
     assert len(vcf2.variants) == 2194
 
 
+# FIXME: Quick and dirty initial test
 def test_vcf_filter_sample_and_custom_info(tmp_path: Path, caplog: LogCaptureFixture):
     """Create minimal VCFs to exercise filter, sample (FORMAT), and custom INFO comparisons."""
 
@@ -168,12 +169,14 @@ def test_vcf_filter_sample_and_custom_info(tmp_path: Path, caplog: LogCaptureFix
     assert "PASS" in text and "LowQual" in text
 
     # Verify sample comparison ran; numeric summary for DP and categorical for GT
+    import pdb
+    pdb.set_trace()
     assert "### Checking sample differences ###" in text
     assert "Sample field: DP" in text
-    assert "DP (numeric)" in text or "(numeric)" in text
+    assert "DP (numerical)" in text or "(numerical)" in text
     assert "Sample field: GT" in text
 
     # Verify custom info comparisons ran for both keys
     assert "### Checking custom info keys ###" in text
-    assert "MYNUM" in text and "(numeric)" in text
+    assert "MYNUM" in text and "(numerical)" in text
     assert "MYSTAT" in text and "present in both" in text
