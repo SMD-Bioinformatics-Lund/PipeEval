@@ -2,8 +2,9 @@
 
 import argparse
 import logging
-from configparser import ConfigParser
+from configparser import ConfigParser, SectionProxy
 from pathlib import Path
+import sys
 from typing import List, Optional, Set, Tuple
 
 from commands.eval.classes.helpers import PathObj, RunSettings
@@ -38,7 +39,7 @@ for comp in SNV_COMPARISONS:
     VALID_COMPARISONS.add(comp)
 for comp in SV_COMPARISONS:
     VALID_COMPARISONS.add(comp)
-for comp in {"default", "file", "yaml", "qc", "versions"}:
+for comp in {"default", "file", "scout_yaml", "qc", "versions"}:
     VALID_COMPARISONS.add(comp)
 
 description = """
@@ -58,7 +59,7 @@ def main(
     ro: RunObject,
     rs: RunSettings,
     args_config_path: Optional[str],
-    comparisons: Set[str],
+    args_comparisons: Optional[Set[str]],
     outdir: Optional[Path],
 ):
 
@@ -78,8 +79,7 @@ def main(
 
     pipe_conf = config[rs.pipeline]
 
-    if comparisons and len(comparisons & VALID_COMPARISONS) == 0:
-        raise ValueError(f"Valid comparisons are: {VALID_COMPARISONS}, found: {comparisons}")
+    used_comparisons = get_comparisons(logger, args_comparisons, pipe_conf, rs)
 
     run_ids = (ro.r1_id, ro.r2_id)
 
@@ -88,13 +88,13 @@ def main(
     if outdir is not None:
         outdir.mkdir(parents=True, exist_ok=True)
 
-    if not comparisons or "file" in comparisons:
+    if not used_comparisons or "file" in used_comparisons:
         do_file_diff(logger, outdir, pipe_conf, ro, r1_paths, r2_paths)
 
     snv_patterns = set(pipe_conf["snv_vcf"].split(",")) if pipe_conf.get("snv_vcf") else set()
     main_vcf_comparisons(
         run_ids,
-        comparisons,
+        used_comparisons,
         ro,
         r1_paths,
         r2_paths,
@@ -109,7 +109,7 @@ def main(
     sv_patterns = set(pipe_conf["sv_vcf"].split(",")) if pipe_conf.get("sv_vcf") else set()
     main_vcf_comparisons(
         run_ids,
-        comparisons,
+        used_comparisons,
         ro,
         r1_paths,
         r2_paths,
@@ -122,7 +122,7 @@ def main(
     )
 
     scout_yaml_check = "scout_yaml"
-    if not comparisons or scout_yaml_check in comparisons:
+    if not used_comparisons or scout_yaml_check in used_comparisons:
         do_simple_diff(
             logger,
             ro,
@@ -135,12 +135,35 @@ def main(
         )
 
     qc_check = "qc"
-    if not comparisons or qc_check in comparisons:
+    if not used_comparisons or qc_check in used_comparisons:
         do_simple_diff(logger, ro, r1_paths, r2_paths, pipe_conf, qc_check, outdir, rs.verbose)
 
     version_check = "versions"
-    if not comparisons or version_check in comparisons:
+    if not used_comparisons or version_check in used_comparisons:
         do_simple_diff(logger, ro, r1_paths, r2_paths, pipe_conf, version_check, outdir, rs.verbose)
+
+
+def get_comparisons(
+    logger: logging.Logger, arg_comparisons: Optional[Set[str]], pipe_conf: SectionProxy, rs: RunSettings
+) -> Set[str]:
+    used_comparison: Set[str] = set()
+    if arg_comparisons:
+        used_comparison = set(arg_comparisons)
+    else:
+        default_comp_str = pipe_conf.get("default_comparisons")
+        if default_comp_str:
+            used_comparison = set(filter(None, [c.strip() for c in default_comp_str.split(",")]))
+
+    if len(rs.custom_info_keys_snv) > 0:
+        used_comparison.add("custom_info_snv")
+    if len(rs.custom_info_keys_sv) > 0:
+        used_comparison.add("custom_info_sv")
+
+    if used_comparison and len(used_comparison & VALID_COMPARISONS) == 0:
+        logger.error(f"Valid comparisons are: {VALID_COMPARISONS}, found: {used_comparison}")
+        sys.exit(1)
+
+    return used_comparison
 
 
 def main_vcf_comparisons(
@@ -159,7 +182,7 @@ def main_vcf_comparisons(
     vcf_comparisons = set()
     if comparisons:
         vcf_comparisons = {
-            VCFComparison(comp.replace(f"_{vcf_type}", ""))
+            VCFComparison(comp.replace(f"_{vcf_type.value}", ""))
             for comp in comparisons
             if comp in all_comparisons
         }
@@ -211,8 +234,10 @@ def add_arguments(parser: argparse.ArgumentParser):
     parser.add_argument("--config", help="Additional configurations")
     parser.add_argument(
         "--comparisons",
-        help=f"Comma separated. Defaults to: default, available: {','.join(VALID_COMPARISONS)}",
-        default="default",
+        help=(
+            f"Comma separated. If omitted (or set to 'default'), use default_comparisons from the pipeline config. "
+            f"Available: {','.join(sorted(VALID_COMPARISONS))}"
+        ),
     )
     parser.add_argument(
         "--score_threshold",
@@ -320,11 +345,11 @@ def main_wrapper(args: argparse.Namespace):
         custom_info_keys_sv,
     )
 
-    comparisons = set() if args.comparisons == "default" else set(args.comparisons.split(","))
-    if comparisons and len(custom_info_keys_snv) > 0:
-        comparisons.add("custom_info_snv")
-    if comparisons and len(custom_info_keys_sv) > 0:
-        comparisons.add("custom_info_sv")
+    # Build comparisons from CLI; None means use default_comparisons in config
+    if args.comparisons is None or args.comparisons == "default":
+        comparisons = None
+    else:
+        comparisons = set(args.comparisons.split(","))
 
     main(
         run_object,
