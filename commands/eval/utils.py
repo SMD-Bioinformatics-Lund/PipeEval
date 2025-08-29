@@ -46,6 +46,7 @@ def any_is_parent(path: Path, names: List[str]) -> bool:
 
 def verify_pair_exists(
     label: str,
+    run_ids: Tuple[str, str],
     file1: Optional[Union[Path, PathObj]],
     file2: Optional[Union[Path, PathObj]],
     pattern: Optional[str],
@@ -60,11 +61,11 @@ def verify_pair_exists(
         )
     elif not r1_exists:
         raise ValueError(
-            f"Both {label} must exist. {file1} is missing. Is the correct run_id detected/assigned? Patterns used: {pattern}"
+            f"Both {label} must exist. {run_ids[0]} is missing. Is the correct run_id detected/assigned? Patterns used: {pattern}"
         )
     elif not r2_exists:
         raise ValueError(
-            f"Both {label} must exist. {file2} is missing. Is the correct run_id detected/assigned? Patterns used: {pattern}"
+            f"Both {label} must exist. {run_ids[1]} is missing. Is the correct run_id detected/assigned? Patterns used: {pattern}"
         )
 
 
@@ -145,7 +146,7 @@ def get_pair_match(
             )
 
     try:
-        verify_pair_exists(error_label, r1_matching, r2_matching, ", ".join(valid_patterns))
+        verify_pair_exists(error_label, ro.run_ids, r1_matching, r2_matching, ", ".join(valid_patterns))
     except ValueError as e:
         logger.warning(e)
 
@@ -174,6 +175,7 @@ def get_ignored(
 
 def get_vcf_pair(
     logger: Logger,
+    run_ids: Tuple[str, str],
     vcf_paths: List[str],
     ro: RunObject,
     r1_paths: List[PathObj],

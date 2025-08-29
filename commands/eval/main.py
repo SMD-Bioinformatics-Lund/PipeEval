@@ -82,15 +82,15 @@ def main(  # noqa: C901 (skipping complexity check)
     if comparisons and len(comparisons & VALID_COMPARISONS) == 0:
         raise ValueError(f"Valid comparisons are: {VALID_COMPARISONS}, found: {comparisons}")
 
-    verify_pair_exists("result dirs", ro.r1_results, ro.r2_results, None)
+    run_ids = (ro.r1_id, ro.r2_id)
+
+    verify_pair_exists("result dirs", run_ids, ro.r1_results, ro.r2_results, None)
 
     if outdir is not None:
         outdir.mkdir(parents=True, exist_ok=True)
 
     if not comparisons or "file" in comparisons:
         do_file_diff(logger, outdir, pipe_conf, ro, r1_paths, r2_paths)
-
-    run_ids = (ro.r1_id, ro.r2_id)
 
     snv_patterns = set(pipe_conf["snv_vcf"].split(",")) if pipe_conf.get("snv_vcf") else set()
     main_vcf_comparisons(
@@ -170,6 +170,7 @@ def main_vcf_comparisons(
 
             vcfs = get_vcf_pair(
                 logger,
+                run_ids,
                 list(vcf_path_patterns),
                 ro,
                 r1_paths,
