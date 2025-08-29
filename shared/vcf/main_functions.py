@@ -1,14 +1,11 @@
-from collections import defaultdict
-from itertools import islice
 from decimal import Decimal, InvalidOperation
-import statistics
 from logging import Logger
 from pathlib import Path
 from typing import Dict, List, Optional, Set, Tuple
 
 from commands.eval.classes.helpers import VCFPair
 from shared.compare import ColumnComparison, Comparison, parse_var_key_for_sort
-from shared.util import parse_decimal, prettify_rows
+from shared.util import prettify_rows
 from shared.vcf.field_comparison import show_categorical_comparisons, show_numerical_comparisons
 from shared.vcf.score import get_table, get_table_header
 from shared.vcf.vcf import DiffScoredVariant, ScoredVariant

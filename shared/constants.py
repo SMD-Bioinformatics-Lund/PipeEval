@@ -9,5 +9,3 @@ IS_VCF_PATTERN = ".vcf$|.vcf.gz$"
 class VCFType(Enum):
     sv = "sv"
     snv = "snv"
-
-

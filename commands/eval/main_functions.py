@@ -11,9 +11,8 @@ from commands.eval.classes.helpers import PathObj, RunSettings, VCFPair
 from commands.eval.classes.run_object import RunObject
 from commands.eval.constants import FILE_NAMES
 from commands.eval.utils import get_ignored, get_pair_match
-from commands.vcf.main import VCFType
 from shared.compare import do_comparison
-from shared.constants import RUN_ID_PLACEHOLDER
+from shared.constants import RUN_ID_PLACEHOLDER, VCFType
 from shared.file import check_valid_file, get_filehandle
 from shared.vcf.annotation import compare_variant_annotation
 from shared.vcf.main_functions import (
@@ -78,7 +77,7 @@ def do_vcf_comparisons(
             logger.warning("No custom info keys supplied, skipping custom_info_keys comparison")
         else:
             logger.info("")
-            logger.info(f"### Checking custom info keys ###")
+            logger.info("### Checking custom info keys ###")
             check_custom_info_field_differences(
                 logger, run_ids, vcfs, vcfs.comp.shared, custom_info_keys
             )

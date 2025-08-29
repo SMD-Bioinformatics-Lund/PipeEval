@@ -1,5 +1,4 @@
 import argparse
-from enum import Enum
 import logging
 from pathlib import Path
 import sys
