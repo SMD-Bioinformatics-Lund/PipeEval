@@ -37,7 +37,6 @@ def truncate_string(text: str, max_len: int) -> str:
 
 
 def parse_decimal(val: str) -> Optional[Decimal]:
-    """Return value if number, else return None"""
     try:
         d = Decimal(val)
     except (InvalidOperation, TypeError):

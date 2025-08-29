@@ -12,7 +12,6 @@ def show_categorical_comparisons(
     logger: Logger, run_ids: Tuple[str, str], category_entries: List[Tuple[str, str]], max_thres=5
 ):
     nbr_identical = 0
-
     nbr_differences: Dict[str, int] = defaultdict(int)
 
     for entry1, entry2 in category_entries:

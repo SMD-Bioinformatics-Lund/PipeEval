@@ -100,10 +100,6 @@ def test_parse_scored_vcf_counts():
     assert len(vcf2.variants) == 2194
 
 
-def _write_vcf(path: Path, lines: List[str]) -> None:
-    path.write_text("\n".join(lines))
-
-
 def test_vcf_filter_sample_and_custom_info(tmp_path: Path, caplog: LogCaptureFixture):
     """Create minimal VCFs to exercise filter, sample (FORMAT), and custom INFO comparisons."""
 
@@ -138,8 +134,8 @@ def test_vcf_filter_sample_and_custom_info(tmp_path: Path, caplog: LogCaptureFix
 
     vcf1 = tmp_path / "t1.vcf"
     vcf2 = tmp_path / "t2.vcf"
-    _write_vcf(vcf1, header + v1_body)
-    _write_vcf(vcf2, header + v2_body)
+    vcf1.write_text("\n".join(header + v1_body))
+    vcf2.write_text("\n".join(header + v2_body))
 
     outdir = tmp_path / "out"
     outdir.mkdir()

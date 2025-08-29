@@ -5,7 +5,7 @@ from typing import Dict, List, Optional, Set, Tuple
 
 from commands.eval.classes.helpers import VCFPair
 from shared.compare import ColumnComparison, Comparison, parse_var_key_for_sort
-from shared.util import prettify_rows
+from shared.util import parse_decimal, prettify_rows
 from shared.vcf.field_comparison import show_categorical_comparisons, show_numerical_comparisons
 from shared.vcf.score import get_table, get_table_header
 from shared.vcf.vcf import DiffScoredVariant, ScoredVariant
@@ -57,10 +57,6 @@ def check_vcf_sample_differences(
 
         comp = ColumnComparison(shared_key_values)
 
-        # if sample_key == "DV":
-        #     import pdb
-        #     pdb.set_trace()
-
         is_numerical = comp.all_numeric and len(comp.numeric_pairs) > 0 
         column_type = "numerical" if is_numerical else "categorical"
  
@@ -74,12 +70,6 @@ def check_vcf_sample_differences(
             show_numerical_comparisons(logger, run_ids, comp.numeric_pairs)
         else:
             show_categorical_comparisons(logger, run_ids, comp.categorical_pairs)
-
-    
-
-
-
-
 
 def check_custom_info_field_differences(
     logger: Logger,
@@ -125,19 +115,11 @@ def check_custom_info_field_differences(
                 f"{both_present} present in both, {nbr_same} identical ({v1_present} v1 only, {v2_present} v2 only)"
             )
 
-        # Detect if all shared values are numeric; if so, show numeric summary
-        def _parse_decimal(val: str):
-            try:
-                d = Decimal(val)
-            except (InvalidOperation, TypeError):
-                return None
-            return d if d.is_finite() else None
-
         all_numeric = True
         numeric_pairs: List[Tuple[Decimal, Decimal]] = []
         for s1, s2 in shared_key_values:
-            d1 = _parse_decimal(s1)
-            d2 = _parse_decimal(s2)
+            d1 = parse_decimal(s1)
+            d2 = parse_decimal(s2)
             if d1 is None or d2 is None:
                 all_numeric = False
                 break
