@@ -59,25 +59,27 @@ def scale_value_to_screen(
     return pos
 
 
-# Workaround to support Python3.6
-# When updated to beyond 3.8, statistics.quantiles is the way to go
-def _pct(data: List[float], fraction: float) -> float:  # p in [0,1]
-    data = sorted(data)
-    if not data:
-        raise ValueError("no data")
-    position = (len(data) - 1) * fraction
-    floor = math.floor(position)
-    ceil = math.ceil(position)
-    return (
-        data[int(position)]
-        if floor == ceil
-        else data[floor] * (ceil - position) + data[ceil] * (position - floor)
-    )
 
 
 def quantiles(data: List[Decimal], n=4) -> List[Decimal]:
+
+    # Workaround to support Python3.6
+    # When updated to beyond 3.8, statistics.quantiles is the way to go
+    def pct(data: List[float], fraction: float) -> float:  # p in [0,1]
+        data = sorted(data)
+        if not data:
+            raise ValueError("no data")
+        position = (len(data) - 1) * fraction
+        floor = math.floor(position)
+        ceil = math.ceil(position)
+        return (
+            data[int(position)]
+            if floor == ceil
+            else data[floor] * (ceil - position) + data[ceil] * (position - floor)
+        )
+
     data_float = [float(d) for d in data]
-    return [Decimal(_pct(data_float, k / n)) for k in range(1, n)]
+    return [Decimal(pct(data_float, k / n)) for k in range(1, n)]
 
 
 def render_bar(
