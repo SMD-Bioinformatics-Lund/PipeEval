@@ -105,7 +105,7 @@ def render_bar(
     right_value = scale_value_to_screen(max_value, view_min, view_max, screen_width)
 
     for i in range(left_value, right_value + 1):
-        view_chars[i] = " "
+        view_chars[i] = "-"
 
     # IQR: q1..q3 as '='
     if q1 is not None and q3 is not None:
