@@ -82,7 +82,7 @@ def main(  # noqa: C901 (skipping complexity check)
     if comparisons and len(comparisons & VALID_COMPARISONS) == 0:
         raise ValueError(f"Valid comparisons are: {VALID_COMPARISONS}, found: {comparisons}")
 
-    verify_pair_exists("result dirs", ro.r1_results, ro.r2_results)
+    verify_pair_exists("result dirs", ro.r1_results, ro.r2_results, None)
 
     if outdir is not None:
         outdir.mkdir(parents=True, exist_ok=True)
