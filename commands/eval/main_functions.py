@@ -56,7 +56,7 @@ def do_vcf_comparisons(
     run_ids: Tuple[str, str],
     outdir: Optional[Path],
     rs: RunSettings,
-    vcf_type: VCFType,
+    vcf_type_label: str,
     vcfs: VCFPair,
     custom_info_keys: Optional[Set[str]],
 ):
@@ -89,7 +89,7 @@ def do_vcf_comparisons(
     if VCFComparison.presence in comparisons:
         logger.info("")
         logger.info("### Variants only present in one ###")
-        presence_path = outdir / f"scored_{vcf_type}_presence.txt" if outdir else None
+        presence_path = outdir / f"scored_{vcf_type_label}_presence.txt" if outdir else None
         compare_variant_presence(
             logger,
             run_ids,
@@ -118,12 +118,12 @@ def do_vcf_comparisons(
         logger.info("")
         logger.info("### Comparing score ###")
         score_thres_path = (
-            outdir / f"scored_{vcf_type}_above_thres_{rs.score_threshold}.txt"
+            outdir / f"scored_{vcf_type_label}_above_thres_{rs.score_threshold}.txt"
             if outdir
             else None
         )
         all_diffing_path = (
-            outdir / f"scored_{vcf_type}_all_diffing.txt" if outdir else None
+            outdir / f"scored_{vcf_type_label}_all_diffing.txt" if outdir else None
         )
         is_sv = False
 
@@ -142,7 +142,7 @@ def do_vcf_comparisons(
             rs.annotation_info_keys,
         )
         if rs.output_all_variants is not None and outdir:
-            all_path = outdir / f"scored_{vcf_type}_score_full.txt"
+            all_path = outdir / f"scored_{vcf_type_label}_score_full.txt"
             write_full_score_table(
                 run_ids,
                 vcfs.comp.shared,

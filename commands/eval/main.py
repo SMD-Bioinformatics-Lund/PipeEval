@@ -197,7 +197,7 @@ def main_vcf_comparisons(
                     run_ids,
                     outdir,
                     rs,
-                    vcf_type,
+                    vcf_type.value,
                     vcfs,
                     custom_info_keys,
                 )

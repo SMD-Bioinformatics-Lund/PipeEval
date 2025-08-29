@@ -118,6 +118,8 @@ def test_eval_main(
         "scout_yaml.diff",
     ]
 
+    print(list(outdir.iterdir()))
+
     for fname in expected_files:
         assert (outdir / fname).exists(), f"Expected file {fname} does not exist"
 

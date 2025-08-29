@@ -80,7 +80,7 @@ def main(
         run_ids,
         results_folder,
         rs,
-        vcf_type,
+        vcf_type.value,
         vcfs,
         custom_info_keys,
     )
