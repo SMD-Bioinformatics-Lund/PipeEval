@@ -57,16 +57,25 @@ def check_vcf_sample_differences(
 
         comp = ColumnComparison(shared_key_values)
 
+        # if sample_key == "DV":
+        #     import pdb
+        #     pdb.set_trace()
+
+        is_numerical = comp.all_numeric and len(comp.numeric_pairs) > 0 
+        column_type = "numerical" if is_numerical else "categorical"
+ 
         logger.info("")
-        logger.info(f"Sample field: {sample_key}")
+        logger.info(f"Sample field: {sample_key} ({column_type})")
         logger.info(
             f"{comp.both_present} present in both, {comp.nbr_same} identical ({comp.v1_present} v1 only, {comp.v2_present} v2 only)"
         )
 
-        if comp.all_numeric and len(comp.numeric_pairs) > 0:
+        if is_numerical:
             show_numerical_comparisons(logger, run_ids, sample_key, comp.numeric_pairs)
         else:
             show_categorical_comparisons(logger, run_ids, comp.categorical_pairs)
+
+    
 
 
 

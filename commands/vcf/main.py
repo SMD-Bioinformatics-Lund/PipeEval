@@ -63,7 +63,15 @@ def main(
 
     if not comparisons:
         comparisons = ALL_VCF_COMPARISONS
-    vcf_comparisons = {VCFComparison(comp) for comp in comparisons}
+    vcf_comparisons: Set[VCFComparison] = set()
+    for comp in comparisons:
+        if comp not in VCFComparison:
+            all_valid = [member.value for member in VCFComparison]
+            logger.warning(
+                f"{comp} is not a valid comparison. Skipping. Valid are: {", ".join(all_valid)}"
+            )
+        else:
+            vcf_comparisons.add(VCFComparison(comp))
 
     vcfs = parse_vcf_pair(logger, run_ids, (vcf1, vcf2), vcf_type)
     do_vcf_comparisons(
@@ -80,7 +88,9 @@ def main_wrapper(args: argparse.Namespace):
     custom_info_keys = set() if not args.custom_info_keys else set(args.custom_info_keys.split(","))
 
     if len(custom_info_keys) == 0 and "custom_info" in comparisons and args.comparisons:
-        logger.warning("custom_info comparison specified but no --custom_info_keys arguments. Skipping.")
+        logger.warning(
+            "custom_info comparison specified but no --custom_info_keys arguments. Skipping."
+        )
         comparisons.remove("custom_info")
         if len(comparisons) == 0:
             logger.error("No remaining comparisons after removing custom_info. Stopping.")
@@ -152,10 +162,16 @@ def add_arguments(parser: argparse.ArgumentParser):
         help="Write a comparison file including non-differing variants",
     )
     parser.add_argument(
-        "--comparisons", help=f"Comparisons to do. Available are: {",".join(ALL_VCF_COMPARISONS)}. Default is to run all."
+        "--comparisons",
+        help=f"Comparisons to do. Available are: {",".join(ALL_VCF_COMPARISONS)}. Default is to run all.",
     )
-    parser.add_argument("--custom_info_keys", help="INFO keys to inspect separately. Used together with custom_info seting.")
-    parser.add_argument("--vcf_type", type=VCFType, help="Specify if running an SNV or SV", required=True)
+    parser.add_argument(
+        "--custom_info_keys",
+        help='INFO keys to inspect separately. Used together with "info" setting.',
+    )
+    parser.add_argument(
+        "--vcf_type", type=VCFType, help="Specify if running an SNV or SV", required=True
+    )
 
 
 if __name__ == "__main__":

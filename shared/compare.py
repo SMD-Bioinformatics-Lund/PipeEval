@@ -27,9 +27,14 @@ class ColumnComparison:
     numeric_pairs: List[Tuple[Decimal, Decimal]] = []
     categorical_pairs: List[Tuple[str, str]] = []
 
+    def __str__(self) -> str:
+        return f"{self.none_present} {self.v1_present} {self.v2_present} {self.both_present} {self.nbr_same} {self.all_numeric} nbr numeric {len(self.numeric_pairs)}"
+
     def __init__(self, val_pairs: List[Tuple[Optional[str], Optional[str]]]):
 
         self.categorical_pairs: List[Tuple[str, str]] = []
+
+        all_numeric = True
 
         for v1_val, v2_val in val_pairs:
 
@@ -43,18 +48,19 @@ class ColumnComparison:
                 pair = (v1_val, v2_val)
                 self.categorical_pairs.append(pair)
 
-                if self.all_numeric:
+                if all_numeric:
                     d1 = parse_decimal(v1_val)
                     d2 = parse_decimal(v2_val)
 
                     if d1 is None or d2 is None:
-                        self.all_numeric = False
+                        all_numeric = False
                     else:
                         self.numeric_pairs.append((d1, d2))
 
                 self.both_present += 1
                 if v1_val == v2_val:
                     self.nbr_same += 1
+        self.all_numeric = all_numeric
 
 
 def do_comparison(set_1: Set[T], set_2: Set[T]) -> Comparison[T]:

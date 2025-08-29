@@ -5,11 +5,11 @@ from logging import Logger
 import statistics
 from typing import Dict, List, Tuple
 
-from shared.util import prettify_rows
+from shared.util import render_bar, prettify_rows
 
 
 def show_categorical_comparisons(
-    logger: Logger, run_ids: Tuple[str, str], category_entries: List[Tuple[str, str]], max_thres=10
+    logger: Logger, run_ids: Tuple[str, str], category_entries: List[Tuple[str, str]], max_thres=5
 ):
     nbr_identical = 0
 
@@ -53,106 +53,37 @@ def show_numerical_comparisons(
     ident_count = sum(1 for a, b in numeric_pairs if a == b)
     diff_count = len(numeric_pairs) - ident_count
 
-    # FIXME: Move to util location
-    def median(vals: List[Decimal]) -> str:
-        if len(vals) == 0:
-            return "NA"
-        return str(statistics.median(vals))
+    v1_median = statistics.median(v1_vals)
+    v2_median = statistics.median(v2_vals)
+    v1_stdev = round(statistics.stdev(v1_vals), 2) if len(v1_vals) >= 2 else "NA"
+    v2_stdev = round(statistics.stdev(v2_vals), 2) if len(v2_vals) >= 2 else "NA"
+    v1_min = min(v1_vals)
+    v2_min = min(v2_vals)
+    v1_max = max(v1_vals)
+    v2_max = max(v2_vals)
 
-    def stdev(vals: List[Decimal]) -> str:
-        if len(vals) < 2:
-            return "NA"
-        try:
-            return str(statistics.stdev(vals))
-        except statistics.StatisticsError:
-            return "NA"
+    v1_stats_row = [f"{run_ids[0]}", f"N={len(v1_vals)}", f"median={v1_median}", f"stdev={v1_stdev}", f"min={v1_min}", f"max={v1_max}"]
+    v2_stats_row = [f"{run_ids[1]}", f"N={len(v2_vals)}", f"median={v2_median}", f"stdev={v2_stdev}", f"min={v2_min}", f"max={v2_max}"]
 
-    logger.info("")
-    logger.info(f"{info_key} (numeric)")
-    logger.info(
-        f"{run_ids[0]} -> N={len(v1_vals)} median={median(v1_vals)} stdev={stdev(v1_vals)}"
-    )
-    logger.info(
-        f"{run_ids[1]} -> N={len(v2_vals)} median={median(v2_vals)} stdev={stdev(v2_vals)}"
-    )
-    logger.info(f"Identical pairs: {ident_count} Differing pairs: {diff_count}")
+    pretty_stats_rows = prettify_rows([v1_stats_row, v2_stats_row])
+    for row in pretty_stats_rows:
+        logger.info(row)
 
-    # FIXME: OK, these parts will need some hands-on touch
+    logger.info(f"Identical pairs: {ident_count}, differing pairs: {diff_count}")
 
-    # FIXME: Move to util
-    def safe_quantiles(vals: List[Decimal]):
-        if len(vals) < 2:
-            md = statistics.median(vals) if len(vals) == 1 else None
-            return (min(vals) if vals else None, md, md, md, max(vals) if vals else None)
-        try:
-            q1, q2, q3 = statistics.quantiles(vals, n=4, method="inclusive")
-        except Exception:
-            # Fallback: approximate using median splits
-            sorted_vals = sorted(vals)
-            md = statistics.median(sorted_vals)
-            mid = len(sorted_vals) // 2
-            lower = sorted_vals[:mid]
-            upper = sorted_vals[-mid:]
-            q1 = statistics.median(lower) if lower else md
-            q3 = statistics.median(upper) if upper else md
-            return (sorted_vals[0], q1, md, q3, sorted_vals[-1])
-        md = statistics.median(vals)
-        return (min(vals), q1, md, q3, max(vals))
+    all_vals = v1_vals + v2_vals
+    global_min = min(all_vals)
+    global_max = max(all_vals)
 
-    def scale_to_range(val: Decimal, vmin: Decimal, vmax: Decimal, w: int) -> int:
-        if vmin == vmax:
-            return w // 2
-        # Clamp within [0, w-1]
-        pos = int(round((float(val - vmin) / float(vmax - vmin)) * (w - 1)))
-        return max(0, min(w - 1, pos))
+    bar1 = render_bar(v1_vals, global_min, global_max, width)
+    bar2 = render_bar(v2_vals, global_min, global_max, width)
 
-    def _render_bar(vals: List[Decimal], vmin_all: Decimal, vmax_all: Decimal, w: int) -> str:
-        if len(vals) == 0:
-            return "".ljust(w)
-        vmin, q1, md, q3, vmax = safe_quantiles(vals)
+    bar_rows = [
+        [f"{run_ids[0]}", global_min, f"|{bar1}|", global_max],
+        [f"{run_ids[1]}", global_min, f"|{bar2}|", global_max],
+    ]
 
-        if not vmin or not vmax:
-            raise ValueError("Unknown situation, vmin and vmax should be non None")
+    pretty_rows = prettify_rows(bar_rows)
 
-        # If any are None (empty list handled above), just show median
-        chars = [" "] * w
-        # Whiskers: min..max as '-'
-        l = scale_to_range(vmin, vmin_all, vmax_all, w)
-        r = scale_to_range(vmax, vmin_all, vmax_all, w)
-        if l > r:
-            l, r = r, l
-        for i in range(l, r + 1):
-            chars[i] = "-"
-        # IQR: q1..q3 as '='
-        if q1 is not None and q3 is not None:
-            i1 = scale_to_range(q1, vmin_all, vmax_all, w)
-            i3 = scale_to_range(q3, vmin_all, vmax_all, w)
-            if i1 > i3:
-                i1, i3 = i3, i1
-            for i in range(i1, i3 + 1):
-                chars[i] = "="
-        # Median as '|'
-        if md is not None:
-            im = scale_to_range(md, vmin_all, vmax_all, w)
-            chars[im] = "|"
-        return "".join(chars)
-
-    # FIXME: Util?
-    if len(v1_vals) and len(v2_vals):
-        global_min = min(min(v1_vals), min(v2_vals))
-        global_max = max(max(v1_vals), max(v2_vals))
-    elif len(v1_vals):
-        global_min = min(v1_vals)
-        global_max = max(v1_vals)
-    elif len(v2_vals):
-        global_min = min(v2_vals)
-        global_max = max(v2_vals)
-    else:
-        global_min = Decimal(0)
-        global_max = Decimal(0)
-
-    bar1 = _render_bar(v1_vals, global_min, global_max, width)
-    bar2 = _render_bar(v2_vals, global_min, global_max, width)
-
-    logger.info(f"{run_ids[0]} |{bar1}|")
-    logger.info(f"{run_ids[1]} |{bar2}|")
+    for row in pretty_rows:
+        logger.info(row)
