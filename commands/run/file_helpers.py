@@ -168,8 +168,6 @@ def write_run_log(
     config: RunConfig,
     commit_hash: str,
 ):
-    print(">>> Writing run log to", run_log_path)
-
     with run_log_path.open("w") as out_fh:
         print("# Settings", file=out_fh)
         print(f"output dir: {run_log_path.parent}", file=out_fh)
