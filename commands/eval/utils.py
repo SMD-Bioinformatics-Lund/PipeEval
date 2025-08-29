@@ -208,9 +208,9 @@ def parse_vcf_pair(
     vcf_type: VCFType,
 ) -> VCFPair:
     
-    if vcf_type == "sv":
+    if vcf_type.value == "sv":
         is_sv = True
-    elif vcf_type == "snv":
+    elif vcf_type.value == "snv":
         is_sv = False
     else:
         raise ValueError(f"Expected VCF type sv or snv, found {vcf_type}")
