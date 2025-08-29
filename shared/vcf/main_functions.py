@@ -180,13 +180,17 @@ def get_variant_presence_summary(
 
     if len(r1_only) > 0:
         if max_display is not None:
-            output.append(f"# First {min(len(r1_only), max_display)} only found in {run_ids[0]}")
+            output.append(
+                f"# First {min(len(r1_only), max_display)} only found in {run_ids[0]}"
+            )
         else:
             output.append(f"Only found in {run_ids[0]}")
 
         r1_table: List[List[str]] = []
         for key in sorted(list(r1_only), key=parse_var_key_for_sort)[0:max_display]:
-            row_fields = variants_r1[key].get_row(show_line_numbers, additional_annotations)
+            row_fields = variants_r1[key].get_row(
+                show_line_numbers, additional_annotations
+            )
             r1_table.append(row_fields)
         pretty_rows = prettify_rows(r1_table)
         for row in pretty_rows:
@@ -194,13 +198,17 @@ def get_variant_presence_summary(
 
     if len(r2_only) > 0:
         if max_display is not None:
-            output.append(f"# First {min(len(r2_only), max_display)} only found in {run_ids[1]}")
+            output.append(
+                f"# First {min(len(r2_only), max_display)} only found in {run_ids[1]}"
+            )
         else:
             output.append(f"Only found in {run_ids[1]}")
 
         r2_table: List[List[str]] = []
         for key in sorted(list(r2_only), key=parse_var_key_for_sort)[0:max_display]:
-            row_fields = variants_r2[key].get_row(show_line_numbers, additional_annotations)
+            row_fields = variants_r2[key].get_row(
+                show_line_numbers, additional_annotations
+            )
             r2_table.append(row_fields)
         pretty_rows = prettify_rows(r2_table)
         for row in pretty_rows:
@@ -358,7 +366,8 @@ def write_full_score_table(
 ) -> None:
 
     all_variants: list[DiffScoredVariant] = [
-        DiffScoredVariant(variants_r1[key], variants_r2[key]) for key in shared_variant_keys
+        DiffScoredVariant(variants_r1[key], variants_r2[key])
+        for key in shared_variant_keys
     ]
 
     all_variants.sort(key=lambda var: var.r1.get_rank_score(), reverse=True)

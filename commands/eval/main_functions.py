@@ -89,7 +89,9 @@ def do_vcf_comparisons(
     if VCFComparison.presence in comparisons:
         logger.info("")
         logger.info("### Variants only present in one ###")
-        presence_path = outdir / f"scored_{vcf_type_label}_presence.txt" if outdir else None
+        presence_path = (
+            outdir / f"scored_{vcf_type_label}_presence.txt" if outdir else None
+        )
         compare_variant_presence(
             logger,
             run_ids,
