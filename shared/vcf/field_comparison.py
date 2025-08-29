@@ -42,7 +42,6 @@ def show_categorical_comparisons(
 def show_numerical_comparisons(
     logger: Logger,
     run_ids: Tuple[str, str],
-    info_key: str,
     numeric_pairs: List[Tuple[Decimal, Decimal]],
     width: int = 60,
 ) -> None:

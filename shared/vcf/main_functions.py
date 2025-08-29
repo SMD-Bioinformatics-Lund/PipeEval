@@ -71,7 +71,7 @@ def check_vcf_sample_differences(
         )
 
         if is_numerical:
-            show_numerical_comparisons(logger, run_ids, sample_key, comp.numeric_pairs)
+            show_numerical_comparisons(logger, run_ids, comp.numeric_pairs)
         else:
             show_categorical_comparisons(logger, run_ids, comp.categorical_pairs)
 
@@ -144,7 +144,7 @@ def check_custom_info_field_differences(
             numeric_pairs.append((d1, d2))
 
         if all_numeric and len(numeric_pairs) > 0:
-            show_numerical_comparisons(logger, run_ids, info_key, numeric_pairs)
+            show_numerical_comparisons(logger, run_ids, numeric_pairs)
         else:
             if len(shared_key_values) > 0:
                 show_categorical_comparisons(logger, run_ids, shared_key_values)

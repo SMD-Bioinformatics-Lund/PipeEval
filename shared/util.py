@@ -45,32 +45,16 @@ def parse_decimal(val: str) -> Optional[Decimal]:
     return d if d.is_finite() else None
 
 
-def get_safe_quantiles(vals: List[Decimal]):
-    if len(vals) < 2:
-        md = statistics.median(vals) if len(vals) == 1 else None
-        return (min(vals) if vals else None, md, md, md, max(vals) if vals else None)
-    try:
-        q1, q2, q3 = statistics.quantiles(vals, n=4, method="inclusive")
-    except Exception:
-        # Fallback: approximate using median splits
-        sorted_vals = sorted(vals)
-        md = statistics.median(sorted_vals)
-        mid = len(sorted_vals) // 2
-        lower = sorted_vals[:mid]
-        upper = sorted_vals[-mid:]
-        q1 = statistics.median(lower) if lower else md
-        q3 = statistics.median(upper) if upper else md
-        return (sorted_vals[0], q1, md, q3, sorted_vals[-1])
-    md = statistics.median(vals)
-    return (min(vals), q1, md, q3, max(vals))
+def scale_value_to_screen(val: Decimal, min_value: Decimal, max_value: Decimal, screen_width: int) -> int:
 
+    if min_value == max_value:
+        return screen_width // 2
 
-def scale_to_range(val: Decimal, vmin: Decimal, vmax: Decimal, w: int) -> int:
-    if vmin == vmax:
-        return w // 2
-    # Clamp within [0, w-1]
-    pos = int(round((float(val - vmin) / float(vmax - vmin)) * (w - 1)))
-    return max(0, min(w - 1, pos))
+    total_range = float(max_value - min_value)
+    value_from_min = float(val - min_value)
+    scaled_value = (value_from_min / total_range) * (screen_width - 1)
+    pos = int(round(scaled_value))
+    return pos
 
 
 def render_bar(
@@ -78,7 +62,10 @@ def render_bar(
 ) -> str:
     if len(values) == 0:
         return "".ljust(screen_width)
-    min_value, q1, median, q3, max_value = get_safe_quantiles(values)
+    q1, _q2, q3 = statistics.quantiles(values, n=4, method="inclusive")
+    min_value = min(values)
+    max_value = max(values)
+    median_value = statistics.median(values)
 
     # Start with all positions empty
     view_chars = [" "] * screen_width
@@ -86,22 +73,22 @@ def render_bar(
         # If no end values, return an empty string
         return "".join(view_chars)
 
-    left_value = scale_to_range(min_value, view_min, view_max, screen_width)
-    right_value = scale_to_range(max_value, view_min, view_max, screen_width)
+    left_value = scale_value_to_screen(min_value, view_min, view_max, screen_width)
+    right_value = scale_value_to_screen(max_value, view_min, view_max, screen_width)
 
     for i in range(left_value, right_value + 1):
         view_chars[i] = " "
 
     # IQR: q1..q3 as '='
     if q1 is not None and q3 is not None:
-        q1_view_pos = scale_to_range(q1, view_min, view_max, screen_width)
-        q3_view_pos = scale_to_range(q3, view_min, view_max, screen_width)
+        q1_view_pos = scale_value_to_screen(q1, view_min, view_max, screen_width)
+        q3_view_pos = scale_value_to_screen(q3, view_min, view_max, screen_width)
         for i in range(q1_view_pos, q3_view_pos + 1):
             view_chars[i] = "="
 
     # Median as '|'
-    if median is not None:
-        median_view_pos = scale_to_range(median, view_min, view_max, screen_width)
+    if median_value is not None:
+        median_view_pos = scale_value_to_screen(median_value, view_min, view_max, screen_width)
         view_chars[median_view_pos] = "|"
 
     return "".join(view_chars)
