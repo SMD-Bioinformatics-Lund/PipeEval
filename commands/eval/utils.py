@@ -48,6 +48,7 @@ def verify_pair_exists(
     label: str,
     file1: Optional[Union[Path, PathObj]],
     file2: Optional[Union[Path, PathObj]],
+    pattern: str,
 ):
 
     r1_exists = file1 and file1.exists()
@@ -55,15 +56,15 @@ def verify_pair_exists(
 
     if not r1_exists and not r2_exists:
         raise ValueError(
-            f"Both {label} must exist. Neither currently exists. Is the correct run_id detected/assigned?"
+            f"Both {label} must exist. Neither currently exists. Is the correct run_id detected/assigned? Patterns used: {pattern}"
         )
     elif not r1_exists:
         raise ValueError(
-            f"Both {label} must exist. {file1} is missing. Is the correct run_id detected/assigned?"
+            f"Both {label} must exist. {file1} is missing. Is the correct run_id detected/assigned? Patterns used: {pattern}"
         )
     elif not r2_exists:
         raise ValueError(
-            f"Both {label} must exist. {file2} is missing. Is the correct run_id detected/assigned?"
+            f"Both {label} must exist. {file2} is missing. Is the correct run_id detected/assigned? Patterns used: {pattern}"
         )
 
 
@@ -144,7 +145,7 @@ def get_pair_match(
             )
 
     try:
-        verify_pair_exists(error_label, r1_matching, r2_matching)
+        verify_pair_exists(error_label, r1_matching, r2_matching, ", ".join(valid_patterns))
     except ValueError as e:
         logger.warning(e)
 
