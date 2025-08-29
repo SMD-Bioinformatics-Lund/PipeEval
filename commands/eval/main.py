@@ -192,7 +192,6 @@ def main_vcf_comparisons(
 
             vcfs = get_vcf_pair(
                 logger,
-                run_ids,
                 list(vcf_path_patterns),
                 ro,
                 r1_paths,

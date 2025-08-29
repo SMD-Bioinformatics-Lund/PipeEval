@@ -12,17 +12,17 @@ from shared.vcf.vcf import parse_scored_vcf
 from .classes.run_object import PathObj, RunObject
 
 
-def get_files_ending_with(pattern: str, paths: List[PathObj]) -> List[PathObj]:
+def get_files_matching(pattern: str, paths: List[PathObj]) -> List[PathObj]:
     re_pattern = re.compile(pattern)
     matching = [path for path in paths if re.search(re_pattern, str(path)) is not None]
     return matching
 
 
-def get_single_file_ending_with(
+def get_single_matching(
     patterns: List[str], paths: List[PathObj]
 ) -> Union[PathObj, None]:
     for pattern in patterns:
-        matching = get_files_ending_with(pattern, paths)
+        matching = get_files_matching(pattern, paths)
         if len(matching) > 1:
             matches = [str(match) for match in matching]
             raise ValueError(
@@ -124,8 +124,8 @@ def get_pair_match(
     verbose: bool,
 ) -> Optional[Tuple[Path, Path]]:
 
-    r1_matching = get_single_file_ending_with(valid_patterns, r1_paths)
-    r2_matching = get_single_file_ending_with(valid_patterns, r2_paths)
+    r1_matching = get_single_matching(valid_patterns, r1_paths)
+    r2_matching = get_single_matching(valid_patterns, r2_paths)
     if verbose:
         if r1_matching is not None:
             logger.info(
@@ -175,7 +175,6 @@ def get_ignored(
 
 def get_vcf_pair(
     logger: Logger,
-    run_ids: Tuple[str, str],
     vcf_paths: List[str],
     ro: RunObject,
     r1_paths: List[PathObj],
@@ -218,7 +217,7 @@ def parse_vcf_pair(
     else:
         raise ValueError(f"Expected VCF type sv or snv, found {vcf_type}")
 
-    logger.info(f"# Parsing {vcf_type} VCFs ...")
+    logger.info(f"# Parsing {vcf_type.value} VCFs ...")
 
     vcf_r1 = parse_scored_vcf(vcf_paths[0], is_sv)
     logger.info(f"{run_ids[0]} number variants: {len(vcf_r1.variants)}")

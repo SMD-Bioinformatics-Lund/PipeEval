@@ -205,7 +205,6 @@ def get_variant_presence_summary(
 
         r2_table: List[List[str]] = []
         for key in sorted(list(r2_only))[0:max_display]:
-        # for key in sorted(list(r2_only), key=parse_var_key_for_sort)[0:max_display]:
             row_fields = variants_r2[key].get_row(
                 show_line_numbers, additional_annotations
             )

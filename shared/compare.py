@@ -81,6 +81,9 @@ def do_comparison(set_1: Set[T], set_2: Set[T]) -> Comparison[T]:
     return Comparison(s1_only, s2_only, common)
 
 
+# FIXME: Cannot deal with non-expected chromosomes
+# Think about how to do that
+# Everything non-default should be sorted separately starting with a string
 def parse_var_key_for_sort(entry: str) -> Tuple[int, int]:
     chrom, pos = entry.split("_")[0:2]
     # If prefixed with chr, remove it
