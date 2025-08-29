@@ -2,10 +2,122 @@ from logging import Logger
 from pathlib import Path
 from typing import Dict, List, Optional, Set, Tuple
 
-from shared.compare import Comparison, parse_var_key_for_sort
+from commands.eval.classes.helpers import VCFPair
+from shared.compare import ColumnComparison, Comparison, parse_var_key_for_sort
 from shared.util import prettify_rows
+from shared.vcf.field_comparison import (
+    show_categorical_comparisons,
+    show_numerical_comparisons,
+)
 from shared.vcf.score import get_table, get_table_header
 from shared.vcf.vcf import DiffScoredVariant, ScoredVariant
+
+
+def check_vcf_filter_differences(
+    logger: Logger,
+    run_ids: Tuple[str, str],
+    vcfs: VCFPair,
+    shared_variant_keys: Set[str],
+):
+    logger.info("Comparing filter differences")
+    pairs = []
+    for key in shared_variant_keys:
+        v1 = vcfs.vcf1.variants[key]
+        v2 = vcfs.vcf2.variants[key]
+        v1_info = v1.filters
+        v2_info = v2.filters
+        pair = (v1_info, v2_info)
+        pairs.append(pair)
+
+    if len(pairs) > 0:
+        show_categorical_comparisons(logger, run_ids, pairs)
+
+
+def check_vcf_sample_differences(
+    logger: Logger,
+    run_ids: Tuple[str, str],
+    vcfs: VCFPair,
+    shared_variant_keys: Set[str],
+):
+    all_sample_keys: Set[str] = set()
+    for key in shared_variant_keys:
+        v1 = vcfs.vcf1.variants[key]
+        v2 = vcfs.vcf2.variants[key]
+        all_sample_keys.update(v1.sample_dict.keys())
+        all_sample_keys.update(v2.sample_dict.keys())
+
+    if not all_sample_keys:
+        logger.warning("No sample FORMAT fields found, skipping comparison")
+        return
+
+    for sample_key in sorted(all_sample_keys):
+
+        shared_key_values: List[Tuple[Optional[str], Optional[str]]] = []
+
+        for key in shared_variant_keys:
+            v1 = vcfs.vcf1.variants[key]
+            v2 = vcfs.vcf2.variants[key]
+
+            v1_val = v1.sample_dict.get(sample_key)
+            v2_val = v2.sample_dict.get(sample_key)
+
+            shared_key_values.append((v1_val, v2_val))
+
+        comp = ColumnComparison(shared_key_values)
+
+        is_numerical = comp.all_numeric and len(comp.numeric_pairs) > 0
+        column_type = "numerical" if is_numerical else "categorical"
+
+        logger.info("")
+        logger.info(f"Sample field: {sample_key} ({column_type})")
+        logger.info(
+            f"{comp.both_present} present in both, {comp.nbr_same} identical ({comp.v1_present} v1 only, {comp.v2_present} v2 only)"
+        )
+
+        if is_numerical:
+            show_numerical_comparisons(logger, run_ids, comp.numeric_pairs)
+        else:
+            show_categorical_comparisons(logger, run_ids, comp.categorical_pairs)
+
+
+def check_custom_info_field_differences(
+    logger: Logger,
+    run_ids: Tuple[str, str],
+    vcfs: VCFPair,
+    shared_variant_keys: Set[str],
+    info_keys: Set[str],
+):
+    for info_key in info_keys:
+
+        shared_key_values: List[Tuple[Optional[str], Optional[str]]] = []
+
+        for key in shared_variant_keys:
+
+            for key in shared_variant_keys:
+                v1 = vcfs.vcf1.variants[key]
+                v2 = vcfs.vcf2.variants[key]
+
+                v1_info = v1.info_dict.get(info_key)
+                v2_info = v2.info_dict.get(info_key)
+
+                shared_key_values.append((v1_info, v2_info))
+
+        comp = ColumnComparison(shared_key_values)
+
+        logger.info("")
+        logger.info(info_key)
+        if comp.both_present > 0:
+            logger.info(
+                f"{comp.both_present} present in both, {comp.nbr_same} identical ({comp.v1_present} v1 only, {comp.v2_present} v2 only)"
+            )
+
+        if comp.all_numeric and len(comp.numeric_pairs) > 0:
+            show_numerical_comparisons(logger, run_ids, comp.numeric_pairs)
+        else:
+            if len(shared_key_values) > 0:
+                show_categorical_comparisons(logger, run_ids, comp.categorical_pairs)
+            else:
+                logger.info("No entries found for this key")
 
 
 def compare_variant_presence(

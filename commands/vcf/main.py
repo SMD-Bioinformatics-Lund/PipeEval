@@ -1,21 +1,24 @@
 import argparse
 import logging
+import sys
 from pathlib import Path
-from typing import List, Optional
+from typing import List, Optional, Set
 
 from commands.eval.classes.helpers import RunSettings
-from commands.eval.main import vcf_comparisons
+from commands.eval.main import do_vcf_comparisons
+from commands.eval.main_functions import VCFComparison
 from commands.eval.utils import parse_vcf_pair
+from shared.constants import VCFType
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
+ALL_VCF_COMPARISONS = {member.value for member in VCFComparison}
+
 
 def main(
-    pipeline: str,
     vcf1: Path,
     vcf2: Path,
-    is_sv: bool,
     max_display: int,
     max_checked_annots: int,
     score_threshold: int,
@@ -24,6 +27,9 @@ def main(
     results_folder: Optional[Path],
     extra_annot_keys: List[str],
     output_all_variants: bool,
+    comparisons: Set[str],
+    custom_info_keys: Set[str],
+    vcf_type: VCFType,
 ):
     if results_folder is not None:
         if not results_folder.exists():
@@ -41,7 +47,6 @@ def main(
 
     run_ids = (run_id1, run_id2)
 
-    comparisons = None
     verbose = False
     show_line_numbers = True
 
@@ -56,9 +61,29 @@ def main(
         output_all_variants,
     )
 
-    vcf_type = "snv"
+    if not comparisons:
+        comparisons = ALL_VCF_COMPARISONS
+    vcf_comparisons: Set[VCFComparison] = set()
+    for comp in comparisons:
+        if comp not in VCFComparison:
+            all_valid = [member.value for member in VCFComparison]
+            logger.warning(
+                f"{comp} is not a valid comparison. Skipping. Valid are: {", ".join(all_valid)}"
+            )
+        else:
+            vcf_comparisons.add(VCFComparison(comp))
+
     vcfs = parse_vcf_pair(logger, run_ids, (vcf1, vcf2), vcf_type)
-    vcf_comparisons(logger, comparisons, run_ids, results_folder, rs, vcf_type, vcfs)
+    do_vcf_comparisons(
+        logger,
+        vcf_comparisons,
+        run_ids,
+        results_folder,
+        rs,
+        vcf_type.value,
+        vcfs,
+        custom_info_keys,
+    )
 
 
 def main_wrapper(args: argparse.Namespace):
@@ -66,11 +91,29 @@ def main_wrapper(args: argparse.Namespace):
     if args.silent:
         logger.setLevel(logging.WARNING)
 
+    comparisons = (
+        ALL_VCF_COMPARISONS
+        if not args.comparisons
+        else set(args.comparisons.split(","))
+    )
+    custom_info_keys = (
+        set() if not args.custom_info_keys else set(args.custom_info_keys.split(","))
+    )
+
+    if len(custom_info_keys) == 0 and "custom_info" in comparisons and args.comparisons:
+        logger.warning(
+            "custom_info comparison specified but no --custom_info_keys arguments. Skipping."
+        )
+        comparisons.remove("custom_info")
+        if len(comparisons) == 0:
+            logger.error(
+                "No remaining comparisons after removing custom_info. Stopping."
+            )
+            sys.exit(1)
+
     main(
-        args.pipeline,
         args.vcf1,
         args.vcf2,
-        args.is_sv,
         args.max_display,
         args.max_checked_annots,
         args.score_threshold,
@@ -79,12 +122,13 @@ def main_wrapper(args: argparse.Namespace):
         args.results if args.results is not None else None,
         args.annotations.split(",") if args.annotations is not None else [],
         args.all_variants,
+        comparisons,
+        custom_info_keys,
+        args.vcf_type,
     )
 
 
 def add_arguments(parser: argparse.ArgumentParser):
-    # FIXME: Document
-    parser.add_argument("--pipeline")
     parser.add_argument(
         "--vcf1",
         "-1",
@@ -101,7 +145,6 @@ def add_arguments(parser: argparse.ArgumentParser):
     )
     parser.add_argument("--id1", help="Optional run ID for first vcf")
     parser.add_argument("--id2", help="Optional run ID for second vcf")
-    parser.add_argument("--is_sv", action="store_true", help="Process VCF in SV mode")
     parser.add_argument("--results", type=Path, help="Optional results folder")
     parser.add_argument(
         "--score_threshold",
@@ -132,6 +175,20 @@ def add_arguments(parser: argparse.ArgumentParser):
         "--all_variants",
         action="store_true",
         help="Write a comparison file including non-differing variants",
+    )
+    parser.add_argument(
+        "--comparisons",
+        help=f"Comparisons to do. Available are: {",".join(ALL_VCF_COMPARISONS)}. Default is to run all.",
+    )
+    parser.add_argument(
+        "--custom_info_keys",
+        help='INFO keys to inspect separately. Used together with "info" setting.',
+    )
+    parser.add_argument(
+        "--vcf_type",
+        type=VCFType,
+        help="Specify if running an SNV or SV",
+        required=True,
     )
 
 

@@ -6,6 +6,7 @@ from typing import Dict, List, Optional, Set, Tuple, Union
 
 from commands.eval.classes.helpers import VCFPair
 from shared.compare import do_comparison
+from shared.constants import VCFType
 from shared.vcf.vcf import parse_scored_vcf
 
 from .classes.run_object import PathObj, RunObject
@@ -177,11 +178,11 @@ def get_vcf_pair(
     r1_paths: List[PathObj],
     r2_paths: List[PathObj],
     verbose: bool,
-    vcf_type: str,
+    vcf_type: VCFType,
 ) -> Optional[VCFPair]:
     vcf_pair_paths = get_pair_match(
         logger,
-        vcf_type,
+        vcf_type.value,
         vcf_paths,
         ro,
         r1_paths,
@@ -204,13 +205,21 @@ def parse_vcf_pair(
     logger: Logger,
     run_ids: Tuple[str, str],
     vcf_paths: Tuple[Path, Path],
-    vcf_type: str,
+    vcf_type: VCFType,
 ) -> VCFPair:
+
+    if vcf_type.value == "sv":
+        is_sv = True
+    elif vcf_type.value == "snv":
+        is_sv = False
+    else:
+        raise ValueError(f"Expected VCF type sv or snv, found {vcf_type}")
+
     logger.info(f"# Parsing {vcf_type} VCFs ...")
 
-    vcf_r1 = parse_scored_vcf(vcf_paths[0], False)
+    vcf_r1 = parse_scored_vcf(vcf_paths[0], is_sv)
     logger.info(f"{run_ids[0]} number variants: {len(vcf_r1.variants)}")
-    vcf_r2 = parse_scored_vcf(vcf_paths[1], False)
+    vcf_r2 = parse_scored_vcf(vcf_paths[1], is_sv)
     logger.info(f"{run_ids[1]} number variants: {len(vcf_r2.variants)}")
 
     comp_res = do_comparison(

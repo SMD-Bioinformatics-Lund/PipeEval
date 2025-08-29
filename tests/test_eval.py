@@ -102,7 +102,7 @@ def test_eval_main(
     run_settings = RunSettings("dna-const", score_threshold=17)
 
     with caplog.at_level(logging.INFO):
-        main(run_object, run_settings, None, None, outdir)
+        main(run_object, run_settings, None, set(), outdir)
 
     assert len(caplog.records) > 0, "No logs were captured"
     assert not any(record.levelname == "ERROR" for record in caplog.records)
@@ -117,6 +117,8 @@ def test_eval_main(
         "scored_sv_all_diffing.txt",
         "scout_yaml.diff",
     ]
+
+    print(list(outdir.iterdir()))
 
     for fname in expected_files:
         assert (outdir / fname).exists(), f"Expected file {fname} does not exist"
