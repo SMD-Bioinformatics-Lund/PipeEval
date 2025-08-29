@@ -68,7 +68,7 @@ def main(
         if comp not in VCFComparison:
             all_valid = [member.value for member in VCFComparison]
             logger.warning(
-                f"{comp} is not a valid comparison. Skipping. Valid are: {", ".join(all_valid)}"
+                f'{comp} is not a valid comparison. Skipping. Valid are: {", ".join(all_valid)}'
             )
         else:
             vcf_comparisons.add(VCFComparison(comp))
@@ -91,14 +91,8 @@ def main_wrapper(args: argparse.Namespace):
     if args.silent:
         logger.setLevel(logging.WARNING)
 
-    comparisons = (
-        ALL_VCF_COMPARISONS
-        if not args.comparisons
-        else set(args.comparisons.split(","))
-    )
-    custom_info_keys = (
-        set() if not args.custom_info_keys else set(args.custom_info_keys.split(","))
-    )
+    comparisons = ALL_VCF_COMPARISONS if not args.comparisons else set(args.comparisons.split(","))
+    custom_info_keys = set() if not args.custom_info_keys else set(args.custom_info_keys.split(","))
 
     if len(custom_info_keys) == 0 and "custom_info" in comparisons and args.comparisons:
         logger.warning(
@@ -106,9 +100,7 @@ def main_wrapper(args: argparse.Namespace):
         )
         comparisons.remove("custom_info")
         if len(comparisons) == 0:
-            logger.error(
-                "No remaining comparisons after removing custom_info. Stopping."
-            )
+            logger.error("No remaining comparisons after removing custom_info. Stopping.")
             sys.exit(1)
 
     main(
@@ -178,7 +170,7 @@ def add_arguments(parser: argparse.ArgumentParser):
     )
     parser.add_argument(
         "--comparisons",
-        help=f"Comparisons to do. Available are: {",".join(ALL_VCF_COMPARISONS)}. Default is to run all.",
+        help=f'Comparisons to do. Available are: {",".join(ALL_VCF_COMPARISONS)}. Default is to run all.',
     )
     parser.add_argument(
         "--custom_info_keys",
