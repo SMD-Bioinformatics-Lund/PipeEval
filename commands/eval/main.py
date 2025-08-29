@@ -4,7 +4,6 @@ import argparse
 import logging
 from configparser import ConfigParser
 from pathlib import Path
-import sys
 from typing import List, Optional, Set, Tuple
 
 from commands.eval.classes.helpers import PathObj, RunSettings

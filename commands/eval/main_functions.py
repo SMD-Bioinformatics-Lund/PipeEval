@@ -47,7 +47,7 @@ class VCFComparison(Enum):
     custom_info = "custom_info"
     presence = "presence"
     annotation = "annotation"
-    score = "score"
+    rank_score = "score"
 
 
 def do_vcf_comparisons(
@@ -116,7 +116,7 @@ def do_vcf_comparisons(
             rs.max_checked_annots,
         )
 
-    if VCFComparison.score in comparisons:
+    if VCFComparison.rank_score in comparisons:
         logger.info("")
         logger.info("### Comparing score ###")
         score_thres_path = (
