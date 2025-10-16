@@ -9,6 +9,8 @@ from commands.run.main import add_arguments as runner_add_arguments
 from commands.run.main import main_wrapper as runner_main_wrapper
 from commands.vcf.main import add_arguments as vcf_add_arguments
 from commands.vcf.main import main_wrapper as vcf_main_wrapper
+from commands.somatic.main import add_arguments as somatic_add_arguments
+from commands.somatic.main import main_wrapper as somatic_main_wrapper
 
 __version_info__ = ("1", "4", "0")
 __version__ = ".".join(__version_info__)
@@ -23,6 +25,8 @@ def main():
         eval_main_wrapper(args)
     elif args.subcommand == "vcf":
         vcf_main_wrapper(args)
+    elif args.subcommand == "somatic":
+        somatic_main_wrapper(args)
     else:
         raise ValueError(
             f"Unknown sub command: {args.subcommand}. Check valid commands by running main.py --help"
@@ -59,6 +63,13 @@ def parse_arguments():
         formatter_class=argparse.ArgumentDefaultsHelpFormatter,
     )
     vcf_add_arguments(vcf_parser)
+
+    somatic_parser = subparsers.add_parser(
+        "somatic",
+        description="Somatic pipeline VCFs comparisions",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
+    somatic_add_arguments(somatic_parser)
 
     args = parent_parser.parse_args()
 

@@ -4,6 +4,7 @@ from typing import List
 class RunSettings:
     def __init__(
         self,
+        use_score_threshold: bool= True,
         score_threshold: int = 17,
         max_display: int = 10,
         verbose: bool = False,
@@ -12,6 +13,7 @@ class RunSettings:
         extra_annot_keys: List[str] = [],
         output_all_variants: bool = False,
     ):
+        self.use_score_threshold = use_score_threshold
         self.score_threshold = score_threshold
         self.max_display = max_display
         self.verbose = verbose
