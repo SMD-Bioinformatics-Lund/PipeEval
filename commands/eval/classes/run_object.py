@@ -1,9 +1,9 @@
 import re
 from logging import Logger
 from pathlib import Path
-from typing import List, Optional
+from typing import List, Optional, Tuple
 
-from commands.eval.classes.pathobj import PathObj
+from commands.eval.classes.helpers import PathObj
 
 
 def get_files_in_dir(
@@ -50,6 +50,7 @@ class RunObject:
 
         self.r1_id: str = run_id1
         self.r2_id: str = run_id2
+        self.run_ids: Tuple[str, str] = (run_id1, run_id2)
 
 
 def get_run_object(
@@ -66,7 +67,7 @@ def get_run_object(
 
     if id2 is None:
         id2 = detect_run_id(logger, results2.name, verbose)
-        logger.info(f"# --run_id1 not set, assigned: {id2}")
+        logger.info(f"# --run_id2 not set, assigned: {id2}")
 
     run_object = RunObject(
         id1,

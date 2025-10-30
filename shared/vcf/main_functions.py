@@ -1,20 +1,126 @@
 from logging import Logger
 from pathlib import Path
-from typing import Dict, List, Optional, Set
+from typing import Dict, List, Optional, Set, Tuple
 
-from commands.eval.classes.run_settings import RunSettings
-from commands.eval.classes.score_paths import ScorePaths
-from shared.compare import Comparison, do_comparison, parse_var_key_for_sort
+from commands.eval.classes.helpers import VCFPair
+from shared.compare import ColumnComparison, Comparison
 from shared.util import prettify_rows
-from shared.vcf.annotation import compare_variant_annotation
+from shared.vcf.field_comparison import (
+    show_categorical_comparisons,
+    show_numerical_comparisons,
+)
 from shared.vcf.score import get_table, get_table_header
-from shared.vcf.vcf import DiffScoredVariant, ScoredVariant, parse_scored_vcf
+from shared.vcf.vcf import DiffScoredVariant, ScoredVariant
+
+
+def check_vcf_filter_differences(
+    logger: Logger,
+    run_ids: Tuple[str, str],
+    vcfs: VCFPair,
+    shared_variant_keys: Set[str],
+):
+    logger.info("Comparing filter differences")
+    pairs = []
+    for key in shared_variant_keys:
+        v1 = vcfs.vcf1.variants[key]
+        v2 = vcfs.vcf2.variants[key]
+        v1_info = v1.filters
+        v2_info = v2.filters
+        pair = (v1_info, v2_info)
+        pairs.append(pair)
+
+    if len(pairs) > 0:
+        show_categorical_comparisons(logger, run_ids, pairs)
+
+
+def check_vcf_sample_differences(
+    logger: Logger,
+    run_ids: Tuple[str, str],
+    vcfs: VCFPair,
+    shared_variant_keys: Set[str],
+):
+    all_sample_keys: Set[str] = set()
+    for key in shared_variant_keys:
+        v1 = vcfs.vcf1.variants[key]
+        v2 = vcfs.vcf2.variants[key]
+        all_sample_keys.update(v1.sample_dict.keys())
+        all_sample_keys.update(v2.sample_dict.keys())
+
+    if not all_sample_keys:
+        logger.warning("No sample FORMAT fields found, skipping comparison")
+        return
+
+    for sample_key in sorted(all_sample_keys):
+
+        shared_key_values: List[Tuple[Optional[str], Optional[str]]] = []
+
+        for key in shared_variant_keys:
+            v1 = vcfs.vcf1.variants[key]
+            v2 = vcfs.vcf2.variants[key]
+
+            v1_val = v1.sample_dict.get(sample_key)
+            v2_val = v2.sample_dict.get(sample_key)
+
+            shared_key_values.append((v1_val, v2_val))
+
+        comp = ColumnComparison(shared_key_values)
+
+        is_numerical = comp.all_numeric and len(comp.numeric_pairs) > 0
+        column_type = "numerical" if is_numerical else "categorical"
+
+        logger.info("")
+        logger.info(f"Sample field: {sample_key} ({column_type})")
+        logger.info(
+            f"{comp.both_present} present in both, {comp.nbr_same} identical ({comp.v1_present} v1 only, {comp.v2_present} v2 only)"
+        )
+
+        if is_numerical:
+            show_numerical_comparisons(logger, run_ids, comp.numeric_pairs)
+        else:
+            show_categorical_comparisons(logger, run_ids, comp.categorical_pairs)
+
+
+def check_custom_info_field_differences(
+    logger: Logger,
+    run_ids: Tuple[str, str],
+    vcfs: VCFPair,
+    shared_variant_keys: Set[str],
+    info_keys: Set[str],
+):
+    for info_key in info_keys:
+
+        shared_key_values: List[Tuple[Optional[str], Optional[str]]] = []
+
+        for key in shared_variant_keys:
+            v1 = vcfs.vcf1.variants[key]
+            v2 = vcfs.vcf2.variants[key]
+
+            v1_info = v1.info_dict.get(info_key)
+            v2_info = v2.info_dict.get(info_key)
+
+            shared_key_values.append((v1_info, v2_info))
+
+        comp = ColumnComparison(shared_key_values)
+
+        logger.info("")
+        logger.info(info_key)
+        if comp.both_present > 0:
+            logger.info(
+                f"{comp.both_present} present in both, {comp.nbr_same} identical ({comp.v1_present} v1 only, {comp.v2_present} v2 only)"
+            )
+
+        if comp.all_numeric and len(comp.numeric_pairs) > 0:
+            show_numerical_comparisons(logger, run_ids, comp.numeric_pairs)
+        else:
+            if len(shared_key_values) > 0:
+                show_categorical_comparisons(logger, run_ids, comp.categorical_pairs)
+            else:
+                logger.info("No entries found for this key")
 
 
 def compare_variant_presence(
     logger: Logger,
-    label_r1: str,
-    label_r2: str,
+    run_ids: Tuple[str, str],
     variants_r1: Dict[str, ScoredVariant],
     variants_r2: Dict[str, ScoredVariant],
     comparison_results: Comparison[str],
@@ -23,14 +129,11 @@ def compare_variant_presence(
     show_line_numbers: bool,
     additional_annotations: List[str],
 ):
-    common = comparison_results.shared
     r1_only = comparison_results.r1
     r2_only = comparison_results.r2
 
     summary_lines = get_variant_presence_summary(
-        label_r1,
-        label_r2,
-        common,
+        run_ids,
         r1_only,
         r2_only,
         variants_r1,
@@ -39,14 +142,15 @@ def compare_variant_presence(
         max_display,
         additional_annotations,
     )
-    for line in summary_lines:
-        logger.info(line)
+    if len(summary_lines) > 0:
+        for line in summary_lines:
+            logger.info(line)
+    else:
+        logger.info("No difference found")
 
     if out_path is not None:
         full_summary_lines = get_variant_presence_summary(
-            label_r1,
-            label_r2,
-            common,
+            run_ids,
             r1_only,
             r2_only,
             variants_r1,
@@ -61,9 +165,7 @@ def compare_variant_presence(
 
 
 def get_variant_presence_summary(
-    label_r1: str,
-    label_r2: str,
-    common: Set[str],
+    run_ids: Tuple[str, str],
     r1_only: Set[str],
     r2_only: Set[str],
     variants_r1: Dict[str, ScoredVariant],
@@ -77,13 +179,13 @@ def get_variant_presence_summary(
     if len(r1_only) > 0:
         if max_display is not None:
             output.append(
-                f"# First {min(len(r1_only), max_display)} only found in {label_r1}"
+                f"# First {min(len(r1_only), max_display)} only found in {run_ids[0]}"
             )
         else:
-            output.append(f"Only found in {label_r1}")
+            output.append(f"Only found in {run_ids[0]}")
 
         r1_table: List[List[str]] = []
-        for key in sorted(list(r1_only), key=parse_var_key_for_sort)[0:max_display]:
+        for key in sorted(list(r1_only))[0:max_display]:
             row_fields = variants_r1[key].get_row(
                 show_line_numbers, additional_annotations
             )
@@ -95,13 +197,13 @@ def get_variant_presence_summary(
     if len(r2_only) > 0:
         if max_display is not None:
             output.append(
-                f"# First {min(len(r2_only), max_display)} only found in {label_r2}"
+                f"# First {min(len(r2_only), max_display)} only found in {run_ids[1]}"
             )
         else:
-            output.append(f"Only found in {label_r2}")
+            output.append(f"Only found in {run_ids[1]}")
 
         r2_table: List[List[str]] = []
-        for key in sorted(list(r2_only), key=parse_var_key_for_sort)[0:max_display]:
+        for key in sorted(list(r2_only))[0:max_display]:
             row_fields = variants_r2[key].get_row(
                 show_line_numbers, additional_annotations
             )
@@ -115,8 +217,7 @@ def get_variant_presence_summary(
 
 def compare_variant_score(
     logger: Logger,
-    run_id1: str,
-    run_id2: str,
+    run_ids: Tuple[str, str],
     shared_variants: Set[str],
     variants_r1: Dict[str, ScoredVariant],
     variants_r2: Dict[str, ScoredVariant],
@@ -141,8 +242,7 @@ def compare_variant_score(
     if len(diff_scored_variants) > 0:
         print_diff_score_info(
             logger,
-            run_id1,
-            run_id2,
+            run_ids,
             diff_scored_variants,
             shared_variants,
             variants_r1,
@@ -161,8 +261,7 @@ def compare_variant_score(
 
 def print_diff_score_info(
     logger: Logger,
-    run_id1: str,
-    run_id2: str,
+    run_ids: Tuple[str, str],
     diff_scored_variants: List[DiffScoredVariant],
     shared_variant_keys: Set[str],
     variants_r1: Dict[str, ScoredVariant],
@@ -192,12 +291,11 @@ def print_diff_score_info(
         f"# Number differently scored above {score_threshold}: {len(diff_variants_above_thres)}",
     )
     logger.info(
-        f"# Total number shared variants: {len(shared_variant_keys)} ({run_id1}: {len(variants_r1)}, {run_id2}: {len(variants_r2)})",
+        f"# Total number shared variants: {len(shared_variant_keys)} ({run_ids[0]}: {len(variants_r1)}, {run_ids[1]}: {len(variants_r2)})",
     )
 
     limited_header = get_table_header(
-        run_id1,
-        run_id2,
+        run_ids,
         shared_variant_keys,
         variants_r1,
         variants_r2,
@@ -208,8 +306,7 @@ def print_diff_score_info(
     )
 
     full_header = get_table_header(
-        run_id1,
-        run_id2,
+        run_ids,
         shared_variant_keys,
         variants_r1,
         variants_r2,
@@ -256,8 +353,7 @@ def print_diff_score_info(
 
 
 def write_full_score_table(
-    run_id1: str,
-    run_id2: str,
+    run_ids: Tuple[str, str],
     shared_variant_keys: Set[str],
     variants_r1: Dict[str, ScoredVariant],
     variants_r2: Dict[str, ScoredVariant],
@@ -275,8 +371,7 @@ def write_full_score_table(
     all_variants.sort(key=lambda var: var.r1.get_rank_score(), reverse=True)
 
     header = get_table_header(
-        run_id1,
-        run_id2,
+        run_ids,
         shared_variant_keys,
         variants_r1,
         variants_r2,
@@ -290,86 +385,3 @@ def write_full_score_table(
     with out_path.open("w") as out_fh:
         for row in [header] + body:
             print("\t".join(row), file=out_fh)
-
-
-def variant_comparisons(
-    logger: Logger,
-    run_id1: str,
-    run_id2: str,
-    r1_scored_vcf: Path,
-    r2_scored_vcf: Path,
-    is_sv: bool,
-    rs: RunSettings,
-    paths: ScorePaths,
-    do_score_check: bool,
-    do_annot_check: bool,
-):
-    logger.info("# Parsing VCFs ...")
-
-    vcf_r1 = parse_scored_vcf(r1_scored_vcf, is_sv)
-    logger.info(f"{run_id1} number variants: {len(vcf_r1.variants)}")
-    vcf_r2 = parse_scored_vcf(r2_scored_vcf, is_sv)
-    logger.info(f"{run_id2} number variants: {len(vcf_r2.variants)}")
-    comp_res = do_comparison(
-        set(vcf_r1.variants.keys()),
-        set(vcf_r2.variants.keys()),
-    )
-    logger.info(f"In common: {len(comp_res.shared)}")
-    logger.info(f"Only in {run_id1}: {len(comp_res.r1)}")
-    logger.info(f"Only in {run_id2}: {len(comp_res.r2)}")
-
-    compare_variant_presence(
-        logger,
-        run_id1,
-        run_id2,
-        vcf_r1.variants,
-        vcf_r2.variants,
-        comp_res,
-        rs.max_display,
-        paths.presence,
-        rs.show_line_numbers,
-        rs.annotation_info_keys,
-    )
-    shared_variants = comp_res.shared
-    if do_annot_check:
-        logger.info("")
-        logger.info("### Comparing annotations ###")
-        compare_variant_annotation(
-            logger,
-            run_id1,
-            run_id2,
-            shared_variants,
-            vcf_r1.variants,
-            vcf_r2.variants,
-            rs.max_checked_annots,
-        )
-    if do_score_check:
-        logger.info("")
-        logger.info("### Comparing score ###")
-        compare_variant_score(
-            logger,
-            run_id1,
-            run_id2,
-            shared_variants,
-            vcf_r1.variants,
-            vcf_r2.variants,
-            rs.score_threshold,
-            rs.max_display,
-            paths.score_thres,
-            paths.all_diffing,
-            is_sv,
-            rs.show_line_numbers,
-            rs.annotation_info_keys,
-        )
-        if paths.all is not None:
-            write_full_score_table(
-                run_id1,
-                run_id2,
-                shared_variants,
-                vcf_r1.variants,
-                vcf_r2.variants,
-                paths.all,
-                is_sv,
-                rs.show_line_numbers,
-                rs.annotation_info_keys,
-            )

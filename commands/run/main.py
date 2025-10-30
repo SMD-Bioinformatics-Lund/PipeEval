@@ -2,18 +2,15 @@
 
 import argparse
 import logging
-import os
 import subprocess
 import sys
-from configparser import ConfigParser
 from datetime import datetime
 from pathlib import Path
 from typing import List, Optional
 
 from commands.run.file_helpers import (
-    copy_nextflow_config,
-    get_single_csv,
-    get_trio_csv,
+    copy_nextflow_configs,
+    get_csv,
     setup_results_links,
     write_resume_script,
     write_run_log,
@@ -27,8 +24,8 @@ from commands.run.gittools import (
     get_git_commit_hash_and_log,
     pull_branch,
 )
+from commands.run.help_classes.config_classes import RunConfig
 from shared.constants import ASSAY_PLACEHOLDER
-from shared.util import check_valid_config_path, load_config
 
 description = """
 The intent of this script is to make running control samples on specific versions of pipelines easy.
@@ -47,37 +44,34 @@ logger = logging.getLogger(__name__)
 
 
 def main(
-    config: ConfigParser,
+    config: RunConfig,
     label: Optional[str],
     checkout: str,
     base_dir: Optional[Path],
     repo: Optional[Path],
     start_data: str,
-    dry_run: bool,
     stub_run: bool,
-    run_type: str,
+    run_profile: str,
     skip_confirmation: bool,
-    queue: Optional[str],
     no_start: bool,
     datestamp: bool,
     verbose: bool,
     assay: Optional[str],
     analysis: Optional[str],
+    csv_base: Path,
 ):
-    logger.info(f"Preparing run, type: {run_type}, data: {start_data}")
+    logger.info(f"Preparing run, type: {run_profile}, data: {start_data}")
 
-    check_valid_config_arguments(config, run_type, start_data, base_dir, repo)
-    base_dir = (
-        base_dir if base_dir is not None else Path(config.get("settings", "base"))
-    )
-    repo = repo if repo is not None else Path(config.get("settings", "repo"))
-    datestamp = datestamp or config.getboolean("settings", "datestamp")
+    base_dir = base_dir if base_dir is not None else Path(config.general_settings.base)
+    repo = repo if repo is not None else Path(config.general_settings.repo)
+    datestamp = datestamp or config.general_settings.datestamp
 
     check_valid_repo(repo)
+
     do_repo_checkout(repo, checkout, verbose, skip_confirmation)
     (commit_hash, last_log) = get_git_commit_hash_and_log(logger, repo, verbose)
     logger.info(last_log)
-    run_label = build_run_label(run_type, checkout, label, stub_run, start_data)
+    run_label = build_run_label(run_profile, checkout, label, stub_run, start_data)
 
     if not datestamp:
         results_dir = base_dir / run_label
@@ -87,90 +81,72 @@ def main(
 
     confirm_run_if_results_exists(results_dir, skip_confirmation)
 
-    if not dry_run:
-        results_dir.mkdir(exist_ok=True, parents=True)
+    results_dir.mkdir(exist_ok=True, parents=True)
 
     run_log_path = results_dir / "run.log"
-    if dry_run:
-        logging.info(f"(dry) Writing log to {run_log_path}")
-    else:
-        write_run_log(
-            run_log_path,
-            run_type,
-            label or "no label",
-            checkout,
-            config,
-            commit_hash,
-        )
+    write_run_log(
+        run_log_path,
+        run_profile,
+        label or "no label",
+        checkout,
+        config,
+        commit_hash,
+    )
 
-    run_type_settings = dict(config[run_type])
+    try:
+        pipeline_info_path = results_dir / "pipeline_info"
+        pipeline_name = config.run_profile.pipeline
+        pipeline_info_path.write_text(pipeline_name)
+    except Exception:
+        logger.warning("Could not write pipeline_info file")
 
     assay = assay or ASSAY_PLACEHOLDER
-    analysis = analysis or run_type_settings["profile"]
+    analysis = analysis or config.run_profile.run_profile
 
-    if not config.getboolean(run_type, "trio"):
-        csv = get_single_csv(
-            config,
-            run_type_settings,
-            run_label,
-            start_data,
-            queue,
-            stub_run,
-            assay,
-            analysis,
-        )
-    else:
-        csv = get_trio_csv(
-            config,
-            run_type_settings,
-            run_label,
-            start_data,
-            queue,
-            stub_run,
-            assay,
-            analysis,
-        )
     out_csv = results_dir / "run.csv"
-    if dry_run:
-        logging.info(f"(dry) Writing CSV to {out_csv}")
-    else:
-        csv.write_to_file(str(out_csv))
+    csv_content = get_csv(logger, config, run_label, start_data, csv_base)
+
+    out_csv.write_text(csv_content)
 
     def get_start_nextflow_command(quote_pipeline_arguments: bool) -> List[str]:
         command = build_start_nextflow_analysis_cmd(
-            config["settings"]["start_nextflow_analysis"],
+            config.general_settings.start_nextflow_analysis,
             out_csv,
             results_dir,
-            config["settings"]["executor"],
-            config["settings"]["cluster"],
-            config["settings"]["queue"],
-            config["settings"]["singularity_version"],
-            config["settings"]["nextflow_version"],
-            config["settings"]["container"],
-            str(repo / config["settings"]["runscript"]),
-            run_type_settings["profile"],
+            config.general_settings.executor,
+            config.general_settings.cluster,
+            config.general_settings.queue,
+            config.general_settings.singularity_version,
+            config.general_settings.nextflow_version,
+            config.general_settings.container,
+            str(repo / config.general_settings.runscript),
+            config.run_profile.pipeline_profile,
             stub_run,
             no_start,
             quote_pipeline_arguments,
+            [
+                config.general_settings.repo / conf
+                for conf in config.general_settings.nextflow_configs
+            ],
         )
         return command
 
     write_resume_script(
-        logger,
         results_dir,
         get_start_nextflow_command(True),
-        dry_run,
     )
-    copy_nextflow_config(repo, results_dir)
-    setup_results_links(logger, config, results_dir, run_label, dry_run, assay)
+    logger.info("Copying nextflow configs")
+    copy_nextflow_configs(repo, results_dir, config.general_settings.nextflow_configs)
+    logger.info("Preparing results lists")
+    setup_results_links(logger, config, results_dir, run_label, assay)
 
-    start_run(get_start_nextflow_command(False), dry_run, skip_confirmation)
+    start_run(get_start_nextflow_command(False), skip_confirmation)
 
 
 def confirm_run_if_results_exists(results_dir: Path, skip_confirmation: bool):
     if results_dir.exists() and not skip_confirmation:
         confirmation = input(
-            f"The results dir {results_dir} already exists. Do you want to proceed? (y/n) "
+            f"The results dir {results_dir} already exists. Do you want to proceed? (y/N) "
         )
 
         if confirmation != "y":
@@ -191,45 +167,21 @@ def do_repo_checkout(repo: Path, checkout: str, verbose: bool, skip_confirmation
             confirmation = "y"
         else:
             confirmation = input(
-                f"You have checked out the branch {branch} in {repo}. Do you want to pull? (y/n) "
+                f"You have checked out the branch {branch} in {repo}. Do you want to pull? (y/N) "
             )
         if confirmation == "y":
             logger.info("Pulling from origin")
             pull_branch(logger, repo, branch, verbose)
 
 
-def check_valid_config_arguments(
-    config: ConfigParser,
-    run_type: str,
-    start_data: str,
-    base_dir: Optional[Path],
-    repo: Optional[Path],
-):
-    if not config.has_section(run_type):
-        raise ValueError(f"Valid config keys are: {config.sections()}")
-    valid_start_data = ["fq", "bam", "vcf"]
-    if start_data not in valid_start_data:
-        raise ValueError(f"Valid start_data types are: {', '.join(valid_start_data)}")
-
-    if base_dir is None:
-        if not check_valid_config_path(config, "settings", "base"):
-            found = config.get("settings", "base")
-            raise ValueError(
-                f"A valid output base folder must be specified either through the '--base' flag, or in the config['settings']['base']. Found: {found}"
-            )
-
-    if repo is None:
-        if not check_valid_config_path(config, "settings", "repo"):
-            found = config.get("settings", "repo")
-            raise ValueError(
-                f"A valid repo must be specified either through the '--repo' flag, or in the config['settings']['repo']. Found: {found}"
-            )
-
-
 def build_run_label(
-    run_type: str, checkout: str, label: Optional[str], stub_run: bool, start_data: str
+    run_profile: str,
+    checkout: str,
+    label: Optional[str],
+    stub_run: bool,
+    start_data: str,
 ) -> str:
-    label_parts = [run_type]
+    label_parts = [run_profile]
     if label is not None:
         label_parts.append(label)
     label_parts.append(checkout)
@@ -258,10 +210,11 @@ def build_start_nextflow_analysis_cmd(
     nextflow_version: str,
     container: str,
     runscript: str,
-    profile: str,
+    profile: Optional[str],
     stub_run: bool,
     no_start: bool,
     quote_pipeline_arguments: bool,
+    nextflow_configs: List[Path],
 ) -> List[str]:
 
     out_dir = results_dir
@@ -292,15 +245,30 @@ def build_start_nextflow_analysis_cmd(
             f'--pipeline "{runscript} -profile {profile}"',
         )
     else:
-        start_nextflow_command.extend(
-            [
-                "--pipeline",
-                f"{runscript} -profile {profile}",
-            ]
+        start_nextflow_command.append(
+            "--pipeline",
         )
+        if profile:
+            start_nextflow_command.append(
+                f"{runscript} -profile {profile}",
+            )
+        else:
+            start_nextflow_command.append(
+                f"{runscript}",
+            )
+
+    start_nextflow_command.append("--custom_flags")
+    # Provide configs directly
+    # Normally autodetected as nextflow.config in the repo base
+    # This becomes important for instance for nf-core pipelines where we
+    # use multiple config files
+    custom_flags = ""
+    for conf in nextflow_configs:
+        custom_flags += f" -c {conf}"
     if stub_run:
-        start_nextflow_command.append("--custom_flags")
-        start_nextflow_command.append("'-stub-run'")
+        custom_flags += " -stub-run"
+
+    start_nextflow_command.append(custom_flags)
 
     if no_start:
         start_nextflow_command.append("--nostart")
@@ -308,46 +276,55 @@ def build_start_nextflow_analysis_cmd(
     return start_nextflow_command
 
 
-def start_run(
-    start_nextflow_command: List[str], dry_run: bool, skip_confirmation: bool
-):
-    if not dry_run:
-        if not skip_confirmation:
-            pretty_command = " \\\n    ".join(start_nextflow_command)
-            confirmation = input(
-                f"Do you want to run the following command:\n{pretty_command}\n(y/n) "
-            )
+def start_run(start_nextflow_command: List[str], skip_confirmation: bool):
+    if not skip_confirmation:
+        pretty_command = " \\\n    ".join(start_nextflow_command)
+        confirmation = input(
+            f"Do you want to run the following command:\n{pretty_command}\n(y/N) "
+        )
 
-            if confirmation == "y":
-                subprocess.run(start_nextflow_command, check=True)
-            else:
-                logger.info("Exiting ...")
-        else:
-            subprocess.run(start_nextflow_command, check=True)
-    else:
-        joined_command = " ".join(start_nextflow_command)
-        logger.info("(dry) " + joined_command)
+        if confirmation != "y":
+            logger.info("Exiting ...")
+            return
+
+    subprocess.run(start_nextflow_command, check=True)
 
 
 def main_wrapper(args: argparse.Namespace):
 
-    curr_dir = os.path.dirname(os.path.abspath(__file__))
-    config = load_config(logger, curr_dir, args.config)
+    parent_path = Path(__file__).resolve().parent
+    profile_conf_path = (
+        args.run_profile_config or parent_path / "config/run_profile.ini"
+    )
+    pipeline_settings_path = (
+        args.pipeline_settings_config or parent_path / "config/pipeline_settings.ini"
+    )
+    samples_path = args.samples_config or parent_path / "config/samples.ini"
+
+    csv_base = args.csv_base or parent_path / "config/csv_templates"
+
+    config = RunConfig(
+        logger,
+        args.run_profile,
+        profile_conf_path,
+        pipeline_settings_path,
+        samples_path,
+    )
 
     if args.silent:
         logger.setLevel(logging.WARNING)
 
     if args.baseline is not None:
-        logging.info(
+        logger.info(
             "Performing additional baseline run as specified by --baseline flag"
         )
 
         if args.baseline_repo is not None:
             baseline_repo = str(args.baseline_repo)
         else:
-            baseline_repo = config.get("settings", "baseline_repo", fallback="")
-            if baseline_repo == "":
-                logging.error(
+            baseline_repo = config.general_settings.baseline_repo
+            if not baseline_repo:
+                logger.error(
                     "When running with --baseline a baseline repo must either be provided using --baseline_repo option or in the config"
                 )
                 sys.exit(1)
@@ -359,18 +336,17 @@ def main_wrapper(args: argparse.Namespace):
             Path(args.base) if args.base is not None else None,
             Path(baseline_repo),
             args.start_data,
-            args.dry,
             args.stub,
-            args.run_type,
+            args.run_profile,
             args.skip_confirmation,
-            args.queue,
             args.nostart,
             args.datestamp,
             args.verbose,
             args.assay,
             args.analysis,
+            csv_base,
         )
-        logging.info("Now proceeding with checking out the --checkout")
+        logger.info("Now proceeding with checking out the --checkout")
     main(
         config,
         args.label,
@@ -378,21 +354,23 @@ def main_wrapper(args: argparse.Namespace):
         Path(args.base) if args.base is not None else None,
         Path(args.repo) if args.repo is not None else None,
         args.start_data,
-        args.dry,
         args.stub,
-        args.run_type,
+        args.run_profile,
         args.skip_confirmation,
-        args.queue,
         args.nostart,
         args.datestamp,
         args.verbose,
         args.assay,
         args.analysis,
+        csv_base,
     )
 
 
 def add_arguments(parser: argparse.ArgumentParser):
-    parser.add_argument("--label", help="Something for you to use to remember the run")
+    parser.add_argument(
+        "--label",
+        help="Optional custom label that will be part of the run label and thus part of the results folder name",
+    )
     parser.add_argument(
         "--checkout",
         required=True,
@@ -400,7 +378,7 @@ def add_arguments(parser: argparse.ArgumentParser):
     )
     parser.add_argument(
         "--base",
-        help="The base folder into which results folders are created following the pattern: {base}/{label}_{run_type}_{checkout}). Can also be specified in the config.",
+        help="The base folder into which results folders are created following the pattern: {base}/{label}_{run_profile}_{checkout}). Can also be specified in the config.",
     )
     parser.add_argument(
         "--repo",
@@ -416,15 +394,10 @@ def add_arguments(parser: argparse.ArgumentParser):
         help="Start run from FASTQ (fq), BAM (bam) or VCF (vcf) (must be present in config)",
     )
     parser.add_argument(
+        "--run_profile",
         "--run_type",
-        help="Select run type from the config (i.e. giab-single, giab-trio, seracare ...). Multiple comma-separated can be specified.",
+        help="Select run profile from the config (i.e. giab-single, giab-trio, seracare ...). Multiple comma-separated can be specified.",
         required=True,
-    )
-    parser.add_argument(
-        "--dry",
-        "-n",
-        action="store_true",
-        help="Go through the motions, but don't execute the pipeline",
     )
     parser.add_argument(
         "--skip_confirmation",
@@ -435,12 +408,16 @@ def add_arguments(parser: argparse.ArgumentParser):
         "--stub", action="store_true", help="Pass the -stub-run flag to the pipeline"
     )
     parser.add_argument(
-        "--config",
-        help="Config file in INI format containing information about run types and cases",
+        "--run_profile_config",
+        help="Config file in INI format with PipeEval run profile info. Default path in commands/run/run_profile.config",
     )
     parser.add_argument(
-        "--queue",
-        help="Optionally specify in which queue to run (i.e. low, grace-normal etc.)",
+        "--pipeline_settings_config",
+        help="Config file in INI format with PipeEval run pipeline settings. Default path in commands/run/pipeline_settings.config",
+    )
+    parser.add_argument(
+        "--samples_config",
+        help="Config file in INI format with PipeEval samples info. Default path in commands/run/samples.config",
     )
     parser.add_argument(
         "--datestamp",
@@ -467,8 +444,9 @@ def add_arguments(parser: argparse.ArgumentParser):
     )
     parser.add_argument(
         "--analysis",
-        help="Specify a custom analysis in the CSV file (defaults to --run_type argument)",
+        help="Specify a custom analysis in the CSV file (defaults to --run_profile argument)",
     )
+    parser.add_argument("--csv_base", help="Base folder for CSV templates.")
 
 
 if __name__ == "__main__":

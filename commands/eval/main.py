@@ -1,34 +1,28 @@
 #!/usr/bin/env python3
 
 import argparse
-import difflib
 import logging
-import os
-from collections import Counter
-from io import TextIOWrapper
+import sys
+from configparser import ConfigParser, SectionProxy
 from pathlib import Path
-from typing import Dict, List, Optional, Set
+from typing import List, Optional, Set, Tuple
 
-from commands.eval.classes.pathobj import PathObj
+from commands.eval.classes.helpers import PathObj, RunSettings
 from commands.eval.classes.run_object import (
     RunObject,
     get_files_in_dir,
     get_run_object,
 )
-from commands.eval.classes.run_settings import RunSettings
-from commands.eval.classes.score_paths import ScorePaths
-from shared.compare import do_comparison
-from shared.constants import IS_VCF_PATTERN, RUN_ID_PLACEHOLDER
-from shared.file import check_valid_file, get_filehandle
-from shared.util import load_config
-from shared.vcf.main_functions import variant_comparisons
-from shared.vcf.vcf import count_variants
+from commands.eval.main_functions import (
+    VCFComparison,
+    do_file_diff,
+    do_simple_diff,
+    do_vcf_comparisons,
+)
+from shared.constants import RUN_ID_PLACEHOLDER, VCFType
 
 from .utils import (
-    get_files_ending_with,
-    get_ignored,
-    get_pair_match,
-    get_pair_matches,
+    get_vcf_pair,
     verify_pair_exists,
 )
 
@@ -36,22 +30,20 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 VCF_SUFFIX = [".vcf", ".vcf.gz"]
-VALID_COMPARISONS = set(
-    [
-        "default",
-        "file",
-        "vcf",
-        "score_snv",
-        "score_sv",
-        "yaml",
-        "qc",
-        "annotation_snv",
-        "annotation_sv",
-    ]
-)
+VCF_COMPARISONS = [member.value for member in VCFComparison]
+SNV_COMPARISONS = [f"{comp}_snv" for comp in VCF_COMPARISONS]
+SV_COMPARISONS = [f"{comp}_sv" for comp in VCF_COMPARISONS]
+
+VALID_COMPARISONS = set()
+for comp in SNV_COMPARISONS:
+    VALID_COMPARISONS.add(comp)
+for comp in SV_COMPARISONS:
+    VALID_COMPARISONS.add(comp)
+for comp in {"default", "file", "scout_yaml", "qc", "versions"}:
+    VALID_COMPARISONS.add(comp)
 
 description = """
-Compare results for runs in the CMD constitutional pipeline.
+Compare results between runs for two versions of a pipeline.
 
 Performs all or a subset of the comparisons:
 
@@ -63,17 +55,11 @@ Performs all or a subset of the comparisons:
 """
 
 
-def log_and_write(text: str, fh: Optional[TextIOWrapper]):
-    logger.info(text)
-    if fh is not None:
-        print(text, file=fh)
-
-
-def main(  # noqa: C901 (skipping complexity check)
+def main(
     ro: RunObject,
     rs: RunSettings,
-    config_path: Optional[str],
-    comparisons: Optional[Set[str]],
+    args_config_path: Optional[str],
+    args_comparisons: Optional[Set[str]],
     outdir: Optional[Path],
 ):
 
@@ -84,312 +70,177 @@ def main(  # noqa: C901 (skipping complexity check)
         ro.r2_results, ro.r2_id, RUN_ID_PLACEHOLDER, ro.r2_results
     )
 
-    curr_dir = os.path.dirname(os.path.abspath(__file__))
-    config = load_config(logger, curr_dir, config_path)
+    parent_path = Path(__file__).resolve().parent
+    config_path = args_config_path or parent_path / "default.ini"
+    config = ConfigParser()
+    config.read(config_path)
 
-    if comparisons is not None and len(comparisons & VALID_COMPARISONS) == 0:
+    if not config.has_section(rs.pipeline):
+        available_sections = config.sections()
         raise ValueError(
-            f"Valid comparisons are: {VALID_COMPARISONS}, found: {comparisons}"
+            f"Pipeline \"{rs.pipeline}\" is not defined in config. Available in config file are: {', '.join(available_sections)}. Specify pipeline using the --pipeline flag."
         )
 
-    verify_pair_exists("result dirs", ro.r1_results, ro.r2_results)
+    pipe_conf = config[rs.pipeline]
+
+    used_comparisons = get_comparisons(logger, args_comparisons, pipe_conf, rs)
+
+    run_ids = (ro.r1_id, ro.r2_id)
+
+    verify_pair_exists("result dirs", run_ids, ro.r1_results, ro.r2_results, None)
 
     if outdir is not None:
         outdir.mkdir(parents=True, exist_ok=True)
 
-    if comparisons is None or "file" in comparisons:
-        out_path = outdir / "check_sample_files.txt" if outdir else None
-        logger.info("")
-        logger.info("### Comparing existing files ###")
+    if not used_comparisons or "file" in used_comparisons:
+        do_file_diff(logger, outdir, pipe_conf, ro, r1_paths, r2_paths)
 
-        ignore_files = config.get("settings", "ignore", fallback="").split(",")
+    snv_patterns = (
+        set(pipe_conf["snv_vcf"].split(",")) if pipe_conf.get("snv_vcf") else set()
+    )
+    main_vcf_comparisons(
+        run_ids,
+        used_comparisons,
+        ro,
+        r1_paths,
+        r2_paths,
+        rs,
+        snv_patterns,
+        outdir,
+        VCFType.snv,
+        rs.custom_info_keys_snv,
+        SNV_COMPARISONS,
+    )
 
-        check_same_files(
-            ro,
-            r1_paths,
-            r2_paths,
-            ignore_files,
-            out_path,
-        )
+    sv_patterns = (
+        set(pipe_conf["sv_vcf"].split(",")) if pipe_conf.get("sv_vcf") else set()
+    )
+    main_vcf_comparisons(
+        run_ids,
+        used_comparisons,
+        ro,
+        r1_paths,
+        r2_paths,
+        rs,
+        sv_patterns,
+        outdir,
+        VCFType.sv,
+        rs.custom_info_keys_sv,
+        SV_COMPARISONS,
+    )
 
-    if comparisons is not None and "vcf" in comparisons:
-        logger.info("")
-        logger.info("--- Comparing VCF numbers ---")
-
-        r1_vcfs = [p.real_path for p in get_files_ending_with(IS_VCF_PATTERN, r1_paths)]
-        r2_vcfs = [p.real_path for p in get_files_ending_with(IS_VCF_PATTERN, r2_paths)]
-
-        if len(r1_vcfs) > 0 or len(r2_vcfs) > 0:
-            out_path = outdir / "all_vcf_compare.txt" if outdir else None
-            compare_all_vcfs(
-                ro,
-                r1_vcfs,
-                r2_vcfs,
-                out_path,
-            )
-        else:
-            logger.warning("No VCFs detected, skipping VCF comparison")
-
-    if (
-        comparisons is None
-        or "score_snv" in comparisons
-        or "annotation_snv" in comparisons
-    ):
-        logger.info("")
-        logger.info("--- Comparing scored SNV VCFs ---")
-
-        scored_snv_pair = get_pair_match(
+    scout_yaml_check = "scout_yaml"
+    if not used_comparisons or scout_yaml_check in used_comparisons:
+        do_simple_diff(
             logger,
-            "scored SNVs",
-            config["settings"]["scored_snv"].split(","),
             ro,
             r1_paths,
             r2_paths,
+            pipe_conf,
+            scout_yaml_check,
+            outdir,
             rs.verbose,
         )
 
-        if scored_snv_pair is None:
-            logger.warning(
-                f"Skipping scored SNV comparison due to missing files ({scored_snv_pair})"
-            )
-        else:
-
-            snv_score_paths = ScorePaths(
-                "snv", outdir, rs.score_threshold, rs.output_all_variants
-            )
-
-            is_sv = False
-            variant_comparisons(
-                logger,
-                ro.r1_id,
-                ro.r2_id,
-                scored_snv_pair[0],
-                scored_snv_pair[1],
-                is_sv,
-                rs,
-                snv_score_paths,
-                comparisons is None or "score_snv" in comparisons,
-                comparisons is None or "annotation_snv" in comparisons,
-            )
-
-    if (
-        comparisons is None
-        or "score_sv" in comparisons
-        or "annotation_sv" in comparisons
-    ):
-        logger.info("")
-        logger.info("--- Comparing scored SV VCFs ---")
-
-        scored_sv_pair = get_pair_match(
-            logger,
-            "scored SVs",
-            config["settings"]["scored_sv"].split(","),
-            ro,
-            r1_paths,
-            r2_paths,
-            rs.verbose,
+    qc_check = "qc"
+    if not used_comparisons or qc_check in used_comparisons:
+        do_simple_diff(
+            logger, ro, r1_paths, r2_paths, pipe_conf, qc_check, outdir, rs.verbose
         )
 
-        if scored_sv_pair is None:
-            logger.warning(
-                f"Skipping scored SV comparison due to missing files {scored_sv_pair}"
-            )
-        else:
-
-            sv_score_paths = ScorePaths(
-                "sv", outdir, rs.score_threshold, rs.output_all_variants
-            )
-
-            is_sv = True
-            variant_comparisons(
-                logger,
-                ro.r1_id,
-                ro.r2_id,
-                scored_sv_pair[0],
-                scored_sv_pair[1],
-                is_sv,
-                rs,
-                sv_score_paths,
-                comparisons is None or "score_sv" in comparisons,
-                comparisons is None or "annotation_sv" in comparisons,
-            )
-
-    if comparisons is None or "yaml" in comparisons:
-        logger.info("")
-        logger.info("--- Comparing YAML ---")
-        yaml_pair = get_pair_match(
-            logger,
-            "Scout YAMLs",
-            config["settings"]["yaml"].split(","),
-            ro,
-            r1_paths,
-            r2_paths,
-            rs.verbose,
+    version_check = "versions"
+    if not used_comparisons or version_check in used_comparisons:
+        do_simple_diff(
+            logger, ro, r1_paths, r2_paths, pipe_conf, version_check, outdir, rs.verbose
         )
-        if not yaml_pair:
-            logging.warning(
-                f"Skipping yaml comparison, at least one file missing ({yaml_pair})"
-            )
-        else:
-            out_path = outdir / "yaml_diff.txt" if outdir else None
-            diff_compare_files(ro.r1_id, ro.r2_id, yaml_pair[0], yaml_pair[1], out_path)
 
-    if comparisons is None or "qc" in comparisons:
-        logger.info("")
-        logger.info("--- Comparing QC for samples ---")
 
-        qc_pairs = get_pair_matches(
-            config["settings"]["qc"],
-            r1_paths,
-            r2_paths,
-        )
-        if len(qc_pairs) == 0:
-            logging.warning("Skipping QC comparisons, no matching pairs found")
-        else:
-            for qc_pair in qc_pairs:
-                out_path = (
-                    outdir / f"qc_diff_{qc_pair[0].sample_id}.txt" if outdir else None
-                )
-                logger.info(f"Showing differences for sample {qc_pair[0].sample_id}")
-                diff_compare_files(
-                    ro.r1_id, ro.r2_id, qc_pair[0].path, qc_pair[1].path, out_path
-                )
-
-    if comparisons is None or "versions" in comparisons:
-        logger.info("")
-        logger.info("--- Comparing version files ---")
-        version_pair = get_pair_match(
-            logger,
-            "versions",
-            config["settings"]["versions"].split(","),
-            ro,
-            r1_paths,
-            r2_paths,
-            rs.verbose,
-        )
-        if not version_pair:
-            logging.warning(f"At least one version file missing ({version_pair})")
-        else:
-            out_path = outdir / "yaml_diff.txt" if outdir else None
-            diff_compare_files(
-                ro.r1_id, ro.r2_id, version_pair[0], version_pair[1], out_path
+def get_comparisons(
+    logger: logging.Logger,
+    arg_comparisons: Optional[Set[str]],
+    pipe_conf: SectionProxy,
+    rs: RunSettings,
+) -> Set[str]:
+    used_comparison: Set[str] = set()
+    if arg_comparisons:
+        used_comparison = set(arg_comparisons)
+    else:
+        default_comp_str = pipe_conf.get("default_comparisons")
+        if default_comp_str:
+            used_comparison = set(
+                filter(None, [c.strip() for c in default_comp_str.split(",")])
             )
 
+    if len(rs.custom_info_keys_snv) > 0:
+        used_comparison.add("custom_info_snv")
+    if len(rs.custom_info_keys_sv) > 0:
+        used_comparison.add("custom_info_sv")
 
-def check_same_files(
+    if used_comparison and len(used_comparison & VALID_COMPARISONS) == 0:
+        logger.error(
+            f"Valid comparisons are: {VALID_COMPARISONS}, found: {used_comparison}"
+        )
+        sys.exit(1)
+
+    return used_comparison
+
+
+def main_vcf_comparisons(
+    run_ids: Tuple[str, str],
+    comparisons: Set[str],
     ro: RunObject,
     r1_paths: List[PathObj],
     r2_paths: List[PathObj],
-    ignore_files: List[str],
-    out_path: Optional[Path],
+    rs: RunSettings,
+    vcf_path_patterns: Set[str],
+    outdir: Optional[Path],
+    vcf_type: VCFType,
+    custom_info_keys: Set[str],
+    all_comparisons: List[str],
 ):
+    vcf_comparisons = set()
+    if comparisons:
+        vcf_comparisons = {
+            VCFComparison(comp.replace(f"_{vcf_type.value}", ""))
+            for comp in comparisons
+            if comp in all_comparisons
+        }
 
-    files_in_results1 = set(path.relative_path for path in r1_paths)
-    files_in_results2 = set(path.relative_path for path in r2_paths)
+    if not comparisons or len(vcf_comparisons) > 0:
+        if vcf_path_patterns:
 
-    comparison = do_comparison(files_in_results1, files_in_results2)
-
-    out_fh = open(out_path, "w") if out_path else None
-
-    (r1_nbr_ignored_per_pattern, r1_non_ignored) = get_ignored(
-        comparison.r1, ignore_files
-    )
-    (r2_nbr_ignored_per_pattern, r2_non_ignored) = get_ignored(
-        comparison.r2, ignore_files
-    )
-
-    ignored = Counter(r1_nbr_ignored_per_pattern) + Counter(r2_nbr_ignored_per_pattern)
-
-    if len(r1_non_ignored) > 0:
-        log_and_write(f"Files present in {ro.r1_id} but missing in {ro.r2_id}:", out_fh)
-        for path in sorted(r1_non_ignored):
-            log_and_write(f"  {path}", out_fh)
-
-    if len(r2_non_ignored) > 0:
-        log_and_write(f"Files present in {ro.r2_id} but missing in {ro.r1_id}:", out_fh)
-        for path in sorted(r2_non_ignored):
-            log_and_write(f"  {path}", out_fh)
-
-    if len(r1_non_ignored) == 0 and len(r2_non_ignored) == 0:
-        log_and_write("All non-ignored files present in both results", out_fh)
-
-    if len(ignored) > 0:
-        log_and_write("Ignored", out_fh)
-        for key, val in ignored.items():
-            log_and_write(f"  {key}: {val}", out_fh)
-
-    if out_fh:
-        out_fh.close()
-
-
-def compare_all_vcfs(
-    ro: RunObject,
-    r1_vcfs: List[Path],
-    r2_vcfs: List[Path],
-    out_path: Optional[Path],
-):
-    r1_counts: Dict[str, int] = {}
-    for vcf in r1_vcfs:
-        if check_valid_file(vcf):
-            n_variants = count_variants(vcf)
+            vcfs = get_vcf_pair(
+                logger,
+                list(vcf_path_patterns),
+                ro,
+                r1_paths,
+                r2_paths,
+                rs.verbose,
+                vcf_type,
+            )
+            if vcfs:
+                do_vcf_comparisons(
+                    logger,
+                    vcf_comparisons,
+                    run_ids,
+                    outdir,
+                    rs,
+                    vcf_type.value,
+                    vcfs,
+                    custom_info_keys,
+                )
         else:
-            n_variants = 0
-        r1_counts[str(vcf).replace(str(ro.r1_results), "")] = n_variants
-
-    r2_counts: Dict[str, int] = {}
-    for vcf in r2_vcfs:
-        if check_valid_file(vcf):
-            n_variants = count_variants(vcf)
-        else:
-            n_variants = 0
-        r2_counts[str(vcf).replace(str(ro.r2_results), "")] = n_variants
-
-    paths = r1_counts.keys() | r2_counts.keys()
-
-    max_path_length = max(len(path) for path in paths)
-
-    out_fh = open(out_path, "w") if out_path else None
-    log_and_write(f"{'Path':<{max_path_length}} {ro.r1_id:>10} {ro.r2_id:>10}", out_fh)
-    for path in sorted(paths):
-        r1_val = r1_counts.get(path) or "-"
-        r2_val = r2_counts.get(path) or "-"
-        log_and_write(
-            f"{path:<{max_path_length}} {r1_val:>{len(ro.r1_id)}} {r2_val:>{len(ro.r2_id)}}",
-            out_fh,
-        )
-
-    if out_fh:
-        out_fh.close()
-
-
-def diff_compare_files(
-    run_id1: str,
-    run_id2: str,
-    file1: Path,
-    file2: Path,
-    out_path: Optional[Path],
-):
-
-    with get_filehandle(file1) as r1_fh, get_filehandle(file2) as r2_fh:
-        r1_lines = [
-            line.replace(run_id1, RUN_ID_PLACEHOLDER) for line in r1_fh.readlines()
-        ]
-        r2_lines = [
-            line.replace(run_id2, RUN_ID_PLACEHOLDER) for line in r2_fh.readlines()
-        ]
-
-    out_fh = open(out_path, "w") if out_path else None
-    diff = list(difflib.unified_diff(r1_lines, r2_lines))
-    if len(diff) > 0:
-        for line in diff:
-            log_and_write(line.rstrip(), out_fh)
-    else:
-        log_and_write("No difference found", out_fh)
-    if out_fh:
-        out_fh.close()
+            logger.warning(f"No {vcf_type.value.upper()} patterns matched, skipping")
 
 
 def add_arguments(parser: argparse.ArgumentParser):
+    parser.add_argument(
+        "--pipeline",
+        help=(
+            "The target pipeline (e.g. dna-const, rna-const). If not provided,"
+            " eval attempts to read it from 'pipeline_info' in the results folders."
+        ),
+    )
     parser.add_argument(
         "--run_id1",
         "-i1",
@@ -401,8 +252,10 @@ def add_arguments(parser: argparse.ArgumentParser):
     parser.add_argument("--config", help="Additional configurations")
     parser.add_argument(
         "--comparisons",
-        help=f"Comma separated. Defaults to: default, run all by: {','.join(VALID_COMPARISONS)}",
-        default="default",
+        help=(
+            f"Comma separated. If omitted (or set to 'default'), use default_comparisons from the pipeline config. "
+            f"Available: {','.join(sorted(VALID_COMPARISONS))}"
+        ),
     )
     parser.add_argument(
         "--score_threshold",
@@ -443,6 +296,37 @@ def add_arguments(parser: argparse.ArgumentParser):
         action="store_true",
         help="Write score comparison including non-differing variants",
     )
+    parser.add_argument(
+        "--custom_info_keys_snv", help="INFO keys to investigate closer in SNV vcf"
+    )
+    parser.add_argument(
+        "--custom_info_keys_sv", help="INFO keys to investigate closer in SV vcf"
+    )
+
+
+def get_pipeline_from_run_folders(
+    logger: logging.Logger, results1: Path, results2: Path
+):
+    """Checks for file pipeline_info in the results dir if pipeline"""
+    pipeline1 = None
+    pipeline2 = None
+    try:
+        info1 = (results1 / "pipeline_info").read_text().strip()
+        pipeline1 = info1 if info1 else None
+    except Exception:
+        pipeline1 = None
+    try:
+        info2 = (results2 / "pipeline_info").read_text().strip()
+        pipeline2 = info2 if info2 else None
+    except Exception:
+        pipeline2 = None
+
+    if pipeline1 and pipeline2 and pipeline1 != pipeline2:
+        logger.error(
+            f"Found differing pipelines in the run dirs ({pipeline1} and {pipeline2}). Specify pipeline using the --pipeline flag"
+        )
+
+    return pipeline1 or pipeline2
 
 
 def main_wrapper(args: argparse.Namespace):
@@ -458,7 +342,28 @@ def main_wrapper(args: argparse.Namespace):
     if args.annotations:
         extra_annot_keys = args.annotations.split(",")
 
+    custom_info_keys_snv = (
+        set()
+        if not args.custom_info_keys_snv
+        else set(args.custom_info_keys_snv.split(","))
+    )
+    custom_info_keys_sv = (
+        set()
+        if not args.custom_info_keys_sv
+        else set(args.custom_info_keys_sv.split(","))
+    )
+
+    # The placeholder allows of a later graceful exit after the base config has been loaded
+    pipeline_name = (
+        args.pipeline
+        or get_pipeline_from_run_folders(
+            logger, run_object.r1_results, run_object.r2_results
+        )
+        or "No pipeline found"
+    )
+
     run_settings = RunSettings(
+        pipeline_name,
         args.score_threshold,
         args.max_display,
         args.verbose,
@@ -466,18 +371,20 @@ def main_wrapper(args: argparse.Namespace):
         args.show_line_numbers,
         extra_annot_keys,
         args.all_variants,
+        custom_info_keys_snv,
+        custom_info_keys_sv,
     )
+
+    # Build comparisons from CLI; None means use default_comparisons in config
+    if args.comparisons is None or args.comparisons == "default":
+        comparisons = None
+    else:
+        comparisons = set(args.comparisons.split(","))
 
     main(
         run_object,
         run_settings,
         args.config,
-        None if args.comparisons == "default" else set(args.comparisons.split(",")),
+        comparisons,
         Path(args.outdir) if args.outdir is not None else None,
     )
-
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    add_arguments(parser)
-    args = parser.parse_args()

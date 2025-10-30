@@ -1,41 +1,37 @@
-from configparser import ConfigParser
+import sys
 from datetime import datetime
 from logging import Logger
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Dict, List, Optional
 
-from commands.run.help_classes import Case, CsvEntry
+from commands.run.help_classes.config_classes import RunConfig, SampleConfig
 
 
-def write_resume_script(
-    logging: Logger, results_dir: Path, run_command: List[str], dry_run: bool
-):
+def write_resume_script(results_dir: Path, run_command: List[str]):
     resume_command = run_command + ["--resume"]
     resume_script = results_dir / "resume.sh"
-    if not dry_run:
-        resume_script.write_text(" ".join(resume_command))
-    else:
-        logging.info(f"(dry) Writing {resume_command} to {resume_script}")
+    resume_script.write_text(" ".join(resume_command))
 
 
-def copy_nextflow_config(repo: Path, results_dir: Path):
-    config_path = repo / "nextflow.config"
-    dest_path = results_dir / "nextflow.config"
-    dest_path.write_text(config_path.read_text())
+def copy_nextflow_configs(repo: Path, results_dir: Path, configs: List[Path]):
+
+    for config in configs:
+        config_path = repo / config
+        dest_path = results_dir / config.name
+        dest_path.write_text(config_path.read_text())
 
 
 def setup_results_links(
     logger: Logger,
-    config: ConfigParser,
+    config: RunConfig,
     results_dir: Path,
     run_label: str,
-    dry: bool,
     assay: str,
 ):
 
-    log_base_dir = config["settings"]["log_base_dir"]
-    trace_base_dir = config["settings"]["trace_base_dir"]
-    work_base_dir = config["settings"]["work_base_dir"]
+    log_base_dir = config.general_settings.log_base_dir
+    trace_base_dir = config.general_settings.trace_base_dir
+    work_base_dir = config.general_settings.work_base_dir
 
     current_date = datetime.now()
     date_stamp = current_date.strftime("%Y-%m-%d")
@@ -50,146 +46,143 @@ def setup_results_links(
 
     if log_link.exists():
         logger.warning(f"{log_link} already exists, removing previous link")
-        if not dry:
-            log_link.unlink()
+        log_link.unlink()
 
     if trace_link.exists():
         logger.warning(f"{trace_link} already exists, removing previous link")
-        if not dry:
-            trace_link.unlink()
+        trace_link.unlink()
 
     if work_link.exists():
         logger.warning(f"{work_link} already exists, removing previous link")
-        if not dry:
-            work_link.unlink()
+        work_link.unlink()
 
-    if not dry:
-        log_link.symlink_to(log_link_target)
-        trace_link.symlink_to(trace_link_target)
-        work_link.symlink_to(work_link_target)
-    else:
-        logger.info(f"(dry) Linking log from {log_link_target} to {log_link}")
-        logger.info(f"(dry) Linking trace from {trace_link_target} to {trace_link}")
-        logger.info(f"(dry) Linking work from {work_link_target} to {work_link}")
+    log_link.symlink_to(log_link_target)
+    trace_link.symlink_to(trace_link_target)
+    work_link.symlink_to(work_link_target)
 
 
-def get_single_csv(
-    config: ConfigParser,
-    run_type_settings: Dict[str, Any],
+def get_replace_map(
+    logger: Logger,
+    starting_run_from: str,
+    sample: SampleConfig,
     run_label: str,
-    start_data: str,
-    queue: Optional[str],
-    stub_run: bool,
-    assay: str,
-    analysis: str,
-):
-    case_id = run_type_settings["case"]
-    case_conf = config[case_id]
+    default_panel: Optional[str],
+    case_type: str,
+    all_sample_ids: List[str],
+    all_sample_types: List[str],
+) -> Dict[str, str]:
 
-    # Replace real data with dummy files in stub run to avoid scratching
-    if stub_run:
-        stub_case = config["settings"]
-        for key in stub_case:
-            case_conf[key] = stub_case[key]
+    replace_map = {
+        f"<id {sample.sample_type}>": sample.id,
+        "<group>": run_label,
+        f"<sex {sample.sample_type}>": sample.sex,
+    }
 
-    case = parse_case(dict(case_conf), start_data, is_trio=False)
+    if default_panel:
+        replace_map["<default_panel>"] = default_panel
 
-    if not Path(case.read1).exists() or not Path(case.read2).exists():
-        raise FileNotFoundError(f"One or both files missing: {case.read1} {case.read2}")
-
-    default_panel = run_type_settings["default_panel"]
-    run_csv = CsvEntry(run_label, [case], queue, assay, analysis, default_panel)
-    return run_csv
-
-
-def get_trio_csv(
-    config: ConfigParser,
-    run_type_settings: Dict[str, Any],
-    run_label: str,
-    start_data: str,
-    queue: Optional[str],
-    stub_run: bool,
-    assay: str,
-    analysis: str,
-):
-
-    case_ids = run_type_settings["cases"].split(",")
-    assert (
-        len(case_ids) == 3
-    ), f"For a trio, three fields are expected, found: {case_ids}"
-    cases: List[Case] = []
-    for case_id in case_ids:
-        case_dict = config[case_id]
-
-        # Replace real data with dummy files in stub run to avoid scratching
-        if stub_run:
-            stub_case = config["settings"]
-            for key in stub_case:
-                case_dict[key] = stub_case[key]
-
-        case = parse_case(dict(case_dict), start_data, is_trio=True)
-
-        if not Path(case.read1).exists() or not Path(case.read2).exists():
-            raise FileNotFoundError(
-                f"One or both files missing: {case.read1} {case.read2}"
+    # This is a custom case needed to accomodate how the Lund DNA constitutional
+    # pipeline uses the read1/read2 field to start from various data types
+    if starting_run_from == "fq":
+        if not sample.fq_fw or not sample.fq_rv:
+            logger.error(
+                f"Start run from fastq but at least one file missing. Fw: {sample.fq_fw} Rv: {sample.fq_rv}"
             )
-
-        cases.append(case)
-
-    default_panel = run_type_settings["default_panel"]
-    run_csv = CsvEntry(run_label, cases, queue, assay, analysis, default_panel)
-    return run_csv
-
-
-def parse_case(case_dict: Dict[str, str], start_data: str, is_trio: bool) -> Case:
-    if start_data == "vcf":
-        fw = case_dict["vcf"]
-        rv = f"{fw}.tbi"
-    elif start_data == "bam":
-        fw = case_dict["bam"]
-        rv = f"{fw}.bai"
-    elif start_data == "fq":
-        fw = case_dict["fq_fw"]
-        rv = case_dict["fq_rv"]
+            sys.exit(1)
+        replace_map[f"<read1 {sample.sample_type}>"] = sample.fq_fw
+        replace_map[f"<read2 {sample.sample_type}>"] = sample.fq_rv
+    elif starting_run_from == "bam":
+        if not sample.bam:
+            logger.error("Start run from bam but bam is missing")
+            sys.exit(1)
+        replace_map[f"<read1 {sample.sample_type}>"] = sample.bam
+        replace_map[f"<read2 {sample.sample_type}>"] = f"{sample.bam}.bai"
+    elif starting_run_from == "vcf":
+        if not sample.vcf:
+            logger.error("Start run from vcf but vcf is missing")
+            sys.exit(1)
+        replace_map[f"<read1 {sample.sample_type}>"] = sample.vcf
+        replace_map[f"<read2 {sample.sample_type}>"] = f"{sample.vcf}.bai"
     else:
         raise ValueError(
-            f"Unknown start_data, found: {start_data}, valid are vcf, bam, fq"
+            f"start_run_from should be fq, bam or vcf, found: '{starting_run_from}'"
         )
 
-    case = Case(
-        case_dict["id"],
-        case_dict["clarity_pool_id"],
-        case_dict["clarity_sample_id"],
-        case_dict["sex"],
-        case_dict["type"],
-        fw,
-        rv,
-        mother=case_dict.get("mother") if is_trio else None,
-        father=case_dict.get("father") if is_trio else None,
-    )
-    return case
+    # Custom case for trio mode for Lund DNA constitutional pipeline
+    if case_type == "trio":
+        type_to_id = dict(zip(all_sample_types, all_sample_ids))
+        replace_map["<father>"] = type_to_id["father"]
+        replace_map["<mother>"] = type_to_id["mother"]
+
+    return replace_map
+
+
+def get_csv(
+    logger: Logger,
+    config: RunConfig,
+    run_label: str,
+    starting_run_from: str,
+    csv_base: Path,
+) -> str:
+
+    csv_template_name = config.run_profile.csv_template
+    csv_template_path = csv_base / csv_template_name
+
+    csv_rows = csv_template_path.read_text().strip().split("\n")
+    all_sample_ids = config.run_profile.samples
+
+    csv_header = csv_rows[0]
+    csv_body_rows = csv_rows[1:]
+
+    all_sample_ids = config.run_profile.samples
+    all_sample_types = config.run_profile.sample_types
+
+    updated_rows = [csv_header]
+
+    for i, row in enumerate(csv_body_rows):
+
+        sample_id = all_sample_ids[i]
+        sample = config.all_samples[sample_id]
+
+        replace_map = get_replace_map(
+            logger,
+            starting_run_from,
+            sample,
+            run_label,
+            config.run_profile.default_panel,
+            config.run_profile.case_type,
+            all_sample_ids,
+            all_sample_types,
+        )
+
+        for key, val in replace_map.items():
+            row = row.replace(key, val)
+
+        updated_rows.append(row)
+
+    return "\n".join(updated_rows)
 
 
 def write_run_log(
     run_log_path: Path,
-    run_type: str,
+    run_profile: str,
     label: str,
     checkout_str: str,
-    config: ConfigParser,
+    config: RunConfig,
     commit_hash: str,
 ):
     with run_log_path.open("w") as out_fh:
         print("# Settings", file=out_fh)
         print(f"output dir: {run_log_path.parent}", file=out_fh)
-        print(f"run type: {run_type}", file=out_fh)
+        print(f"run profile: {run_profile}", file=out_fh)
         print(f"run label: {label}", file=out_fh)
         print(f"checkout: {checkout_str}", file=out_fh)
         print(f"commit hash: {commit_hash}", file=out_fh)
         print("", file=out_fh)
         print("# Config file - settings", file=out_fh)
-        for key, val in config["settings"].items():
+        for key, val in config.get_setting_entries().items():
             print(f"{key}: {val}", file=out_fh)
 
-        print(f"# Config file - {run_type}", file=out_fh)
-        for key, val in config[run_type].items():
+        print(f"# Config file - {run_profile}", file=out_fh)
+        for key, val in config.get_profile_entries().items():
             print(f"{key}: {val}", file=out_fh)

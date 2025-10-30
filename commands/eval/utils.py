@@ -4,20 +4,25 @@ from logging import Logger
 from pathlib import Path
 from typing import Dict, List, Optional, Set, Tuple, Union
 
+from commands.eval.classes.helpers import VCFPair
+from shared.compare import do_comparison
+from shared.constants import VCFType
+from shared.vcf.vcf import parse_scored_vcf
+
 from .classes.run_object import PathObj, RunObject
 
 
-def get_files_ending_with(pattern: str, paths: List[PathObj]) -> List[PathObj]:
+def get_files_matching(pattern: str, paths: List[PathObj]) -> List[PathObj]:
     re_pattern = re.compile(pattern)
     matching = [path for path in paths if re.search(re_pattern, str(path)) is not None]
     return matching
 
 
-def get_single_file_ending_with(
+def get_single_matching(
     patterns: List[str], paths: List[PathObj]
 ) -> Union[PathObj, None]:
     for pattern in patterns:
-        matching = get_files_ending_with(pattern, paths)
+        matching = get_files_matching(pattern, paths)
         if len(matching) > 1:
             matches = [str(match) for match in matching]
             raise ValueError(
@@ -41,8 +46,10 @@ def any_is_parent(path: Path, names: List[str]) -> bool:
 
 def verify_pair_exists(
     label: str,
+    run_ids: Tuple[str, str],
     file1: Optional[Union[Path, PathObj]],
     file2: Optional[Union[Path, PathObj]],
+    pattern: Optional[str],
 ):
 
     r1_exists = file1 and file1.exists()
@@ -50,15 +57,15 @@ def verify_pair_exists(
 
     if not r1_exists and not r2_exists:
         raise ValueError(
-            f"Both {label} must exist. Neither currently exists. Is the correct run_id detected/assigned?"
+            f"Both {label} must exist. Neither currently exists. Is the correct run_id detected/assigned? Patterns used: {pattern}"
         )
     elif not r1_exists:
         raise ValueError(
-            f"Both {label} must exist. {file1} is missing. Is the correct run_id detected/assigned?"
+            f"Both {label} must exist. {run_ids[0]} is missing. Is the correct run_id detected/assigned? Patterns used: {pattern}"
         )
     elif not r2_exists:
         raise ValueError(
-            f"Both {label} must exist. {file2} is missing. Is the correct run_id detected/assigned?"
+            f"Both {label} must exist. {run_ids[1]} is missing. Is the correct run_id detected/assigned? Patterns used: {pattern}"
         )
 
 
@@ -117,8 +124,8 @@ def get_pair_match(
     verbose: bool,
 ) -> Optional[Tuple[Path, Path]]:
 
-    r1_matching = get_single_file_ending_with(valid_patterns, r1_paths)
-    r2_matching = get_single_file_ending_with(valid_patterns, r2_paths)
+    r1_matching = get_single_matching(valid_patterns, r1_paths)
+    r2_matching = get_single_matching(valid_patterns, r2_paths)
     if verbose:
         if r1_matching is not None:
             logger.info(
@@ -139,7 +146,9 @@ def get_pair_match(
             )
 
     try:
-        verify_pair_exists(error_label, r1_matching, r2_matching)
+        verify_pair_exists(
+            error_label, ro.run_ids, r1_matching, r2_matching, ", ".join(valid_patterns)
+        )
     except ValueError as e:
         logger.warning(e)
 
@@ -164,3 +173,64 @@ def get_ignored(
             non_ignored.append(path)
 
     return (nbr_ignored_per_pattern, non_ignored)
+
+
+def get_vcf_pair(
+    logger: Logger,
+    vcf_paths: List[str],
+    ro: RunObject,
+    r1_paths: List[PathObj],
+    r2_paths: List[PathObj],
+    verbose: bool,
+    vcf_type: VCFType,
+) -> Optional[VCFPair]:
+    vcf_pair_paths = get_pair_match(
+        logger,
+        vcf_type.value,
+        vcf_paths,
+        ro,
+        r1_paths,
+        r2_paths,
+        verbose,
+    )
+
+    if vcf_pair_paths is None:
+        logger.warning(f"Skipping {vcf_type.value} comparisons due to missing files")
+        return None
+
+    vcf_pair = parse_vcf_pair(logger, ro.run_ids, vcf_pair_paths, vcf_type)
+
+    return vcf_pair
+
+
+def parse_vcf_pair(
+    logger: Logger,
+    run_ids: Tuple[str, str],
+    vcf_paths: Tuple[Path, Path],
+    vcf_type: VCFType,
+) -> VCFPair:
+
+    if vcf_type.value == "sv":
+        is_sv = True
+    elif vcf_type.value == "snv":
+        is_sv = False
+    else:
+        raise ValueError(f"Expected VCF type sv or snv, found {vcf_type}")
+
+    logger.info(f"# Parsing {vcf_type.value} VCFs ...")
+
+    vcf_r1 = parse_scored_vcf(vcf_paths[0], is_sv)
+    logger.info(f"{run_ids[0]} number variants: {len(vcf_r1.variants)}")
+    vcf_r2 = parse_scored_vcf(vcf_paths[1], is_sv)
+    logger.info(f"{run_ids[1]} number variants: {len(vcf_r2.variants)}")
+
+    comp_res = do_comparison(
+        set(vcf_r1.variants.keys()),
+        set(vcf_r2.variants.keys()),
+    )
+    logger.info(f"In common: {len(comp_res.shared)}")
+    logger.info(f"Only in {run_ids[0]}: {len(comp_res.r1)}")
+    logger.info(f"Only in {run_ids[1]}: {len(comp_res.r2)}")
+
+    vcf_pair = VCFPair(vcf_r1, vcf_r2, comp_res)
+    return vcf_pair
