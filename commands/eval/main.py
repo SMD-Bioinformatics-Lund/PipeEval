@@ -78,7 +78,7 @@ def main(
     if not config.has_section(rs.pipeline):
         available_sections = config.sections()
         raise ValueError(
-            f"Pipeline {rs.pipeline} is not defined in config. Available in config file are: {', '.join(available_sections)}"
+            f"Pipeline \"{rs.pipeline}\" is not defined in config. Available in config file are: {', '.join(available_sections)}. Specify pipeline using the --pipeline flag."
         )
 
     pipe_conf = config[rs.pipeline]
