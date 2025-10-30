@@ -81,6 +81,8 @@ def get_replace_map(
     if default_panel:
         replace_map["<default_panel>"] = default_panel
 
+    # This is a custom case needed to accomodate how the Lund DNA constitutional 
+    # pipeline uses the read1/read2 field to start from various data types
     if starting_run_from == "fq":
         if not sample.fq_fw or not sample.fq_rv:
             logger.error(
@@ -106,6 +108,7 @@ def get_replace_map(
             f"start_run_from should be fq, bam or vcf, found: '{starting_run_from}'"
         )
 
+    # Custom case for trio mode for Lund DNA constitutional pipeline
     if case_type == "trio":
         type_to_id = dict(zip(all_sample_types, all_sample_ids))
         replace_map["<father>"] = type_to_id["father"]
