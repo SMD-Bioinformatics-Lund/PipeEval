@@ -367,7 +367,10 @@ def main_wrapper(args: argparse.Namespace):
 
 
 def add_arguments(parser: argparse.ArgumentParser):
-    parser.add_argument("--label", help="Optional custom label that will be part of the run label and thus part of the results folder name")
+    parser.add_argument(
+        "--label",
+        help="Optional custom label that will be part of the run label and thus part of the results folder name",
+    )
     parser.add_argument(
         "--checkout",
         required=True,

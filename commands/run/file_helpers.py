@@ -81,7 +81,7 @@ def get_replace_map(
     if default_panel:
         replace_map["<default_panel>"] = default_panel
 
-    # This is a custom case needed to accomodate how the Lund DNA constitutional 
+    # This is a custom case needed to accomodate how the Lund DNA constitutional
     # pipeline uses the read1/read2 field to start from various data types
     if starting_run_from == "fq":
         if not sample.fq_fw or not sample.fq_rv:
