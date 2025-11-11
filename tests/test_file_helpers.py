@@ -40,7 +40,7 @@ def run_profile_config(logger: logging.Logger) -> RunProfileConfig:
     return RunProfileConfig(logger, "run profile", "name", profile_section)
 
 
-def test_get_replace_map_fq_with_default_panel_trio(logger, run_profile_config, sample_config):
+def test_get_replace_map_basic(logger, run_profile_config, sample_config):
 
     replace_map = get_replace_map(
         logger,

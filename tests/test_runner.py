@@ -107,6 +107,7 @@ def test_single_dna_const_run(
         assay=None,
         analysis=None,
         csv_base=csv_base,
+        remote_name="origin",
     )
 
     run_label = "dna_single_const-label-testcheckout-stub-fq"
@@ -180,6 +181,7 @@ def test_single_rna_const_run(
         assay=None,
         analysis=None,
         csv_base=csv_base,
+        remote_name="origin",
     )
 
     run_label = "rna_single_const-label-testcheckout-stub-fq"
@@ -252,6 +254,7 @@ def test_paired_tumor_run(
         assay=None,
         analysis=None,
         csv_base=csv_base,
+        remote_name="origin",
     )
 
     run_label = "somatic-label-testcheckout-stub-fq"
@@ -331,6 +334,7 @@ def test_trio_run(
         assay=None,
         analysis=None,
         csv_base=csv_base,
+        remote_name="origin",
     )
 
     run_label = "trio-label-testcheckout-stub-fq"
