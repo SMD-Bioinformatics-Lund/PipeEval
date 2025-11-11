@@ -42,9 +42,6 @@ It can be configured to run singles, trios and start with FASTQ, BAM and VCF.
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 logger = logging.getLogger(__name__)
 
-# Might need a revisit if more flexibility is needed later on
-DEFAULT_REMOTE = "origin"
-
 
 def main(
     config: RunConfig,
@@ -62,6 +59,7 @@ def main(
     assay: Optional[str],
     analysis: Optional[str],
     csv_base: Path,
+    remote_name: str,
 ):
     logger.info(f"Preparing run, type: {run_profile}, data: {start_data}")
 
@@ -73,7 +71,7 @@ def main(
 
     check_valid_repo(repo)
 
-    do_repo_checkout(repo, checkout, verbose, skip_confirmation, DEFAULT_REMOTE)
+    do_repo_checkout(repo, checkout, verbose, skip_confirmation, remote_name)
     (commit_hash, last_log) = get_git_commit_hash_and_log(logger, repo, verbose)
     logger.info(last_log)
     run_label = build_run_label(run_profile, checkout, label, stub_run, start_data)
@@ -362,6 +360,7 @@ def main_wrapper(args: argparse.Namespace):
             args.assay,
             args.analysis,
             csv_base,
+            args.remote,
         )
         logger.info("Now proceeding with checking out the --checkout")
     main(
@@ -380,6 +379,7 @@ def main_wrapper(args: argparse.Namespace):
         args.assay,
         args.analysis,
         csv_base,
+        args.remote,
     )
 
 
@@ -464,6 +464,11 @@ def add_arguments(parser: argparse.ArgumentParser):
         help="Specify a custom analysis in the CSV file (defaults to --run_profile argument)",
     )
     parser.add_argument("--csv_base", help="Base folder for CSV templates.")
+    parser.add_argument(
+        "--remote",
+        help="Git remote from which to checkout if not present locally",
+        default="origin",
+    )
 
 
 if __name__ == "__main__":
