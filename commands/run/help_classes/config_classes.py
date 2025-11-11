@@ -1,8 +1,7 @@
 import sys
-from configparser import ConfigParser, SectionProxy
+from configparser import ConfigParser
 from logging import Logger
 from pathlib import Path
-from types import SimpleNamespace
 from typing import Dict, List, Optional, Union
 
 from shared.util import parse_bool_from_string
@@ -297,7 +296,9 @@ class RunConfig:
             logger, str(profile_config_path), run_profile
         )
 
-        self.general_settings = self._get_pipeline_config(logger, str(pipeline_config_path))
+        self.general_settings = self._get_pipeline_config(
+            logger, str(pipeline_config_path)
+        )
 
         sample_config_parser = ConfigParser()
         sample_config_parser.read(sample_config_path)
@@ -349,10 +350,10 @@ class RunConfig:
             sys.exit(1)
         profile_section = dict(config[run_profile].items())
         profile_section_name = config[run_profile].name
-        config = RunProfileConfig(
+        run_config = RunProfileConfig(
             logger, run_profile, profile_section_name, profile_section
         )
-        return config
+        return run_config
 
     def _get_pipeline_config(
         self, logger: Logger, pipeline_config_path: str

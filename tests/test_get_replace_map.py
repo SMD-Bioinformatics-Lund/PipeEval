@@ -1,6 +1,4 @@
 import logging
-from types import SimpleNamespace
-
 import pytest
 
 from commands.run.file_helpers import get_replace_map
@@ -101,7 +99,9 @@ def test_get_replace_map_single(logger: logging.Logger, proband_config: SampleCo
     assert replace_map.get("<sex proband>") == "M"
 
 
-def test_get_replace_map_single_bam(logger: logging.Logger, proband_config: SampleConfig):
+def test_get_replace_map_single_bam(
+    logger: logging.Logger, proband_config: SampleConfig
+):
 
     profile_section = {
         "pipeline": "test-pipeline",
