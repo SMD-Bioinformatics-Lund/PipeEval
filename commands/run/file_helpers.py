@@ -4,7 +4,11 @@ from logging import Logger
 from pathlib import Path
 from typing import Dict, List, Optional
 
-from commands.run.help_classes.config_classes import RunConfig, RunProfileConfig, SampleConfig
+from commands.run.help_classes.config_classes import (
+    RunConfig,
+    RunProfileConfig,
+    SampleConfig,
+)
 
 
 def write_resume_script(results_dir: Path, run_command: List[str]):
@@ -64,65 +68,37 @@ def setup_results_links(
 def get_replace_map(
     logger: Logger,
     starting_run_from: str,
-    sample: SampleConfig,
+    sample_configs: List[SampleConfig],
     run_label: str,
-    default_panel: Optional[str],
-    case_type: str,
-    all_sample_ids: List[str],
-    all_sample_types: List[str],
-    run_profile: RunProfileConfig
+    run_profile: RunProfileConfig,
 ) -> Dict[str, str]:
 
-    replace_map = {
-        f"<id {sample.sample_type}>": sample.id,
-        "<group>": run_label,
-        f"<sex {sample.sample_type}>": sample.sex,
-    }
+    # f"<id {sample.sample_type}>": sample.id,
+    # f"<sex {sample.sample_type}>": sample.sex,
+    # if default_panel:
+    #     replace_map["<default_panel>"] = default_panel
 
-    if default_panel:
-        replace_map["<default_panel>"] = default_panel
+    replace_map = hard_coded_setup(
+        logger, run_label, sample_configs, starting_run_from, run_profile.case_type
+    )
 
     # Newly inserted, generic support
     for attr, val in run_profile.items():
-        if attr.startswith("_"):
-            continue
-        if isinstance(val, (str, int, float)):
-            placeholder = f"<{attr}>"
+        placeholder = f"<{attr}>"
+        if placeholder not in replace_map:
+            replace_map[placeholder] = val
+
+    for sample_config in sample_configs:
+
+        sample_type = sample_config.sample_type
+
+        # Sample specifics
+        for attr, val in sample_config.items():
+            placeholder = f"<{attr} {sample_type}>"
             if placeholder not in replace_map:
-                replace_map[placeholder] = str(val)
+                replace_map[placeholder] = val
 
-    # This is a custom case needed to accomodate how the Lund DNA constitutional
-    # pipeline uses the read1/read2 field to start from various data types
-    if starting_run_from == "fq":
-        if not sample.fq_fw or not sample.fq_rv:
-            logger.error(
-                f"Start run from fastq but at least one file missing. Fw: {sample.fq_fw} Rv: {sample.fq_rv}"
-            )
-            sys.exit(1)
-        replace_map[f"<read1 {sample.sample_type}>"] = sample.fq_fw
-        replace_map[f"<read2 {sample.sample_type}>"] = sample.fq_rv
-    elif starting_run_from == "bam":
-        if not sample.bam:
-            logger.error("Start run from bam but bam is missing")
-            sys.exit(1)
-        replace_map[f"<read1 {sample.sample_type}>"] = sample.bam
-        replace_map[f"<read2 {sample.sample_type}>"] = f"{sample.bam}.bai"
-    elif starting_run_from == "vcf":
-        if not sample.vcf:
-            logger.error("Start run from vcf but vcf is missing")
-            sys.exit(1)
-        replace_map[f"<read1 {sample.sample_type}>"] = sample.vcf
-        replace_map[f"<read2 {sample.sample_type}>"] = f"{sample.vcf}.bai"
-    else:
-        raise ValueError(
-            f"start_run_from should be fq, bam or vcf, found: '{starting_run_from}'"
-        )
-
-    # Custom case for trio mode for Lund DNA constitutional pipeline
-    if case_type == "trio":
-        type_to_id = dict(zip(all_sample_types, all_sample_ids))
-        replace_map["<father>"] = type_to_id["father"]
-        replace_map["<mother>"] = type_to_id["mother"]
+    print(replace_map)
 
     return replace_map
 
@@ -139,32 +115,22 @@ def get_csv(
     csv_template_path = csv_base / csv_template_name
 
     csv_rows = csv_template_path.read_text().strip().split("\n")
-    all_sample_ids = config.run_profile.samples
-
     csv_header = csv_rows[0]
     csv_body_rows = csv_rows[1:]
 
-    all_sample_ids = config.run_profile.samples
-    all_sample_types = config.run_profile.sample_types
-
     updated_rows = [csv_header]
 
+    replace_map = get_replace_map(
+        logger,
+        starting_run_from,
+        list(config.all_samples.values()),
+        run_label,
+        config.run_profile,
+    )
+
+    print("Received replace map", replace_map)
+
     for i, row in enumerate(csv_body_rows):
-
-        sample_id = all_sample_ids[i]
-        sample = config.all_samples[sample_id]
-
-        replace_map = get_replace_map(
-            logger,
-            starting_run_from,
-            sample,
-            run_label,
-            config.run_profile.default_panel,
-            config.run_profile.case_type,
-            all_sample_ids,
-            all_sample_types,
-            config.run_profile
-        )
 
         for key, val in replace_map.items():
             row = row.replace(key, val)
@@ -197,3 +163,60 @@ def write_run_log(
         print(f"# Config file - {run_profile}", file=out_fh)
         for key, val in config.get_profile_entries().items():
             print(f"{key}: {val}", file=out_fh)
+
+
+def hard_coded_setup(
+    logger: Logger,
+    run_label: str,
+    sample_configs: List[SampleConfig],
+    starting_run_from: str,
+    case_type: str,
+) -> Dict[str, str]:
+    """An unfortunate fact of life. Avoid this if you can."""
+
+    # FIXME: Separate out the hard-coded parts
+    replace_map = {
+        "<group>": run_label,
+    }
+
+    for sample in sample_configs:
+
+        replace_map[f"<id {sample.sample_type}>"] = sample.id
+
+        # This is a custom case needed to accomodate how the Lund DNA constitutional
+        # pipeline uses the read1/read2 field to start from various data types
+        if starting_run_from == "fq":
+            if not sample.fq_fw or not sample.fq_rv:
+                logger.error(
+                    f"Start run from fastq but at least one file missing. Fw: {sample.fq_fw} Rv: {sample.fq_rv}"
+                )
+                sys.exit(1)
+            replace_map[f"<read1 {sample.sample_type}>"] = sample.fq_fw
+            replace_map[f"<read2 {sample.sample_type}>"] = sample.fq_rv
+        elif starting_run_from == "bam":
+            if not sample.bam:
+                logger.error("Start run from bam but bam is missing")
+                sys.exit(1)
+            replace_map[f"<read1 {sample.sample_type}>"] = sample.bam
+            replace_map[f"<read2 {sample.sample_type}>"] = f"{sample.bam}.bai"
+        elif starting_run_from == "vcf":
+            if not sample.vcf:
+                logger.error("Start run from vcf but vcf is missing")
+                sys.exit(1)
+            replace_map[f"<read1 {sample.sample_type}>"] = sample.vcf
+            replace_map[f"<read2 {sample.sample_type}>"] = f"{sample.vcf}.bai"
+        else:
+            raise ValueError(
+                f"start_run_from should be fq, bam or vcf, found: '{starting_run_from}'"
+            )
+
+    # Custom case for trio mode for Lund DNA constitutional pipeline
+    if case_type == "trio":
+        type_to_id = {}
+        for sample in sample_configs:
+            type_to_id[sample.sample_type] = sample.id
+
+        replace_map["<father>"] = type_to_id["father"]
+        replace_map["<mother>"] = type_to_id["mother"]
+    
+    return replace_map

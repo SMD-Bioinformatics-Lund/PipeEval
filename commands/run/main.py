@@ -62,7 +62,7 @@ def main(
 ):
     logger.info(f"Preparing run, type: {run_profile}, data: {start_data}")
 
-    base_dir = base_dir if base_dir is not None else Path(config.general_settings.base)
+    base_dir = base_dir if base_dir is not None else Path(config.general_settings.out_base)
     repo = repo if repo is not None else Path(config.general_settings.repo)
     datestamp = datestamp or config.general_settings.datestamp
 

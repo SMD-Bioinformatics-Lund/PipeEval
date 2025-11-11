@@ -21,7 +21,7 @@ def parse_mandatory_section_argument(
 
 class SampleConfig:
 
-    config: ConfigParser
+    config_section: SectionProxy
 
     id: str
     sex: str
@@ -34,6 +34,8 @@ class SampleConfig:
 
     def __init__(self, logger: Logger, sample_section: SectionProxy, sample_type: str):
 
+        self.config_section = sample_section
+
         self.id = sample_section.name
         self.sex = parse_mandatory_section_argument(logger, sample_section, "sex")
 
@@ -43,12 +45,16 @@ class SampleConfig:
         self.vcf = sample_section.get("vcf")
 
         self.sample_type = sample_type
+    
+    def items(self):
+        return self.config_section.items()
+
 
 
 class RunProfileConfig:
 
     config: ConfigParser
-    profile_section: SectionProxy
+    config_section: SectionProxy
 
     # single, trio, paired_tumor - calculated from sample types
     case_type: str
@@ -78,7 +84,7 @@ class RunProfileConfig:
             sys.exit(1)
 
         profile_section = self.config[run_profile]
-        self.profile_section = profile_section
+        self.config_section = profile_section
 
         self.pipeline = parse_mandatory_section_argument(
             logger, profile_section, "pipeline"
@@ -137,7 +143,7 @@ class RunProfileConfig:
         sys.exit(1)
     
     def items(self):
-        return self.profile_section.items()
+        return self.config_section.items()
 
 
 class PipelineSettingsConfig:
@@ -153,8 +159,7 @@ class PipelineSettingsConfig:
     trace_base_dir: str
     work_base_dir: str
     repo: str
-    # FIXME: Clearer name. Out base?
-    base: str
+    out_base: str
     baseline_repo: str
     datestamp: bool
     queue: str
@@ -211,7 +216,7 @@ class PipelineSettingsConfig:
                 mandatory=False,
             )
         )
-        self.base = str(self._parse_setting(logger, "base"))
+        self.out_base = str(self._parse_setting(logger, "base"))
         self.datestamp: bool = self._parse_setting(
             logger, "datestamp", data_type="bool"
         )  # type: ignore[assignment]
