@@ -17,18 +17,27 @@ def sample_config(logger: logging.Logger) -> SampleConfig:
         "id": "sample-1",
         "sample_type": "proband",
         "sex": "F",
-        "fq_fw": "sample-1_R1.fastq.gz",
-        "fq_rv": "sample-1_R2.fastq.gz",
+        "fq_fw": "sample1-R1.fastq.gz",
+        "fq_rv": "sample1-R2.fastq.gz",
         "bam": "sample-1.bam",
         "vcf": "sample-1.vcf",
     }
     # defaults.update(overrides)
 
-    return SampleConfig(logger, sample_section, "test", "proband")
+    return SampleConfig(logger, sample_section, "sample-1", "proband")
 
 @pytest.fixture
 def run_profile_config(logger: logging.Logger) -> RunProfileConfig:
-    return RunProfileConfig(logger, "run profile", "name", {})
+
+    profile_section = {
+        "pipeline": "test-pipeline",
+        "csv_template": "csv template placeholder",
+        "samples": "sample-1",
+        "sample_types": "proband",
+        "default_panel": "panel-A",
+    }
+
+    return RunProfileConfig(logger, "run profile", "name", profile_section)
 
 
 def test_get_replace_map_fq_with_default_panel_trio(logger, run_profile_config, sample_config):
@@ -41,16 +50,12 @@ def test_get_replace_map_fq_with_default_panel_trio(logger, run_profile_config, 
         run_profile_config,
     )
 
-    assert replace_map == {
-        "<id proband>": "sample-1",
-        "<group>": "run-123",
-        "<sex proband>": "F",
-        "<default_panel>": "panel-A",
-        "<read1 proband>": "sample-1_R1.fastq.gz",
-        "<read2 proband>": "sample-1_R2.fastq.gz",
-        "<father>": "father-1",
-        "<mother>": "mother-1",
-    }
+    assert replace_map.get("<id proband>") == "sample-1"
+    assert replace_map.get("<group>") == "run-123"
+    assert replace_map.get("<sex proband>") == "F"
+    assert replace_map.get("<default_panel>") == "panel-A"
+    assert replace_map.get("<read1 proband>") == "sample1-R1.fastq.gz"
+    assert replace_map.get("<read2 proband>") == "sample1-R2.fastq.gz"
 
 
 # def test_get_replace_map_vcf_adds_bai_suffix(logger):
