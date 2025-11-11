@@ -89,14 +89,12 @@ def check_valid_repo(repo: Path) -> Tuple[int, str]:
 
 def check_valid_checkout(
     logger: Logger, repo: Path, checkout_obj: str, verbose: bool
-) -> Tuple[int, str]:
+) -> bool:
     command = ["git", "rev-parse", "--verify", checkout_obj]
     if verbose:
         logger.info(f"Executing: {command} in {repo}")
-    results = run_command(command, repo)
-    if results.returncode != 0:
-        return (
-            results.returncode,
-            f"The string {checkout_obj} was not found in the repository",
-        )
-    return (0, "")
+    try:
+        results = run_command(command, repo)
+        return True
+    except subprocess.CalledProcessError:
+        return False

@@ -68,7 +68,9 @@ def main(
 
     check_valid_repo(repo)
 
-    do_repo_checkout(repo, checkout, verbose, skip_confirmation)
+    remote = "origin"
+
+    do_repo_checkout(repo, checkout, verbose, skip_confirmation, remote)
     (commit_hash, last_log) = get_git_commit_hash_and_log(logger, repo, verbose)
     logger.info(last_log)
     run_label = build_run_label(run_profile, checkout, label, stub_run, start_data)
@@ -154,10 +156,19 @@ def confirm_run_if_results_exists(results_dir: Path, skip_confirmation: bool):
             sys.exit(1)
 
 
-def do_repo_checkout(repo: Path, checkout: str, verbose: bool, skip_confirmation: bool):
+def do_repo_checkout(
+    repo: Path, checkout: str, verbose: bool, skip_confirmation: bool, remote: str
+):
     logger.info("Fetching latest changes for repo")
     fetch_repo(logger, repo, verbose)
-    check_valid_checkout(logger, repo, checkout, verbose)
+    valid_local = check_valid_checkout(logger, repo, checkout, verbose)
+    if not valid_local:
+        remote_checkout = f"{remote}/{checkout}"
+        valid_remote = check_valid_checkout(logger, repo, remote_checkout, verbose)
+        if not valid_remote:
+            logger.error(f"Could not find checkout pattern {checkout} in local or remote")
+            sys.exit(1)
+
     logger.info(f"Checking out: {checkout} in {str(repo)}")
     checkout_repo(logger, repo, checkout, verbose)
     on_branch_head = check_if_on_branchhead(logger, repo, verbose)
