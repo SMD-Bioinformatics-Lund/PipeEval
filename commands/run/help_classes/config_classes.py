@@ -135,6 +135,9 @@ class RunProfileConfig:
                 f"Only cases with 1, 2 or 3 samples are supported. Found: {len(sample_types)}"
             )
         sys.exit(1)
+    
+    def items(self):
+        return self.profile_section.items()
 
 
 class PipelineSettingsConfig:

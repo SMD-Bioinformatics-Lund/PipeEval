@@ -4,7 +4,7 @@ from logging import Logger
 from pathlib import Path
 from typing import Dict, List, Optional
 
-from commands.run.help_classes.config_classes import RunConfig, SampleConfig
+from commands.run.help_classes.config_classes import RunConfig, RunProfileConfig, SampleConfig
 
 
 def write_resume_script(results_dir: Path, run_command: List[str]):
@@ -70,6 +70,7 @@ def get_replace_map(
     case_type: str,
     all_sample_ids: List[str],
     all_sample_types: List[str],
+    run_profile: RunProfileConfig
 ) -> Dict[str, str]:
 
     replace_map = {
@@ -80,6 +81,15 @@ def get_replace_map(
 
     if default_panel:
         replace_map["<default_panel>"] = default_panel
+
+    # Newly inserted, generic support
+    for attr, val in vars(run_profile).items():
+        if attr.startswith("_"):
+            continue
+        if isinstance(val, (str, int, float)):
+            placeholder = f"<{attr}>"
+            if placeholder not in replace_map:
+                replace_map[placeholder] = str(val)
 
     # This is a custom case needed to accomodate how the Lund DNA constitutional
     # pipeline uses the read1/read2 field to start from various data types
@@ -153,6 +163,7 @@ def get_csv(
             config.run_profile.case_type,
             all_sample_ids,
             all_sample_types,
+            config.run_profile
         )
 
         for key, val in replace_map.items():
