@@ -5,6 +5,8 @@ from pathlib import Path
 from types import SimpleNamespace
 from typing import Dict, List, Optional, Union
 
+from shared.util import parse_bool_from_string
+
 DEFAULT_SECTION = "default"
 
 
@@ -186,7 +188,6 @@ class PipelineSettingsConfig:
 
         self.pipeline = pipeline
 
-
         self._default_settings = default_settings
         self._pipeline_settings = pipeline_settings
 
@@ -266,20 +267,8 @@ class PipelineSettingsConfig:
         if data_type == "string":
             return target_section[setting_key]
         elif data_type == "bool":
-
-            raw_value = target_section[setting_key]
-            normalized = raw_value.strip().lower()
-            if normalized in {"1", "true", "yes", "on"}:
-                return True
-            if normalized in {"0", "false", "no", "off"}:
-                return False
-            logger.error(
-                f'Could not parse boolean setting "{setting_key}" with value "{raw_value}"'
-            )
-            sys.exit(1)
-
-            # parsed_bool = bool(target_section[setting_key])
-            # return parsed_bool
+            str_value = target_section[setting_key]
+            return parse_bool_from_string(str_value)
         else:
             raise ValueError(
                 f"Unknown data_type: {data_type}, known are string and bool"
@@ -304,40 +293,11 @@ class RunConfig:
         self.all_samples = {}
         self.run_profile_key = run_profile
 
-        # FIXME: Setup run config, needs refactoring
-        config = ConfigParser()
-        config.read(profile_config_path)
-        if run_profile not in config.keys():
-            ignore = {"DEFAULT"}
-            available = ", ".join(set(config.keys()) - ignore)
-            logger.error(
-                f"Provided run profile not present among available entries in the run profile config. Provided: {run_profile}, available: {available}"
-            )
-            sys.exit(1)
-        profile_section = dict(config[run_profile].items())
-        profile_section_name = config[run_profile].name
-        self.run_profile = RunProfileConfig(logger, run_profile, profile_section_name, profile_section)
-        #
-
-        print(pipeline_config_path)
-
-        pipeline_config = ConfigParser()
-        pipeline_config.read(pipeline_config_path)
-        if self.run_profile.pipeline not in pipeline_config.keys():
-            available = ", ".join(pipeline_config.keys())
-            logger.error(
-                f'Target pipeline "{self.run_profile.pipeline}" not found as an entry in the pipeline config. Available entries are: "{available}"'
-            )
-            sys.exit(1)
-        pipeline_default_settings = dict(pipeline_config[DEFAULT_SECTION].items())
-        pipeline_settings = dict(pipeline_config[self.run_profile.pipeline].items())
-
-        self.general_settings = PipelineSettingsConfig(
-            logger,
-            self.run_profile.pipeline,
-            pipeline_default_settings,
-            pipeline_settings
+        self.run_profile = self._get_run_profile_config(
+            logger, str(profile_config_path), run_profile
         )
+
+        self.general_settings = self._get_pipeline_config(logger, str(pipeline_config_path))
 
         sample_config_parser = ConfigParser()
         sample_config_parser.read(sample_config_path)
@@ -374,3 +334,45 @@ class RunConfig:
         for key, val in self.run_profile.items():
             key_vals[key] = val
         return key_vals
+
+    def _get_run_profile_config(
+        self, logger: Logger, path: str, run_profile: str
+    ) -> RunProfileConfig:
+        config = ConfigParser()
+        config.read(path)
+        if run_profile not in config.keys():
+            ignore = {"DEFAULT"}
+            available = ", ".join(set(config.keys()) - ignore)
+            logger.error(
+                f"Provided run profile not present among available entries in the run profile config. Provided: {run_profile}, available: {available}"
+            )
+            sys.exit(1)
+        profile_section = dict(config[run_profile].items())
+        profile_section_name = config[run_profile].name
+        config = RunProfileConfig(
+            logger, run_profile, profile_section_name, profile_section
+        )
+        return config
+
+    def _get_pipeline_config(
+        self, logger: Logger, pipeline_config_path: str
+    ) -> PipelineSettingsConfig:
+        pipeline_config = ConfigParser()
+        pipeline_config.read(pipeline_config_path)
+        if self.run_profile.pipeline not in pipeline_config.keys():
+            available = ", ".join(pipeline_config.keys())
+            logger.error(
+                f'Target pipeline "{self.run_profile.pipeline}" not found as an entry in the pipeline config. Available entries are: "{available}"'
+            )
+            sys.exit(1)
+        pipeline_default_settings = dict(pipeline_config[DEFAULT_SECTION].items())
+        pipeline_settings = dict(pipeline_config[self.run_profile.pipeline].items())
+
+        config = PipelineSettingsConfig(
+            logger,
+            self.run_profile.pipeline,
+            pipeline_default_settings,
+            pipeline_settings,
+        )
+
+        return config

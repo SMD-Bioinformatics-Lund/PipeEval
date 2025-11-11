@@ -122,3 +122,13 @@ def render_bar(
         view_chars[median_view_pos] = "|"
 
     return "".join(view_chars)
+
+
+def parse_bool_from_string(raw_value: str) -> bool:
+    normalized = raw_value.strip().lower()
+    if normalized in {"1", "true", "yes", "on"}:
+        return True
+    if normalized in {"0", "false", "no", "off"}:
+        return False
+
+    raise ValueError(f"Was not able to parse {raw_value} into a boolean")

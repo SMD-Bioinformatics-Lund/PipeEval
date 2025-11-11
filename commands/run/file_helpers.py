@@ -188,8 +188,6 @@ def get_replace_map_special_rules(
 
     for sample in sample_configs:
 
-        # replace_map[f"<id {sample.sample_type}>"] = sample.id
-
         # This is a custom case needed to accomodate how the Lund DNA constitutional
         # pipeline uses the read1/read2 field to start from various data types
         if starting_run_from == "fq":
