@@ -42,6 +42,9 @@ It can be configured to run singles, trios and start with FASTQ, BAM and VCF.
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 logger = logging.getLogger(__name__)
 
+# Might need a revisit if more flexibility is needed later on
+DEFAULT_REMOTE = "origin"
+
 
 def main(
     config: RunConfig,
@@ -62,15 +65,15 @@ def main(
 ):
     logger.info(f"Preparing run, type: {run_profile}, data: {start_data}")
 
-    base_dir = base_dir if base_dir is not None else Path(config.general_settings.out_base)
+    base_dir = (
+        base_dir if base_dir is not None else Path(config.general_settings.out_base)
+    )
     repo = repo if repo is not None else Path(config.general_settings.repo)
     datestamp = datestamp or config.general_settings.datestamp
 
     check_valid_repo(repo)
 
-    remote = "origin"
-
-    do_repo_checkout(repo, checkout, verbose, skip_confirmation, remote)
+    do_repo_checkout(repo, checkout, verbose, skip_confirmation, DEFAULT_REMOTE)
     (commit_hash, last_log) = get_git_commit_hash_and_log(logger, repo, verbose)
     logger.info(last_log)
     run_label = build_run_label(run_profile, checkout, label, stub_run, start_data)
@@ -163,10 +166,13 @@ def do_repo_checkout(
     fetch_repo(logger, repo, verbose)
     valid_local = check_valid_checkout(logger, repo, checkout, verbose)
     if not valid_local:
+        logger.info(f"Did not find {checkout} locally, checking in remote ({remote})")
         remote_checkout = f"{remote}/{checkout}"
         valid_remote = check_valid_checkout(logger, repo, remote_checkout, verbose)
         if not valid_remote:
-            logger.error(f"Could not find checkout pattern {checkout} in local or remote")
+            logger.error(
+                f"Could not find checkout pattern {checkout} in local or remote"
+            )
             sys.exit(1)
 
     logger.info(f"Checking out: {checkout} in {str(repo)}")

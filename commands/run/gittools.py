@@ -94,7 +94,7 @@ def check_valid_checkout(
     if verbose:
         logger.info(f"Executing: {command} in {repo}")
     try:
-        results = run_command(command, repo)
+        run_command(command, repo)
         return True
     except subprocess.CalledProcessError:
         return False

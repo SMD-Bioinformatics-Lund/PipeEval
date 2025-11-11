@@ -36,6 +36,8 @@ class SampleConfig:
 
         self.config_section = sample_section
 
+        self.config_section["id"] = sample_section.name
+
         self.id = sample_section.name
         self.sex = parse_mandatory_section_argument(logger, sample_section, "sex")
 

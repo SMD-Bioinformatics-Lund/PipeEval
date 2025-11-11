@@ -72,33 +72,35 @@ def get_replace_map(
     run_label: str,
     run_profile: RunProfileConfig,
 ) -> Dict[str, str]:
+    """
+    Used to insert values into template placeholders in the template csv.
+    Hard-coded entries are initially retrieved.
+    Then, parameters are first retrieved from the run profile config section.
+    For instance <default-panel> would be retrieved from corresponding key.
+    Finally, parameters are retrieved from sample configs.
+    For instance <sex proband> would be retrieved from "sex" attribute.
+    Sample type for each sample is defined in the run-profile (as a sample can be a proband or a mother depending on context)
+    """
 
-    # f"<id {sample.sample_type}>": sample.id,
-    # f"<sex {sample.sample_type}>": sample.sex,
-    # if default_panel:
-    #     replace_map["<default_panel>"] = default_panel
-
-    replace_map = hard_coded_setup(
+    replace_map = get_replace_map_special_rules(
         logger, run_label, sample_configs, starting_run_from, run_profile.case_type
     )
 
-    # Newly inserted, generic support
+    # Additional run profile attributes (analysis, default-panel etc)
     for attr, val in run_profile.items():
         placeholder = f"<{attr}>"
         if placeholder not in replace_map:
             replace_map[placeholder] = val
 
+    # Additional sample attributes (sample type, sex etc)
     for sample_config in sample_configs:
 
         sample_type = sample_config.sample_type
-
-        # Sample specifics
         for attr, val in sample_config.items():
             placeholder = f"<{attr} {sample_type}>"
             if placeholder not in replace_map:
                 replace_map[placeholder] = val
 
-    print(replace_map)
 
     return replace_map
 
@@ -127,8 +129,6 @@ def get_csv(
         run_label,
         config.run_profile,
     )
-
-    print("Received replace map", replace_map)
 
     for i, row in enumerate(csv_body_rows):
 
@@ -165,23 +165,31 @@ def write_run_log(
             print(f"{key}: {val}", file=out_fh)
 
 
-def hard_coded_setup(
+def get_replace_map_special_rules(
     logger: Logger,
     run_label: str,
     sample_configs: List[SampleConfig],
     starting_run_from: str,
     case_type: str,
 ) -> Dict[str, str]:
-    """An unfortunate fact of life. Avoid this if you can."""
+    """
+    Special rules where values cannot simply be templated from config.
+    An unfortunate fact of life. Avoid this if you can.
 
-    # FIXME: Separate out the hard-coded parts
+    Current hard-coded values
+
+    * group - Defaults to the run label
+    * read1 and read2 - Can be fastq, bam or vcf, all with the same header in SMDs CSV syntax
+    * mother / father in trio - Special link between samples in the trio. Can it be put in config?
+    """
+
     replace_map = {
         "<group>": run_label,
     }
 
     for sample in sample_configs:
 
-        replace_map[f"<id {sample.sample_type}>"] = sample.id
+        # replace_map[f"<id {sample.sample_type}>"] = sample.id
 
         # This is a custom case needed to accomodate how the Lund DNA constitutional
         # pipeline uses the read1/read2 field to start from various data types
