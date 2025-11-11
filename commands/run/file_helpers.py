@@ -83,7 +83,7 @@ def get_replace_map(
         replace_map["<default_panel>"] = default_panel
 
     # Newly inserted, generic support
-    for attr, val in vars(run_profile).items():
+    for attr, val in run_profile.items():
         if attr.startswith("_"):
             continue
         if isinstance(val, (str, int, float)):
