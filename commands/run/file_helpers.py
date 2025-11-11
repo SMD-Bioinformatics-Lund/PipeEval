@@ -2,7 +2,7 @@ import sys
 from datetime import datetime
 from logging import Logger
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List
 
 from commands.run.help_classes.config_classes import (
     RunConfig,
@@ -100,7 +100,6 @@ def get_replace_map(
             placeholder = f"<{attr} {sample_type}>"
             if placeholder not in replace_map:
                 replace_map[placeholder] = val
-
 
     return replace_map
 
@@ -226,5 +225,5 @@ def get_replace_map_special_rules(
 
         replace_map["<father>"] = type_to_id["father"]
         replace_map["<mother>"] = type_to_id["mother"]
-    
+
     return replace_map
