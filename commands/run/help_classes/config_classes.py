@@ -266,8 +266,20 @@ class PipelineSettingsConfig:
         if data_type == "string":
             return target_section[setting_key]
         elif data_type == "bool":
-            parsed_bool = bool(target_section[setting_key])
-            return parsed_bool
+
+            raw_value = target_section[setting_key]
+            normalized = raw_value.strip().lower()
+            if normalized in {"1", "true", "yes", "on"}:
+                return True
+            if normalized in {"0", "false", "no", "off"}:
+                return False
+            logger.error(
+                f'Could not parse boolean setting "{setting_key}" with value "{raw_value}"'
+            )
+            sys.exit(1)
+
+            # parsed_bool = bool(target_section[setting_key])
+            # return parsed_bool
         else:
             raise ValueError(
                 f"Unknown data_type: {data_type}, known are string and bool"
