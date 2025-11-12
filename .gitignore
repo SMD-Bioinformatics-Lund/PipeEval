@@ -4,6 +4,7 @@
 
 # Dirs
 data/
+out/
 repos/
 __pycache__/
 .pytest_cache/

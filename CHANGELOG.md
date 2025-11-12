@@ -3,6 +3,11 @@
 * Remove `nextflow.config` from pipelines where no special config is set.
 * Correctly quote `-c <config file>` arguments in the `resume.sh`.
 
+# 2.1.0
+
+* Resolve bug where previously non-checked-out repo-branches crashes during checkout checkup. PipeEval can now checkout new branches that are present only in the remote.
+* Generalize the CSV template system such that any attribute from run profiles and samples can be inserted. Extract the hard-coded logic into its own setup-function.
+
 # 2.0.0
 
 * Generalized run module to allow any pipeline
