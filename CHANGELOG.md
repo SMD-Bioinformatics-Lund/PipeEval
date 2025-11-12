@@ -1,3 +1,8 @@
+# TBD
+
+* Remove `nextflow.config` from pipelines where no special config is set.
+* Correctly quote `-c <config file>` arguments in the `resume.sh`.
+
 # 2.0.0
 
 * Generalized run module to allow any pipeline
