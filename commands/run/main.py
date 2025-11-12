@@ -161,7 +161,7 @@ def do_repo_checkout(
     repo: Path, checkout: str, verbose: bool, skip_confirmation: bool, remote: str
 ):
     logger.info("Fetching latest changes for repo")
-    fetch_repo(logger, repo, verbose)
+    fetch_repo(logger, repo, remote, verbose)
     valid_local = check_valid_checkout(logger, repo, checkout, verbose)
     if not valid_local:
         logger.info(f"Did not find {checkout} locally, checking in remote ({remote})")

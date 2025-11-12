@@ -27,8 +27,8 @@ def run_command(command: List[str], repo: Path) -> CompletedProcess:
     return results_local
 
 
-def fetch_repo(logger: Logger, repo: Path, verbose: bool) -> Tuple[int, str]:
-    command = ["git", "fetch"]
+def fetch_repo(logger: Logger, repo: Path, remote: str, verbose: bool) -> Tuple[int, str]:
+    command = ["git", "fetch", remote]
     if verbose:
         logger.info(f"Executing: {command} in {repo}")
     results = run_command(command, repo)
