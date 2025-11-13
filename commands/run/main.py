@@ -278,7 +278,7 @@ def build_start_nextflow_analysis_cmd(
     # This becomes important for instance for nf-core pipelines where we
     # use multiple config files
     custom_flags = ""
-    if len(nextflow_configs) > 1 or str(nextflow_configs[0]) != "nextflow.config":
+    if len(nextflow_configs) > 0:
         for conf in nextflow_configs:
             custom_flags += f' "-c {conf}"'
     if stub_run:
