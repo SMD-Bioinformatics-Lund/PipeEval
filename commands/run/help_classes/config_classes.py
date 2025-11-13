@@ -216,10 +216,6 @@ class PipelineSettingsConfig:
             logger, "datestamp", data_type="bool"
         )  # type: ignore[assignment]
 
-        # nextflow_config_setting_exists = (
-        #     "nextflow_configs" in self._pipeline_settings or "nextflow_configs" in self._default_settings
-        # )
-        # if nextflow_config_setting_exists:
         self.nextflow_configs = [
             Path(p) for p in self._parse_list(logger, "nextflow_configs", mandatory=False)
         ]
