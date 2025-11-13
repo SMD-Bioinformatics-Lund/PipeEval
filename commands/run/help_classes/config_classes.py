@@ -238,11 +238,11 @@ class PipelineSettingsConfig:
     def _parse_list(
         self, logger: Logger, setting_key: str, mandatory: bool = True
     ) -> List[str]:
-        raw_str = str(self._parse_setting(logger, setting_key, "string", mandatory))
-        if raw_str is None:
+        parsed_setting = self._parse_setting(logger, setting_key, "string", mandatory)
+        if parsed_setting is None:
             return []
         else:
-            return raw_str.split(",")
+            return str(parsed_setting).split(",")
 
     def _parse_setting(
         self,
