@@ -217,7 +217,8 @@ class PipelineSettingsConfig:
         )  # type: ignore[assignment]
 
         self.nextflow_configs = [
-            Path(p) for p in self._parse_list(logger, "nextflow_configs", mandatory=False)
+            Path(p)
+            for p in self._parse_list(logger, "nextflow_configs", mandatory=False)
         ]
 
         self.queue = str(self._parse_setting(logger, "queue"))
