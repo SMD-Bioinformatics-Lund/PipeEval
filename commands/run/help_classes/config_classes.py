@@ -170,7 +170,7 @@ class PipelineSettingsConfig:
     executor: str
     cluster: str
 
-    nextflow_configs: List[Path]
+    nextflow_configs: List[Path] = []
 
     singularity_version: str
     nextflow_version: str
@@ -216,8 +216,12 @@ class PipelineSettingsConfig:
             logger, "datestamp", data_type="bool"
         )  # type: ignore[assignment]
 
+        # nextflow_config_setting_exists = (
+        #     "nextflow_configs" in self._pipeline_settings or "nextflow_configs" in self._default_settings
+        # )
+        # if nextflow_config_setting_exists:
         self.nextflow_configs = [
-            Path(p) for p in self._parse_list(logger, "nextflow_configs")
+            Path(p) for p in self._parse_list(logger, "nextflow_configs", mandatory=False)
         ]
 
         self.queue = str(self._parse_setting(logger, "queue"))
@@ -239,7 +243,10 @@ class PipelineSettingsConfig:
         self, logger: Logger, setting_key: str, mandatory: bool = True
     ) -> List[str]:
         raw_str = str(self._parse_setting(logger, setting_key, "string", mandatory))
-        return raw_str.split(",")
+        if raw_str is None:
+            return []
+        else:
+            return raw_str.split(",")
 
     def _parse_setting(
         self,
