@@ -1,4 +1,4 @@
-# TBD
+# 2.1.1
 
 * Remove `nextflow.config` from pipelines where no special config is set.
 * Correctly quote `-c <config file>` arguments in the `resume.sh`.
