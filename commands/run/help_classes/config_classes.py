@@ -170,7 +170,7 @@ class PipelineSettingsConfig:
     executor: str
     cluster: str
 
-    nextflow_configs: List[Path]
+    nextflow_configs: List[Path] = []
 
     singularity_version: str
     nextflow_version: str
@@ -217,7 +217,8 @@ class PipelineSettingsConfig:
         )  # type: ignore[assignment]
 
         self.nextflow_configs = [
-            Path(p) for p in self._parse_list(logger, "nextflow_configs")
+            Path(p)
+            for p in self._parse_list(logger, "nextflow_configs", mandatory=False)
         ]
 
         self.queue = str(self._parse_setting(logger, "queue"))
@@ -238,8 +239,11 @@ class PipelineSettingsConfig:
     def _parse_list(
         self, logger: Logger, setting_key: str, mandatory: bool = True
     ) -> List[str]:
-        raw_str = str(self._parse_setting(logger, setting_key, "string", mandatory))
-        return raw_str.split(",")
+        parsed_setting = self._parse_setting(logger, setting_key, "string", mandatory)
+        if parsed_setting is None:
+            return []
+        else:
+            return str(parsed_setting).split(",")
 
     def _parse_setting(
         self,
