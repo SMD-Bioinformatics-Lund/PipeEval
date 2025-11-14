@@ -59,16 +59,19 @@ def main(
     assay: Optional[str],
     analysis: Optional[str],
     csv_base: Path,
+    remote_name: str,
 ):
     logger.info(f"Preparing run, type: {run_profile}, data: {start_data}")
 
-    base_dir = base_dir if base_dir is not None else Path(config.general_settings.base)
+    base_dir = (
+        base_dir if base_dir is not None else Path(config.general_settings.out_base)
+    )
     repo = repo if repo is not None else Path(config.general_settings.repo)
     datestamp = datestamp or config.general_settings.datestamp
 
     check_valid_repo(repo)
 
-    do_repo_checkout(repo, checkout, verbose, skip_confirmation)
+    do_repo_checkout(repo, checkout, verbose, skip_confirmation, remote_name)
     (commit_hash, last_log) = get_git_commit_hash_and_log(logger, repo, verbose)
     logger.info(last_log)
     run_label = build_run_label(run_profile, checkout, label, stub_run, start_data)
@@ -154,10 +157,22 @@ def confirm_run_if_results_exists(results_dir: Path, skip_confirmation: bool):
             sys.exit(1)
 
 
-def do_repo_checkout(repo: Path, checkout: str, verbose: bool, skip_confirmation: bool):
+def do_repo_checkout(
+    repo: Path, checkout: str, verbose: bool, skip_confirmation: bool, remote: str
+):
     logger.info("Fetching latest changes for repo")
-    fetch_repo(logger, repo, verbose)
-    check_valid_checkout(logger, repo, checkout, verbose)
+    fetch_repo(logger, repo, remote, verbose)
+    valid_local = check_valid_checkout(logger, repo, checkout, verbose)
+    if not valid_local:
+        logger.info(f"Did not find {checkout} locally, checking in remote ({remote})")
+        remote_checkout = f"{remote}/{checkout}"
+        valid_remote = check_valid_checkout(logger, repo, remote_checkout, verbose)
+        if not valid_remote:
+            logger.error(
+                f"Could not find checkout pattern {checkout} in local or remote"
+            )
+            sys.exit(1)
+
     logger.info(f"Checking out: {checkout} in {str(repo)}")
     checkout_repo(logger, repo, checkout, verbose)
     on_branch_head = check_if_on_branchhead(logger, repo, verbose)
@@ -345,6 +360,7 @@ def main_wrapper(args: argparse.Namespace):
             args.assay,
             args.analysis,
             csv_base,
+            args.remote,
         )
         logger.info("Now proceeding with checking out the --checkout")
     main(
@@ -363,6 +379,7 @@ def main_wrapper(args: argparse.Namespace):
         args.assay,
         args.analysis,
         csv_base,
+        args.remote,
     )
 
 
@@ -447,6 +464,11 @@ def add_arguments(parser: argparse.ArgumentParser):
         help="Specify a custom analysis in the CSV file (defaults to --run_profile argument)",
     )
     parser.add_argument("--csv_base", help="Base folder for CSV templates.")
+    parser.add_argument(
+        "--remote",
+        help="Git remote from which to checkout if not present locally",
+        default="origin",
+    )
 
 
 if __name__ == "__main__":

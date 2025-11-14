@@ -1,19 +1,21 @@
 import sys
-from configparser import ConfigParser, SectionProxy
+from configparser import ConfigParser
 from logging import Logger
 from pathlib import Path
 from typing import Dict, List, Optional, Union
+
+from shared.util import parse_bool_from_string
 
 DEFAULT_SECTION = "default"
 
 
 def parse_mandatory_section_argument(
-    logger: Logger, section: SectionProxy, target_key: str
+    logger: Logger, section: Dict[str, str], section_name: str, target_key: str
 ) -> str:
     if not section.get(target_key):
         existing_fields = section.keys()
         logger.error(
-            f'Mandatory setting "{target_key}" not defined in run profile section "{section.name}". (Currently defined fields are : {", ".join(existing_fields)})'
+            f'Mandatory setting "{target_key}" not defined in config section "{section_name}". (Currently defined fields are : {", ".join(existing_fields)})'
         )
         sys.exit(1)
     return section[target_key]
@@ -21,7 +23,7 @@ def parse_mandatory_section_argument(
 
 class SampleConfig:
 
-    config: ConfigParser
+    config_section: Dict[str, str]
 
     id: str
     sex: str
@@ -32,10 +34,22 @@ class SampleConfig:
 
     sample_type: str
 
-    def __init__(self, logger: Logger, sample_section: SectionProxy, sample_type: str):
+    def __init__(
+        self,
+        logger: Logger,
+        sample_section: Dict[str, str],
+        section_name: str,
+        sample_type: str,
+    ):
 
-        self.id = sample_section.name
-        self.sex = parse_mandatory_section_argument(logger, sample_section, "sex")
+        self.config_section = dict(sample_section.items())
+
+        self.config_section["id"] = section_name
+
+        self.id = section_name
+        self.sex = parse_mandatory_section_argument(
+            logger, self.config_section, section_name, "sex"
+        )
 
         self.fq_fw = sample_section.get("fq_fw")
         self.fq_rv = sample_section.get("fq_rv")
@@ -44,11 +58,14 @@ class SampleConfig:
 
         self.sample_type = sample_type
 
+    def items(self):
+        return self.config_section.items()
+
 
 class RunProfileConfig:
 
-    config: ConfigParser
-    profile_section: SectionProxy
+    # config: ConfigParser
+    config_section: Dict[str, str]
 
     # single, trio, paired_tumor - calculated from sample types
     case_type: str
@@ -62,34 +79,27 @@ class RunProfileConfig:
 
     csv_template: str
 
-    def __init__(self, logger: Logger, run_profile: str, conf_path: Path):
-
-        self.config = ConfigParser()
-        self.config.read(conf_path)
+    def __init__(
+        self,
+        logger: Logger,
+        run_profile: str,
+        profile_section_name: str,
+        profile_section: Dict[str, str],
+    ):
 
         self.run_profile = run_profile
-
-        if run_profile not in self.config.keys():
-            ignore = {"DEFAULT"}
-            available = ", ".join(set(self.config.keys()) - ignore)
-            logger.error(
-                f"Provided run profile not present among available entries in the run profile config. Provided: {run_profile}, available: {available}"
-            )
-            sys.exit(1)
-
-        profile_section = self.config[run_profile]
-        self.profile_section = profile_section
+        self.config_section = profile_section
 
         self.pipeline = parse_mandatory_section_argument(
-            logger, profile_section, "pipeline"
+            logger, profile_section, profile_section_name, "pipeline"
         )
         self.pipeline_profile = profile_section.get("pipeline_profile")
         self.csv_template = parse_mandatory_section_argument(
-            logger, profile_section, "csv_template"
+            logger, profile_section, profile_section_name, "csv_template"
         )
 
         samples_str = parse_mandatory_section_argument(
-            logger, profile_section, "samples"
+            logger, profile_section, profile_section_name, "samples"
         )
         self.samples = samples_str.split(",")
 
@@ -136,11 +146,14 @@ class RunProfileConfig:
             )
         sys.exit(1)
 
+    def items(self):
+        return self.config_section.items()
+
 
 class PipelineSettingsConfig:
 
-    _default_settings: SectionProxy
-    _pipeline_settings: SectionProxy
+    _default_settings: Dict[str, str]
+    _pipeline_settings: Dict[str, str]
     raw_config = Dict[str, str]
 
     pipeline: str
@@ -150,8 +163,7 @@ class PipelineSettingsConfig:
     trace_base_dir: str
     work_base_dir: str
     repo: str
-    # FIXME: Clearer name. Out base?
-    base: str
+    out_base: str
     baseline_repo: str
     datestamp: bool
     queue: str
@@ -168,24 +180,15 @@ class PipelineSettingsConfig:
     def __init__(
         self,
         logger: Logger,
-        pipeline_settings_config_path: Path,
         pipeline: str,
+        default_settings: Dict[str, str],
+        pipeline_settings: Dict[str, str],
     ):
 
         self.pipeline = pipeline
 
-        config = ConfigParser()
-        config.read(pipeline_settings_config_path)
-
-        self._default_settings = config[DEFAULT_SECTION]
-        self._pipeline_settings = config[pipeline]
-
-        if pipeline not in config.keys():
-            available = ", ".join(config.keys())
-            logger.error(
-                f'Target pipeline "{pipeline}" not found as an entry in the pipeline config. Available entries are: "{available}"'
-            )
-            sys.exit(1)
+        self._default_settings = default_settings
+        self._pipeline_settings = pipeline_settings
 
         self.singularity_version = str(
             self._parse_setting(logger, "singularity_version")
@@ -208,7 +211,7 @@ class PipelineSettingsConfig:
                 mandatory=False,
             )
         )
-        self.base = str(self._parse_setting(logger, "base"))
+        self.out_base = str(self._parse_setting(logger, "base"))
         self.datestamp: bool = self._parse_setting(
             logger, "datestamp", data_type="bool"
         )  # type: ignore[assignment]
@@ -263,8 +266,8 @@ class PipelineSettingsConfig:
         if data_type == "string":
             return target_section[setting_key]
         elif data_type == "bool":
-            parsed_bool = bool(target_section.getboolean(setting_key))
-            return parsed_bool
+            str_value = target_section[setting_key]
+            return parse_bool_from_string(str_value)
         else:
             raise ValueError(
                 f"Unknown data_type: {data_type}, known are string and bool"
@@ -288,14 +291,13 @@ class RunConfig:
     ):
         self.all_samples = {}
         self.run_profile_key = run_profile
-        self.run_profile = RunProfileConfig(logger, run_profile, profile_config_path)
 
-        print(pipeline_config_path)
+        self.run_profile = self._get_run_profile_config(
+            logger, str(profile_config_path), run_profile
+        )
 
-        self.general_settings = PipelineSettingsConfig(
-            logger,
-            pipeline_config_path,
-            self.run_profile.pipeline,
+        self.general_settings = self._get_pipeline_config(
+            logger, str(pipeline_config_path)
         )
 
         sample_config_parser = ConfigParser()
@@ -311,7 +313,10 @@ class RunConfig:
                 )
                 sys.exit(1)
             section = sample_config_parser[sample]
-            sample_config = SampleConfig(logger, section, sample_types[i])
+            section_dict = dict(section.items())
+            sample_config = SampleConfig(
+                logger, section_dict, section.name, sample_types[i]
+            )
             self.all_samples[sample] = sample_config
 
     def get_sample_conf(self, sample_id: str) -> SampleConfig:
@@ -325,7 +330,50 @@ class RunConfig:
         return key_vals
 
     def get_profile_entries(self) -> Dict[str, str]:
+
         key_vals = {}
-        for key, val in self.run_profile.config[self.run_profile_key].items():
+        for key, val in self.run_profile.items():
             key_vals[key] = val
         return key_vals
+
+    def _get_run_profile_config(
+        self, logger: Logger, path: str, run_profile: str
+    ) -> RunProfileConfig:
+        config = ConfigParser()
+        config.read(path)
+        if run_profile not in config.keys():
+            ignore = {"DEFAULT"}
+            available = ", ".join(set(config.keys()) - ignore)
+            logger.error(
+                f"Provided run profile not present among available entries in the run profile config. Provided: {run_profile}, available: {available}"
+            )
+            sys.exit(1)
+        profile_section = dict(config[run_profile].items())
+        profile_section_name = config[run_profile].name
+        run_config = RunProfileConfig(
+            logger, run_profile, profile_section_name, profile_section
+        )
+        return run_config
+
+    def _get_pipeline_config(
+        self, logger: Logger, pipeline_config_path: str
+    ) -> PipelineSettingsConfig:
+        pipeline_config = ConfigParser()
+        pipeline_config.read(pipeline_config_path)
+        if self.run_profile.pipeline not in pipeline_config.keys():
+            available = ", ".join(pipeline_config.keys())
+            logger.error(
+                f'Target pipeline "{self.run_profile.pipeline}" not found as an entry in the pipeline config. Available entries are: "{available}"'
+            )
+            sys.exit(1)
+        pipeline_default_settings = dict(pipeline_config[DEFAULT_SECTION].items())
+        pipeline_settings = dict(pipeline_config[self.run_profile.pipeline].items())
+
+        config = PipelineSettingsConfig(
+            logger,
+            self.run_profile.pipeline,
+            pipeline_default_settings,
+            pipeline_settings,
+        )
+
+        return config
