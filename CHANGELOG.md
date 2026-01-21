@@ -1,3 +1,6 @@
+# 2.1.1
+* Fix phenotypes in the dna_const CSV templates to be in line with what the constitutional SR pipeline expects
+
 # 2.1.0
 
 * Resolve bug where previously non-checked-out repo-branches crashes during checkout checkup. PipeEval can now checkout new branches that are present only in the remote.
