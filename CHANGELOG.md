@@ -4,6 +4,7 @@
 * Remove "0" placeholders for mother and father field to avoid validation crashes in ol'wgs.
 * Do not run onco profile in masked mode.
 * Moved all PipeEval resource files to `/fs2/resources`.
+* Updated onco bam such that the name matches "seracare" in the generated csv.
 
 # 2.1.0
 
