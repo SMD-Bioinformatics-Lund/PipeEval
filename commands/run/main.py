@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 
 import argparse
-from configparser import ConfigParser
 import logging
 import subprocess
 import sys
+from configparser import ConfigParser
 from datetime import datetime
 from pathlib import Path
 from typing import List, Optional
@@ -154,7 +154,6 @@ def get_default_run_profiles() -> List[str]:
     config = ConfigParser()
     config.read(config_path)
     return sorted(config.sections())
-
 
 
 def confirm_run_if_results_exists(results_dir: Path, skip_confirmation: bool):
@@ -400,9 +399,7 @@ def add_arguments(parser: argparse.ArgumentParser):
         "Select run profile from the config. Multiple comma-separated can be specified."
     )
     if run_profiles:
-        run_profile_help = (
-            f"{run_profile_help} Available profiles from config: {', '.join(run_profiles)}."
-        )
+        run_profile_help = f"{run_profile_help} Available profiles from config: {', '.join(run_profiles)}."
 
     parser.add_argument(
         "--label",
