@@ -1,2 +1,2 @@
 clarity_sample_id,id,type,sex,assay,diagnosis,phenotype,group,father,mother,clarity_pool_id,platform,read1,read2,analysis,priority
-NA,hg002-rna,proband,M,dev,no_diagnosis,healthy,rna-test-master-fq,0,0,NA,illumina,/fs1/jakob/data/giab_hg002_rna/hg002_15M_R1.fastq.gz,/fs1/jakob/data/giab_hg002_rna/hg002_15M_R2.fastq.gz,cmd,grace-lowest
+NA,hg002-rna,proband,M,dev,no_diagnosis,healthy,rna-test-master-fq,,,NA,illumina,/fs1/jakob/data/giab_hg002_rna/hg002_15M_R1.fastq.gz,/fs1/jakob/data/giab_hg002_rna/hg002_15M_R2.fastq.gz,cmd,grace-lowest

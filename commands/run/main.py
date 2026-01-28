@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import argparse
+from configparser import ConfigParser
 import logging
 import subprocess
 import sys
@@ -144,6 +145,16 @@ def main(
     setup_results_links(logger, config, results_dir, run_label, assay)
 
     start_run(get_start_nextflow_command(False), skip_confirmation)
+
+
+def get_default_run_profiles() -> List[str]:
+    config_path = Path(__file__).resolve().parent / "config/run_profile.ini"
+    if not config_path.exists():
+        return []
+    config = ConfigParser()
+    config.read(config_path)
+    return sorted(config.sections())
+
 
 
 def confirm_run_if_results_exists(results_dir: Path, skip_confirmation: bool):
@@ -384,6 +395,15 @@ def main_wrapper(args: argparse.Namespace):
 
 
 def add_arguments(parser: argparse.ArgumentParser):
+    run_profiles = get_default_run_profiles()
+    run_profile_help = (
+        "Select run profile from the config. Multiple comma-separated can be specified."
+    )
+    if run_profiles:
+        run_profile_help = (
+            f"{run_profile_help} Available profiles from config: {', '.join(run_profiles)}."
+        )
+
     parser.add_argument(
         "--label",
         help="Optional custom label that will be part of the run label and thus part of the results folder name",
@@ -412,8 +432,7 @@ def add_arguments(parser: argparse.ArgumentParser):
     )
     parser.add_argument(
         "--run_profile",
-        "--run_type",
-        help="Select run profile from the config (i.e. giab-single, giab-trio, seracare ...). Multiple comma-separated can be specified.",
+        help=run_profile_help,
         required=True,
     )
     parser.add_argument(
