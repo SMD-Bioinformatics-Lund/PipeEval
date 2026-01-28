@@ -5,6 +5,7 @@
 * Do not run onco profile in masked mode.
 * Moved all PipeEval resource files to `/fs2/resources`.
 * Updated onco bam such that the name matches "seracare" in the generated csv.
+* Remove the automated GitHub CI version matching / tagging.
 
 # 2.1.0
 
