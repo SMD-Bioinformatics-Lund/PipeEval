@@ -11,7 +11,7 @@ from commands.run.main import main_wrapper as runner_main_wrapper
 from commands.vcf.main import add_arguments as vcf_add_arguments
 from commands.vcf.main import main_wrapper as vcf_main_wrapper
 
-__version_info__ = ("2", "1", "0")
+__version_info__ = ("2", "1", "1")
 __version__ = ".".join(__version_info__)
 
 logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
