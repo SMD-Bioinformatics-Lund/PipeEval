@@ -16,7 +16,7 @@ Only standard libs are currently used.
 python3 main.py run \
     --checkout jw_update_genmod \
     --base out/genmod \
-    --run_profile giab_single \
+    --run_profile wgs_single \
     --start_data bam \
     --repo /path/to/repo \
     --label run1
