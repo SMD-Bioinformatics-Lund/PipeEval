@@ -187,7 +187,7 @@ def do_repo_checkout(
 
     # Exists as something we can check out locally?
     valid_local = check_valid_checkout(logger, repo, checkout_branch, verbose)
-    
+
     # If not, let's check in the remote
     # Can I create a local branch from the remote one?
     if not valid_local:
@@ -209,9 +209,7 @@ def do_repo_checkout(
             f"Checking out remote branch {remote_checkout} as {checkout_branch}"
         )
         # Yes, let's create a local branch from it
-        checkout_remote_branch(
-            logger, repo, checkout_branch, remote_checkout, verbose
-        )
+        checkout_remote_branch(logger, repo, checkout_branch, remote_checkout, verbose)
     else:
         logger.info(f"Checking out: {checkout_branch} in {str(repo)}")
         checkout_repo(logger, repo, checkout_branch, verbose)
