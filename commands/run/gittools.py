@@ -56,8 +56,10 @@ def check_if_on_branchhead(logger: Logger, repo: Path, verbose: bool) -> bool:
     return results.stdout.strip() != "HEAD"
 
 
-def pull_branch(logger: Logger, repo: Path, branch: str, verbose: bool) -> None:
-    command = ["git", "pull", "origin", branch]
+def pull_branch(
+    logger: Logger, repo: Path, remote: str, branch: str, verbose: bool
+) -> None:
+    command = ["git", "pull", remote, branch]
     if verbose:
         logger.info(f"Executing: {command} in {repo}")
     results = run_command(command, repo)
@@ -100,3 +102,13 @@ def check_valid_checkout(
         return True
     except subprocess.CalledProcessError:
         return False
+
+
+def checkout_remote_branch(
+    logger: Logger, repo: Path, branch: str, remote_ref: str, verbose: bool
+) -> Tuple[int, str]:
+    command = ["git", "checkout", "-b", branch, "--track", remote_ref]
+    if verbose:
+        logger.info(f"Executing: {command} in {repo}")
+    results = run_command(command, repo)
+    return (results.returncode, results.stderr)

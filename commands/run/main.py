@@ -20,6 +20,7 @@ from commands.run.gittools import (
     check_if_on_branchhead,
     check_valid_checkout,
     check_valid_repo,
+    checkout_remote_branch,
     checkout_repo,
     fetch_repo,
     get_git_commit_hash_and_log,
@@ -171,11 +172,32 @@ def do_repo_checkout(
     repo: Path, checkout: str, verbose: bool, skip_confirmation: bool, remote: str
 ):
     logger.info("Fetching latest changes for repo")
+
+    # Sync with the remote repo
     fetch_repo(logger, repo, remote, verbose)
-    valid_local = check_valid_checkout(logger, repo, checkout, verbose)
+
+    # Consider that the checkout may be prefixed by the remote name
+    # I.e. origin/my-branch
+    remote_prefix = f"{remote}/"
+    checkout_branch = checkout
+    remote_checkout = None
+    if checkout.startswith(remote_prefix):
+        checkout_branch = checkout[len(remote_prefix) :]
+        remote_checkout = checkout
+
+    # Exists as something we can check out locally?
+    valid_local = check_valid_checkout(logger, repo, checkout_branch, verbose)
+    
+    # If not, let's check in the remote
+    # Can I create a local branch from the remote one?
     if not valid_local:
-        logger.info(f"Did not find {checkout} locally, checking in remote ({remote})")
-        remote_checkout = f"{remote}/{checkout}"
+        logger.info(
+            f"Did not find {checkout_branch} locally, checking in remote ({remote})"
+        )
+        if remote_checkout is None:
+            remote_checkout = f"{remote}/{checkout_branch}"
+
+        # Does it exist as a valid checkout on the remote?
         valid_remote = check_valid_checkout(logger, repo, remote_checkout, verbose)
         if not valid_remote:
             logger.error(
@@ -183,11 +205,21 @@ def do_repo_checkout(
             )
             sys.exit(1)
 
-    logger.info(f"Checking out: {checkout} in {str(repo)}")
-    checkout_repo(logger, repo, checkout, verbose)
+        logger.info(
+            f"Checking out remote branch {remote_checkout} as {checkout_branch}"
+        )
+        # Yes, let's create a local branch from it
+        checkout_remote_branch(
+            logger, repo, checkout_branch, remote_checkout, verbose
+        )
+    else:
+        logger.info(f"Checking out: {checkout_branch} in {str(repo)}")
+        checkout_repo(logger, repo, checkout_branch, verbose)
+
+    # Are we on a branch head?
     on_branch_head = check_if_on_branchhead(logger, repo, verbose)
     if on_branch_head:
-        branch = checkout
+        branch = checkout_branch
         if skip_confirmation:
             confirmation = "y"
         else:
@@ -195,8 +227,9 @@ def do_repo_checkout(
                 f"You have checked out the branch {branch} in {repo}. Do you want to pull? (y/N) "
             )
         if confirmation == "y":
-            logger.info("Pulling from origin")
-            pull_branch(logger, repo, branch, verbose)
+            logger.info(f"Pulling from {remote}")
+            # Let's pull its latest content
+            pull_branch(logger, repo, remote, branch, verbose)
 
 
 def build_run_label(
