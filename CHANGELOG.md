@@ -7,6 +7,7 @@
 * Updated onco bam such that the name matches "seracare" in the generated csv.
 * Remove the automated GitHub CI version matching / tagging.
 * (Again) attempt to fix the checkout of branches not yet existing as a branch in the local repo.
+* Fix the `resume.sh` script by surrounding the `--custom_flags` arguments with quotes.
 
 # 2.1.1
 * Fix phenotypes in the dna_const CSV templates to be in line with what the constitutional SR pipeline expects
