@@ -136,8 +136,8 @@ def test_single_dna_const_run(
         assert row["assay"] == "dev"
         assert row["diagnosis"] == "itchy_nose"
         assert row["group"] == run_label
-        assert row["father"] == "0"
-        assert row["mother"] == "0"
+        assert row["father"] == ""
+        assert row["mother"] == ""
         assert str(row["read1"]) == str(paths.proband.fq_fw)
         assert str(row["read2"]) == str(paths.proband.fq_rv)
 
@@ -371,8 +371,8 @@ def test_trio_run(
         assert mother_row["assay"] == "dev"
         assert mother_row["diagnosis"] == "stiff_neck"
         assert mother_row["group"] == run_label
-        assert mother_row["father"] == "0"
-        assert mother_row["mother"] == "0"
+        assert mother_row["father"] == ""
+        assert mother_row["mother"] == ""
         assert str(mother_row["read1"]) == str(paths.mother.fq_fw)
         assert str(mother_row["read2"]) == str(paths.mother.fq_rv)
 
@@ -383,7 +383,7 @@ def test_trio_run(
         assert father_row["assay"] == "dev"
         assert father_row["diagnosis"] == "stiff_neck"
         assert father_row["group"] == run_label
-        assert father_row["father"] == "0"
-        assert father_row["mother"] == "0"
+        assert father_row["father"] == ""
+        assert father_row["mother"] == ""
         assert str(father_row["read1"]) == str(paths.father.fq_fw)
         assert str(father_row["read2"]) == str(paths.father.fq_rv)

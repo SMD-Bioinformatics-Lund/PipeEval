@@ -1,3 +1,12 @@
+# TBD
+
+* Fix docs for `--run_profile` argument. Load the allowed arguments from config if possible.
+* Remove "0" placeholders for mother and father field to avoid validation crashes in ol'wgs.
+* Do not run onco profile in masked mode.
+* Moved all PipeEval resource files to `/fs2/resources`.
+* Updated onco bam such that the name matches "seracare" in the generated csv.
+* Remove the automated GitHub CI version matching / tagging.
+
 # 2.1.1
 * Fix phenotypes in the dna_const CSV templates to be in line with what the constitutional SR pipeline expects
 
