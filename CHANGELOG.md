@@ -1,4 +1,4 @@
-# TBD
+# 2.2.0
 
 * Fix docs for `--run_profile` argument. Load the allowed arguments from config if possible.
 * Remove "0" placeholders for mother and father field to avoid validation crashes in ol'wgs.
