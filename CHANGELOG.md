@@ -3,7 +3,7 @@
 * Fix docs for `--run_profile` argument. Load the allowed arguments from config if possible.
 * Remove "0" placeholders for mother and father field to avoid validation crashes in ol'wgs.
 * Do not run onco profile in masked mode.
-* Moved all PipeEval resource files to `/fs2/resources`.
+* Moved all PipeEval resource files to `/fs2/resources/pipeeval`.
 * Updated onco bam such that the name matches "seracare" in the generated csv.
 * Remove the automated GitHub CI version matching / tagging.
 * (Again) attempt to fix the checkout of branches not yet existing as a branch in the local repo.
