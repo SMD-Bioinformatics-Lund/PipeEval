@@ -184,8 +184,12 @@ def do_repo_checkout(
     if checkout.startswith(remote_prefix):
         checkout_branch = checkout[len(remote_prefix) :]
         remote_checkout = checkout
-        logger.warning("Detected checkout of a remote branch (origin/my-branch). Trimming the remote (i.e. \"origin\").")
-        logger.warning(f"checkout after trimming: {checkout_branch}, remote checkout: {remote_checkout}")
+        logger.warning(
+            'Detected checkout of a remote branch (origin/my-branch). Trimming the remote (i.e. "origin").'
+        )
+        logger.warning(
+            f"checkout after trimming: {checkout_branch}, remote checkout: {remote_checkout}"
+        )
 
     # Exists as something we can check out locally?
     valid_local = check_valid_checkout(logger, repo, checkout_branch, verbose)
