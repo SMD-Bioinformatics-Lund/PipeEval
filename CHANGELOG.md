@@ -1,3 +1,7 @@
+# [Unreleased]
+
+* Fix baseline runs to pass nextflow config paths from the baseline repo instead of the primary repo.
+
 # 2.2.0
 
 * Fix docs for `--run_profile` argument. Load the allowed arguments from config if possible.

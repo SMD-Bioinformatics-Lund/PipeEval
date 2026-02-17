@@ -130,7 +130,7 @@ def main(
             no_start,
             quote_pipeline_arguments,
             [
-                config.general_settings.repo / conf
+                repo / conf
                 for conf in config.general_settings.nextflow_configs
             ],
         )
