@@ -31,7 +31,6 @@ class CSVRow:
 
 
 class CsvEntry:
-
     headers = [
         "clarity_sample_id",
         "id",

@@ -22,7 +22,6 @@ def parse_mandatory_section_argument(
 
 
 class SampleConfig:
-
     config_section: Dict[str, str]
 
     id: str
@@ -41,7 +40,6 @@ class SampleConfig:
         section_name: str,
         sample_type: str,
     ):
-
         self.config_section = dict(sample_section.items())
 
         self.config_section["id"] = section_name
@@ -63,7 +61,6 @@ class SampleConfig:
 
 
 class RunProfileConfig:
-
     # config: ConfigParser
     config_section: Dict[str, str]
 
@@ -86,7 +83,6 @@ class RunProfileConfig:
         profile_section_name: str,
         profile_section: Dict[str, str],
     ):
-
         self.run_profile = run_profile
         self.config_section = profile_section
 
@@ -151,7 +147,6 @@ class RunProfileConfig:
 
 
 class PipelineSettingsConfig:
-
     _default_settings: Dict[str, str]
     _pipeline_settings: Dict[str, str]
     raw_config = Dict[str, str]
@@ -184,7 +179,6 @@ class PipelineSettingsConfig:
         default_settings: Dict[str, str],
         pipeline_settings: Dict[str, str],
     ):
-
         self.pipeline = pipeline
 
         self._default_settings = default_settings
@@ -225,7 +219,6 @@ class PipelineSettingsConfig:
         self.cluster = str(self._parse_setting(logger, "cluster"))
 
     def get_items(self):
-
         combined_settings = {}
         for key, val in self._default_settings.items():
             combined_settings[key] = val
@@ -275,7 +268,6 @@ class PipelineSettingsConfig:
 
 
 class RunConfig:
-
     run_profile_key: str
     run_profile: RunProfileConfig
     general_settings: PipelineSettingsConfig
@@ -330,7 +322,6 @@ class RunConfig:
         return key_vals
 
     def get_profile_entries(self) -> Dict[str, str]:
-
         key_vals = {}
         for key, val in self.run_profile.items():
             key_vals[key] = val

@@ -13,7 +13,6 @@ def logger():
 
 @pytest.fixture
 def proband_config(logger: logging.Logger) -> SampleConfig:
-
     sample_id = "sample-1"
     sample_type = "proband"
 
@@ -32,7 +31,6 @@ def proband_config(logger: logging.Logger) -> SampleConfig:
 
 @pytest.fixture
 def mother_config(logger: logging.Logger) -> SampleConfig:
-
     sample_id = "sample-2"
     sample_type = "mother"
 
@@ -50,7 +48,6 @@ def mother_config(logger: logging.Logger) -> SampleConfig:
 
 @pytest.fixture
 def father_config(logger: logging.Logger) -> SampleConfig:
-
     sample_id = "sample-3"
     sample_type = "father"
 
@@ -67,7 +64,6 @@ def father_config(logger: logging.Logger) -> SampleConfig:
 
 
 def test_get_replace_map_single(logger: logging.Logger, proband_config: SampleConfig):
-
     profile_section = {
         "pipeline": "test-pipeline",
         "csv_template": "csv template placeholder",
@@ -103,7 +99,6 @@ def test_get_replace_map_single(logger: logging.Logger, proband_config: SampleCo
 def test_get_replace_map_single_bam(
     logger: logging.Logger, proband_config: SampleConfig
 ):
-
     profile_section = {
         "pipeline": "test-pipeline",
         "csv_template": "csv template placeholder",
@@ -142,7 +137,6 @@ def test_get_replace_map_trio(
     mother_config: SampleConfig,
     father_config: SampleConfig,
 ):
-
     profile_section = {
         "pipeline": "test-pipeline",
         "csv_template": "csv template placeholder",

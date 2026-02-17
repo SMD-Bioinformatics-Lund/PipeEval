@@ -37,7 +37,6 @@ def results_score_all() -> Path:
 
 
 def test_main(caplog: LogCaptureFixture, tmp_path: Path):
-
     vcf1_path = Path("tests/testdata/hg002_chr21.vcf.gz")
     vcf2_path = Path("tests/testdata/hg004_chr21.vcf.gz")
 
@@ -51,7 +50,6 @@ def test_main(caplog: LogCaptureFixture, tmp_path: Path):
     annotations: List[str] = []
 
     with caplog.at_level(logging.INFO):
-
         main(
             vcf1_path,
             vcf2_path,

@@ -222,7 +222,6 @@ def test_paired_tumor_run(
     config_sample_paths: ConfigSamplePathGroup,
     csv_base: Path,
 ):
-
     paths = config_sample_paths
     monkeypatch.setattr(run_main, "do_repo_checkout", lambda *a, **k: None)
     monkeypatch.setattr(run_main, "start_run", lambda *a, **k: None)
@@ -301,7 +300,6 @@ def test_trio_run(
     config_sample_paths: ConfigSamplePathGroup,
     csv_base: Path,
 ):
-
     paths = config_sample_paths
 
     monkeypatch.setattr(run_main, "do_repo_checkout", lambda *a, **k: None)

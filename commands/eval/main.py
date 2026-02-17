@@ -62,7 +62,6 @@ def main(
     args_comparisons: Optional[Set[str]],
     outdir: Optional[Path],
 ):
-
     r1_paths = get_files_in_dir(
         ro.r1_results, ro.r1_id, RUN_ID_PLACEHOLDER, ro.r1_results
     )
@@ -208,7 +207,6 @@ def main_vcf_comparisons(
 
     if not comparisons or len(vcf_comparisons) > 0:
         if vcf_path_patterns:
-
             vcfs = get_vcf_pair(
                 logger,
                 list(vcf_path_patterns),
@@ -330,7 +328,6 @@ def get_pipeline_from_run_folders(
 
 
 def main_wrapper(args: argparse.Namespace):
-
     if args.silent:
         logger.setLevel(logging.WARNING)
 

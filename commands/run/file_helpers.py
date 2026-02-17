@@ -18,7 +18,6 @@ def write_resume_script(results_dir: Path, run_command: List[str]):
 
 
 def copy_nextflow_configs(repo: Path, results_dir: Path, configs: List[Path]):
-
     for config in configs:
         config_path = repo / config
         dest_path = results_dir / config.name
@@ -32,7 +31,6 @@ def setup_results_links(
     run_label: str,
     assay: str,
 ):
-
     log_base_dir = config.general_settings.log_base_dir
     trace_base_dir = config.general_settings.trace_base_dir
     work_base_dir = config.general_settings.work_base_dir
@@ -94,7 +92,6 @@ def get_replace_map(
 
     # Additional sample attributes (sample type, sex etc)
     for sample_config in sample_configs:
-
         sample_type = sample_config.sample_type
         for attr, val in sample_config.items():
             placeholder = f"<{attr} {sample_type}>"
@@ -111,7 +108,6 @@ def get_csv(
     starting_run_from: str,
     csv_base: Path,
 ) -> str:
-
     csv_template_name = config.run_profile.csv_template
     csv_template_path = csv_base / csv_template_name
 
@@ -130,7 +126,6 @@ def get_csv(
     )
 
     for i, row in enumerate(csv_body_rows):
-
         for key, val in replace_map.items():
             row = row.replace(key, val)
 
@@ -187,7 +182,6 @@ def get_replace_map_special_rules(
     }
 
     for sample in sample_configs:
-
         # This is a custom case needed to accomodate how the Lund DNA constitutional
         # pipeline uses the read1/read2 field to start from various data types
         if starting_run_from == "fq":

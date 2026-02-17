@@ -74,7 +74,6 @@ def do_vcf_comparisons(
         check_vcf_sample_differences(logger, run_ids, vcfs, vcfs.comp.shared)
 
     if VCFComparison.custom_info in comparisons:
-
         if not custom_info_keys:
             logger.warning(
                 "No custom info keys supplied, skipping custom_info_keys comparison"
@@ -165,7 +164,6 @@ def check_same_files(
     ignore_files: List[str],
     out_path: Optional[Path],
 ):
-
     files_in_results1 = set(path.relative_path for path in r1_paths)
     files_in_results2 = set(path.relative_path for path in r2_paths)
 
@@ -285,7 +283,6 @@ def diff_compare_files(
     file2: Path,
     out_path: Optional[Path],
 ):
-
     with get_filehandle(file1) as r1_fh, get_filehandle(file2) as r2_fh:
         r1_lines = [
             line.replace(run_id1, RUN_ID_PLACEHOLDER) for line in r1_fh.readlines()

@@ -7,7 +7,6 @@ T = TypeVar("T")
 
 
 class Comparison(Generic[T]):
-
     # After Python 3.7 a @dataclass can be used instead
     def __init__(self, r1: Set[T], r2: Set[T], shared: Set[T]):
         self.r1 = r1
@@ -16,7 +15,6 @@ class Comparison(Generic[T]):
 
 
 class ColumnComparison:
-
     none_present: int
     v1_present: int
     v2_present: int
@@ -31,7 +29,6 @@ class ColumnComparison:
         return f"{self.none_present} {self.v1_present} {self.v2_present} {self.both_present} {self.nbr_same} {self.all_numeric} nbr numeric {len(self.numeric_pairs)}"
 
     def __init__(self, val_pairs: List[Tuple[Optional[str], Optional[str]]]):
-
         self.none_present = 0
         self.v1_present = 0
         self.v2_present = 0
@@ -46,7 +43,6 @@ class ColumnComparison:
         all_numeric = True
 
         for v1_val, v2_val in val_pairs:
-
             if not v1_val and not v2_val:
                 self.none_present += 1
             elif not v2_val:

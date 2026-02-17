@@ -40,7 +40,6 @@ def fetch_repo(
 def checkout_repo(
     logger: Logger, repo: Path, checkout_string: str, verbose: bool
 ) -> Tuple[int, str]:
-
     command = ["git", "checkout", checkout_string]
     if verbose:
         logger.info(f"Executing: {command} in {repo}")
