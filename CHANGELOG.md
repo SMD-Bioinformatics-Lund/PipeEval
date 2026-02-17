@@ -1,3 +1,7 @@
+# [Unreleased]
+
+* Run black on codebase
+
 # 2.2.0
 
 * Fix docs for `--run_profile` argument. Load the allowed arguments from config if possible.
