@@ -1,4 +1,4 @@
-# [Unreleased]
+# 2.2.1
 
 * Fix VCF index suffix for vcf-started runs
 
