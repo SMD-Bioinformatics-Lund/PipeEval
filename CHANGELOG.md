@@ -1,3 +1,7 @@
+# 2.2.1
+
+* Fix VCF index suffix for vcf-started runs
+
 # 2.2.0
 
 * Fix docs for `--run_profile` argument. Load the allowed arguments from config if possible.

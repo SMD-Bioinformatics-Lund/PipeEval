@@ -209,7 +209,7 @@ def get_replace_map_special_rules(
                 logger.error("Start run from vcf but vcf is missing")
                 sys.exit(1)
             replace_map[f"<read1 {sample.sample_type}>"] = sample.vcf
-            replace_map[f"<read2 {sample.sample_type}>"] = f"{sample.vcf}.bai"
+            replace_map[f"<read2 {sample.sample_type}>"] = f"{sample.vcf}.tbi"
         else:
             raise ValueError(
                 f"start_run_from should be fq, bam or vcf, found: '{starting_run_from}'"
