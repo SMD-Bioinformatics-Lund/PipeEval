@@ -1,3 +1,7 @@
+# TBD
+
+* Add sequencing run column to run csvs
+
 # 2.2.1
 
 * Fix baseline runs to pass nextflow config paths from the baseline repo instead of the primary repo.
