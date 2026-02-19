@@ -1,5 +1,6 @@
 # 2.2.1
 
+* Add `--queue` CLI arg to pipeeval runner
 * Fix baseline runs to pass nextflow config paths from the baseline repo instead of the primary repo.
 * Fix VCF index suffix for vcf-started runs
 * Add black to requirements-dev.txt

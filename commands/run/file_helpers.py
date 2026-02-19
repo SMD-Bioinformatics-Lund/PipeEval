@@ -129,6 +129,8 @@ def get_csv(
         config.run_profile,
     )
 
+    replace_map["<queue>"] = config.general_settings.queue
+
     for i, row in enumerate(csv_body_rows):
 
         for key, val in replace_map.items():

@@ -109,7 +109,13 @@ def main(
     analysis = analysis or config.run_profile.run_profile
 
     out_csv = results_dir / "run.csv"
-    csv_content = get_csv(logger, config, run_label, start_data, csv_base)
+    csv_content = get_csv(
+        logger,
+        config,
+        run_label,
+        start_data,
+        csv_base,
+    )
 
     out_csv.write_text(csv_content)
 
@@ -375,6 +381,9 @@ def main_wrapper(args: argparse.Namespace):
         samples_path,
     )
 
+    if args.queue is not None:
+        config.general_settings.queue = args.queue
+    
     if args.silent:
         logger.setLevel(logging.WARNING)
 
@@ -523,6 +532,12 @@ def add_arguments(parser: argparse.ArgumentParser):
         "--remote",
         help="Git remote from which to checkout if not present locally",
         default="origin",
+    )
+    parser.add_argument(
+        "--queue",
+        choices=["lowest", "low", "normal", "high", "highest"],
+        default=None,
+        help="Override cluster queue/priority in config.",
     )
 
 
