@@ -62,7 +62,6 @@ def main(
     analysis: Optional[str],
     csv_base: Path,
     remote_name: str,
-    priority: Optional[str],
 ):
     logger.info(f"Preparing run, type: {run_profile}, data: {start_data}")
 
@@ -109,8 +108,6 @@ def main(
     assay = assay or ASSAY_PLACEHOLDER
     analysis = analysis or config.run_profile.run_profile
 
-    effective_priority = priority or config.general_settings.queue
-
     out_csv = results_dir / "run.csv"
     csv_content = get_csv(
         logger,
@@ -118,7 +115,6 @@ def main(
         run_label,
         start_data,
         csv_base,
-        effective_priority,
     )
 
     out_csv.write_text(csv_content)
@@ -130,7 +126,7 @@ def main(
             results_dir,
             config.general_settings.executor,
             config.general_settings.cluster,
-            effective_priority,
+            config.general_settings.queue,
             config.general_settings.singularity_version,
             config.general_settings.nextflow_version,
             config.general_settings.container,
@@ -385,6 +381,9 @@ def main_wrapper(args: argparse.Namespace):
         samples_path,
     )
 
+    if args.queue is not None:
+        config.general_settings.queue = args.queue
+    
     if args.silent:
         logger.setLevel(logging.WARNING)
 
@@ -420,7 +419,6 @@ def main_wrapper(args: argparse.Namespace):
             args.analysis,
             csv_base,
             args.remote,
-            args.priority,
         )
         logger.info("Now proceeding with checking out the --checkout")
     main(
@@ -440,7 +438,6 @@ def main_wrapper(args: argparse.Namespace):
         args.analysis,
         csv_base,
         args.remote,
-        args.priority,
     )
 
 
@@ -537,10 +534,10 @@ def add_arguments(parser: argparse.ArgumentParser):
         default="origin",
     )
     parser.add_argument(
-        "--priority",
+        "--queue",
         choices=["lowest", "low", "normal", "high", "highest"],
         default=None,
-        help="Override CSV priority; if omitted, keep template value.",
+        help="Override cluster queue/priority in config.",
     )
 
 
