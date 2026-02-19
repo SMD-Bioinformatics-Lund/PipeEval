@@ -2,6 +2,7 @@
 
 * Fix baseline runs to pass nextflow config paths from the baseline repo instead of the primary repo.
 * Fix VCF index suffix for vcf-started runs
+* Change all instances of queue `grace-lowest` to `lowest`
 
 # 2.2.0
 
