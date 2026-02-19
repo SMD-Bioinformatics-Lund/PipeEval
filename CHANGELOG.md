@@ -1,5 +1,7 @@
-# [Unreleased]
+# 2.2.1
 
+* Fix baseline runs to pass nextflow config paths from the baseline repo instead of the primary repo.
+* Fix VCF index suffix for vcf-started runs
 * Add black to requirements-dev.txt
 
 # 2.2.0
