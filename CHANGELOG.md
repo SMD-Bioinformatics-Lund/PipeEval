@@ -1,5 +1,6 @@
 # 2.2.1
 
+* Add `--priority` CLI arg to pipeeval runner, which overrides the config default and propagates down to run.csv
 * Fix baseline runs to pass nextflow config paths from the baseline repo instead of the primary repo.
 * Fix VCF index suffix for vcf-started runs
 * Add black to requirements-dev.txt

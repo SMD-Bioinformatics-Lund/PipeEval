@@ -71,6 +71,7 @@ def get_replace_map(
     sample_configs: List[SampleConfig],
     run_label: str,
     run_profile: RunProfileConfig,
+    run_priority: str,
 ) -> Dict[str, str]:
     """
     Used to insert values into template placeholders in the template csv.
@@ -85,6 +86,8 @@ def get_replace_map(
     replace_map = get_replace_map_special_rules(
         logger, run_label, sample_configs, starting_run_from, run_profile.case_type
     )
+
+    replace_map["<priority>"] = run_priority
 
     # Additional run profile attributes (analysis, default-panel etc)
     for attr, val in run_profile.items():
@@ -110,6 +113,7 @@ def get_csv(
     run_label: str,
     starting_run_from: str,
     csv_base: Path,
+    run_priority: str,
 ) -> str:
 
     csv_template_name = config.run_profile.csv_template
@@ -127,6 +131,7 @@ def get_csv(
         list(config.all_samples.values()),
         run_label,
         config.run_profile,
+        run_priority,
     )
 
     for i, row in enumerate(csv_body_rows):
