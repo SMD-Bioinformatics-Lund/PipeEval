@@ -27,6 +27,7 @@ class RunConfigs:
 
 @pytest.fixture
 def config_sample_paths(tmp_path: Path) -> ConfigSamplePathGroup:
+
     proband = ConfigSamplePaths(tmp_path, "proband")
     mother = ConfigSamplePaths(tmp_path, "mother")
     father = ConfigSamplePaths(tmp_path, "father")
@@ -42,6 +43,7 @@ def config_sample_paths(tmp_path: Path) -> ConfigSamplePathGroup:
 def get_run_config_paths(
     tmp_path: Path, base_dir: Path, config_sample_paths: ConfigSamplePathGroup
 ) -> RunConfigs:
+
     run_profile_config = get_run_profile_config()
     run_profile_config_path = tmp_path / "profile_config.ini"
     run_profile_config_path.write_text(run_profile_config)

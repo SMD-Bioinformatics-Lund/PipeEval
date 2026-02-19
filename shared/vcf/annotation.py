@@ -33,6 +33,7 @@ def compare_variant_annotation(
     variants_r2: Dict[str, ScoredVariant],
     max_considered: int,
 ):
+
     (diffs_per_annot_key, r1_only_annots, r2_only_annots) = calculate_annotation_diffs(
         shared_variant_keys, variants_r1, variants_r2, max_considered, run_ids
     )
@@ -132,6 +133,7 @@ def calculate_annotation_diffs(
 def get_annot_value_diff_summary(
     diffs_per_annot: Dict[str, List[AnnotComp]],
 ) -> List[str]:
+
     header = ["key", "number", "pos", "ref/alt", "first example"]
     output_rows = [header]
     for info_key, annot_value_diffs in diffs_per_annot.items():

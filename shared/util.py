@@ -50,6 +50,7 @@ def parse_decimal(val: str) -> Optional[Decimal]:
 def scale_value_to_screen(
     val: Decimal, min_value: Decimal, max_value: Decimal, screen_width: int
 ) -> int:
+
     if min_value == max_value:
         return screen_width // 2
 
@@ -61,6 +62,7 @@ def scale_value_to_screen(
 
 
 def quantiles(data: List[Decimal], n=4) -> List[Decimal]:
+
     # Workaround to support Python3.6
     # When updated to beyond 3.8, statistics.quantiles is the way to go
     def pct(data: List[float], fraction: float) -> float:  # p in [0,1]

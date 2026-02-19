@@ -48,6 +48,7 @@ def show_numerical_comparisons(
     numeric_pairs: List[Tuple[Decimal, Decimal]],
     width: int = 60,
 ) -> None:
+
     v1_vals = [a for a, _ in numeric_pairs]
     v2_vals = [b for _, b in numeric_pairs]
 

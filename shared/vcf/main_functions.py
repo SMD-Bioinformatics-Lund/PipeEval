@@ -51,6 +51,7 @@ def check_vcf_sample_differences(
         return
 
     for sample_key in sorted(all_sample_keys):
+
         shared_key_values: List[Tuple[Optional[str], Optional[str]]] = []
 
         for key in shared_variant_keys:
@@ -87,6 +88,7 @@ def check_custom_info_field_differences(
     info_keys: Set[str],
 ):
     for info_key in info_keys:
+
         shared_key_values: List[Tuple[Optional[str], Optional[str]]] = []
 
         for key in shared_variant_keys:
@@ -227,6 +229,7 @@ def compare_variant_score(
     show_line_numbers: bool,
     annotation_info_keys: List[str],
 ):
+
     diff_scored_variants: List[DiffScoredVariant] = []
 
     for var_key in shared_variants:
@@ -271,6 +274,7 @@ def print_diff_score_info(
     show_line_numbers: bool,
     annotation_info_keys: List[str],
 ) -> None:
+
     diff_scored_variants.sort(
         key=lambda var: var.r1.get_rank_score(),
         reverse=True,
@@ -358,6 +362,7 @@ def write_full_score_table(
     show_line_numbers: bool,
     annotation_info_keys: List[str],
 ) -> None:
+
     all_variants: list[DiffScoredVariant] = [
         DiffScoredVariant(variants_r1[key], variants_r2[key])
         for key in shared_variant_keys

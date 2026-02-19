@@ -114,6 +114,7 @@ class DiffScoredVariant:
     """Container for comparison of differently scored variants in the same location"""
 
     def __init__(self, r1_variant: ScoredVariant, r2_variant: ScoredVariant):
+
         self.r1 = r1_variant
         self.r2 = r2_variant
 
@@ -143,6 +144,7 @@ class ScoredVCF:
 
 
 def parse_scored_vcf(vcf: Path, is_sv: bool) -> ScoredVCF:
+
     sub_score_name_pattern = re.compile('ID=RankResult,.*Description="(.*)">')
     info_id_pattern = re.compile("ID=(.*),")
 
@@ -156,6 +158,7 @@ def parse_scored_vcf(vcf: Path, is_sv: bool) -> ScoredVCF:
             line = line.rstrip()
             line_nbr += 1
             if line.startswith("#"):
+
                 if line.startswith("##INFO="):
                     info_id = get_match_or_crash(
                         info_id_pattern, line, f"Expected ID match in line: {line}"
@@ -246,6 +249,7 @@ def parse_scored_vcf(vcf: Path, is_sv: bool) -> ScoredVCF:
 
 
 def count_variants(vcf: Path) -> int:
+
     nbr_entries = 0
     with get_filehandle(vcf) as in_fh:
         for line in in_fh:

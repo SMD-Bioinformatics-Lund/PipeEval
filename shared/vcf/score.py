@@ -12,6 +12,7 @@ def get_comparison_row(
     show_sub_scores: bool,
     show_sub_score_summary: bool,
 ) -> List[str]:
+
     if var1 != var2:
         raise ValueError(
             f"Must compare the same variant. This: {str(var1)} Other: {str(var2)}"
@@ -89,6 +90,7 @@ def get_table(
     show_line_numbers: bool,
     annotation_info_keys: List[str],
 ) -> List[List[str]]:
+
     rows = []
 
     for variant in variants:
@@ -107,6 +109,7 @@ def get_table(
 
 
 def sub_score_summary(subscores1: Dict[str, int], subscores2: Dict[str, int]) -> str:
+
     assert (
         subscores1.keys() == subscores2.keys()
     ), f"Subscore keys differing. Found: {subscores1.keys()} and {subscores2.keys()}"

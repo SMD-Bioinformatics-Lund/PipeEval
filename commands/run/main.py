@@ -278,6 +278,7 @@ def build_start_nextflow_analysis_cmd(
     quote_pipeline_arguments: bool,
     nextflow_configs: List[Path],
 ) -> List[str]:
+
     out_dir = results_dir
     cron_dir = results_dir
 
@@ -330,6 +331,7 @@ def build_start_nextflow_analysis_cmd(
         custom_flag_parts.append("-stub-run")
 
     if len(custom_flag_parts) > 0:
+
         start_nextflow_command.append("--custom_flags")
 
         custom_flags = " ".join(custom_flag_parts)
@@ -359,6 +361,7 @@ def start_run(start_nextflow_command: List[str], skip_confirmation: bool):
 
 
 def main_wrapper(args: argparse.Namespace):
+
     parent_path = Path(__file__).resolve().parent
     profile_conf_path = (
         args.run_profile_config or parent_path / "config/run_profile.ini"

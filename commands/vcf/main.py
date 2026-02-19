@@ -87,6 +87,7 @@ def main(
 
 
 def main_wrapper(args: argparse.Namespace):
+
     if args.silent:
         logger.setLevel(logging.WARNING)
 

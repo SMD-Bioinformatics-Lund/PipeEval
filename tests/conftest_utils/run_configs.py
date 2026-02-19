@@ -19,6 +19,7 @@ class ConfigSamplePaths:
 
 
 def get_pipeline_config(base_dir: Path, tmp_path: Path) -> str:
+
     repo_dir = tmp_path / "repo"
     repo_dir.mkdir()
     (repo_dir / ".git").mkdir()
@@ -73,6 +74,7 @@ def get_pipeline_config(base_dir: Path, tmp_path: Path) -> str:
 
 
 def get_run_profile_config() -> str:
+
     pipeline_config_text = textwrap.dedent(
         """
         [dna_single_const]
@@ -138,6 +140,7 @@ class ConfigSamplePathGroup:
 
 
 def get_sample_config(config_sample_paths: ConfigSamplePathGroup) -> str:
+
     proband = config_sample_paths.proband
     mother = config_sample_paths.mother
     father = config_sample_paths.father

@@ -51,6 +51,7 @@ def verify_pair_exists(
     file2: Optional[Union[Path, PathObj]],
     pattern: Optional[str],
 ):
+
     r1_exists = file1 and file1.exists()
     r2_exists = file2 and file2.exists()
 
@@ -79,6 +80,7 @@ def get_pair_matches(
     r1_paths: List[PathObj],
     r2_paths: List[PathObj],
 ) -> List[Tuple[SampleMatch, SampleMatch]]:
+
     re_pattern = re.compile(valid_pattern)
 
     def get_match(path: PathObj) -> Optional[SampleMatch]:
@@ -121,6 +123,7 @@ def get_pair_match(
     r2_paths: List[PathObj],
     verbose: bool,
 ) -> Optional[Tuple[Path, Path]]:
+
     r1_matching = get_single_matching(valid_patterns, r1_paths)
     r2_matching = get_single_matching(valid_patterns, r2_paths)
     if verbose:
@@ -158,6 +161,7 @@ def get_pair_match(
 def get_ignored(
     result_paths: Set[Path], ignore_files: List[str]
 ) -> Tuple[Dict[str, int], List[Path]]:
+
     nbr_ignored_per_pattern: Dict[str, int] = defaultdict(int)
 
     non_ignored: List[Path] = []
@@ -205,6 +209,7 @@ def parse_vcf_pair(
     vcf_paths: Tuple[Path, Path],
     vcf_type: VCFType,
 ) -> VCFPair:
+
     if vcf_type.value == "sv":
         is_sv = True
     elif vcf_type.value == "snv":
