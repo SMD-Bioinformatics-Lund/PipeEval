@@ -1,6 +1,6 @@
 # [Unreleased]
 
-* Run black on codebase
+* Add black to requirements-dev.txt
 
 # 2.2.0
 
