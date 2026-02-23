@@ -272,8 +272,8 @@ def test_paired_tumor_run(
         rows = list(reader)
         assert len(rows) == 2
 
-        diagnosis = "Hem"
-        assay = "GMSHemv1-1"
+        diagnosis = "other"
+        assay = "tumwgs-hema"
 
         pb_row = rows[0]
         assert pb_row["id"] == "s_normal"

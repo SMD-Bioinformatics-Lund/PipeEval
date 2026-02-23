@@ -1,3 +1,7 @@
+# 2.2.2
+
+* Add tumwgs run_profile, pipeline_settings and samples configurations
+
 # 2.2.1
 
 * Fix baseline runs to pass nextflow config paths from the baseline repo instead of the primary repo.
