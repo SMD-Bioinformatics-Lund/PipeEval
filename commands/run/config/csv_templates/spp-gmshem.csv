@@ -1,2 +1,2 @@
 clarity_sample_id,id,type,assay,diagnosis,group,clarity_pool_id,platform,sequencing_run,n_reads,read1,read2,ffpe
-CMD1265A2,<id T>,T,dev,other,<group>,122-614308,illumina,260120_A00681_1199_AHHC55DRX7,48840667,<read1 T>,<read2 T>,
+CMD1265A2,<id T>,T,dev,other,<group T>,122-614308,illumina,260120_A00681_1199_AHHC55DRX7,48840667,<read1 T>,<read2 T>,
