@@ -1,3 +1,7 @@
+# 2.2.3
+
+* Set sample type for parents to "relative" in trio, to bring it in line with production use of ol'wgs.
+
 # 2.2.2
 
 * Add tumwgs run_profile, pipeline_settings and samples configurations
