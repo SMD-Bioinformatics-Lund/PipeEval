@@ -2,10 +2,20 @@
 
 * Add sequencing run column to run csvs
 
+# 2.2.3
+
+* Set sample type for parents to "relative" in trio, to bring it in line with production use of ol'wgs.
+
+# 2.2.2
+
+* Add tumwgs run_profile, pipeline_settings and samples configurations
+
 # 2.2.1
 
 * Fix baseline runs to pass nextflow config paths from the baseline repo instead of the primary repo.
 * Fix VCF index suffix for vcf-started runs
+* Add black to requirements-dev.txt
+* Change all instances of queue `grace-lowest` to `lowest`
 
 # 2.2.0
 

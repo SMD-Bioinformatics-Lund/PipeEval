@@ -1,2 +1,2 @@
 clarity_sample_id,id,type,sex,assay,diagnosis,phenotype,group,father,mother,clarity_pool_id,platform,sequencing_run,read1,read2,analysis,priority
-NA,<id proband>,proband,M,dev,<default_panel>,affected,<group>,,,NA,illumina,250815_A00681_1122_AAAA,<read1 proband>,<read2 proband>,<analysis>,grace-lowest
+NA,<id proband>,proband,M,dev,<default_panel>,affected,<group>,,,NA,illumina,250815_A00681_1122_AAAA,<read1 proband>,<read2 proband>,<analysis>,lowest

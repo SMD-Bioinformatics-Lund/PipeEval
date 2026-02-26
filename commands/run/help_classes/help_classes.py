@@ -80,7 +80,7 @@ class CsvEntry:
         self.diagnosis = diagnosis or "no_diagnosis"
         self.platform = "illumina"
         self.analysis = analysis
-        self.priority = priority or "grace-lowest"
+        self.priority = priority or "lowest"
 
     def header_str(self) -> str:
         return ",".join(self.headers)

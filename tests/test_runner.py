@@ -272,8 +272,8 @@ def test_paired_tumor_run(
         rows = list(reader)
         assert len(rows) == 2
 
-        diagnosis = "Hem"
-        assay = "GMSHemv1-1"
+        diagnosis = "other"
+        assay = "tumwgs-hema"
 
         pb_row = rows[0]
         assert pb_row["id"] == "s_normal"
@@ -366,7 +366,7 @@ def test_trio_run(
 
         mother_row = rows[1]
         assert mother_row["id"] == "s_mother"
-        assert mother_row["type"] == "mother"
+        assert mother_row["type"] == "relative"
         assert mother_row["sex"] == "F"
         assert mother_row["assay"] == "dev"
         assert mother_row["diagnosis"] == "stiff_neck"
@@ -378,7 +378,7 @@ def test_trio_run(
 
         father_row = rows[2]
         assert father_row["id"] == "s_father"
-        assert father_row["type"] == "father"
+        assert father_row["type"] == "relative"
         assert father_row["sex"] == "M"
         assert father_row["assay"] == "dev"
         assert father_row["diagnosis"] == "stiff_neck"
