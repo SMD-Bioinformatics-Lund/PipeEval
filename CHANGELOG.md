@@ -1,4 +1,4 @@
-# 2.2.5
+# 2.2.4
 
 * Add sequencing run column to run csvs
 
