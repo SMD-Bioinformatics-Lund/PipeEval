@@ -1,4 +1,4 @@
-# TBD
+# 2.2.5
 
 * Add sequencing run column to run csvs
 
@@ -8,7 +8,7 @@
 
 # 2.2.2
 
-* Add tumwgs run_profile, pipeline_settings and samples configurations
+* Add tumwgs `run_profile`, `pipeline_settings` and samples configurations
 
 # 2.2.1
 
