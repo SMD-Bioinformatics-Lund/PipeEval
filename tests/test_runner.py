@@ -38,6 +38,7 @@ WGS_CSV_HEADERS = [
     "mother",
     "clarity_pool_id",
     "platform",
+    "sequencing_run",
     "read1",
     "read2",
     "analysis",
