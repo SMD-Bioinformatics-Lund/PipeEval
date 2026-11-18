@@ -1,3 +1,7 @@
+# Unreleased
+
+* Compare annotations across all shared variants by default and report the coverage of explicitly limited comparisons.
+
 # 2.2.4
 
 * Add sequencing run column to run csvs

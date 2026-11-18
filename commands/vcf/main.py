@@ -20,7 +20,7 @@ def main(
     vcf1: Path,
     vcf2: Path,
     max_display: int,
-    max_checked_annots: int,
+    max_checked_annots: Optional[int],
     score_threshold: int,
     run_id1: Optional[str],
     run_id2: Optional[str],
@@ -155,8 +155,7 @@ def add_arguments(parser: argparse.ArgumentParser):
     parser.add_argument(
         "--max_checked_annots",
         type=int,
-        default=10000,
-        help="Limit the number of annotations to check (for performance)",
+        help="Limit annotation comparison to this many shared variants (default: check all)",
     )
     parser.add_argument(
         "--max_display",

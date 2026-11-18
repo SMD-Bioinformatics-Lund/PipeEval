@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import List, Set
+from typing import List, Optional, Set
 
 from shared.compare import Comparison
 from shared.vcf.vcf import ScoredVCF
@@ -23,7 +23,7 @@ class RunSettings:
         score_threshold: int = 17,
         max_display: int = 10,
         verbose: bool = False,
-        max_checked_annots: int = 10,
+        max_checked_annots: Optional[int] = None,
         show_line_numbers: bool = False,
         extra_annot_keys: List[str] = [],
         output_all_variants: bool = False,

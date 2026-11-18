@@ -277,8 +277,7 @@ def add_arguments(parser: argparse.ArgumentParser):
     parser.add_argument("--outdir", help="Optional output folder to store result files")
     parser.add_argument(
         "--max_checked_annots",
-        help="Max number of annotations to check",
-        default=10000,
+        help="Limit annotation comparison to this many shared variants (default: check all)",
         type=int,
     )
     parser.add_argument(

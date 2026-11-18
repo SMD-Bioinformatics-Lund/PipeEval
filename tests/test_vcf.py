@@ -1,4 +1,6 @@
 import logging
+import subprocess
+import sys
 from pathlib import Path
 from typing import List
 
@@ -178,3 +180,44 @@ def test_vcf_filter_sample_and_custom_info(tmp_path: Path, caplog: LogCaptureFix
     assert "### Checking custom info keys ###" in text
     assert "MYNUM" in text and "(numerical)" in text
     assert "MYSTAT" in text and "present in both" in text
+
+
+def test_annotation_defaults_to_comparing_all_shared_variants(tmp_path):
+    vcf1, vcf2 = tmp_path / "v1.vcf", tmp_path / "v2.vcf"
+    header = (
+        "##fileformat=VCFv4.2\n"
+        '##INFO=<ID=CLNSIG,Number=.,Type=String,Description="Clinical significance">\n'
+        "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\n"
+    )
+    common = "".join(
+        f"1\t{pos}\t.\tA\tC\t.\tPASS\tCLNSIG=Benign\n" for pos in range(10000, 20000)
+    )
+    last = "1\t20000\t.\tA\tC\t.\tPASS\tCLNSIG="
+    vcf1.write_text(header + common + last + "Benign\n")
+    vcf2.write_text(header + common + last + "Pathogenic\n")
+
+    cmd = [
+        sys.executable,
+        "main.py",
+        "vcf",
+        "-1",
+        str(vcf1),
+        "-2",
+        str(vcf2),
+        "--vcf_type",
+        "snv",
+        "--comparisons",
+        "annotation",
+    ]
+    full = subprocess.run(cmd, stderr=subprocess.PIPE, text=True, check=True)
+    assert "Checked 10001 of 10001 shared variants" in full.stderr
+    assert "Benign / Pathogenic" in full.stderr
+
+    limited = subprocess.run(
+        cmd + ["--max_checked_annots", "10000"],
+        stderr=subprocess.PIPE,
+        text=True,
+        check=True,
+    )
+    assert "Checked 10000 of 10001 shared variants" in limited.stderr
+    assert "agreed across the 10000 variants checked" in limited.stderr
