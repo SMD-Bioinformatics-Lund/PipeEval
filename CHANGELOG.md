@@ -1,3 +1,7 @@
+# Unreleased
+
+* Use configured sample sex in single-sample sheets and apply explicit assay and analysis overrides to run.csv.
+
 # 2.2.4
 
 * Add sequencing run column to run csvs

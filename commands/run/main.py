@@ -105,11 +105,10 @@ def main(
     except Exception:
         logger.warning("Could not write pipeline_info file")
 
-    assay = assay or ASSAY_PLACEHOLDER
-    analysis = analysis or config.run_profile.run_profile
-
     out_csv = results_dir / "run.csv"
-    csv_content = get_csv(logger, config, run_label, start_data, csv_base)
+    csv_content = get_csv(
+        logger, config, run_label, start_data, csv_base, assay, analysis
+    )
 
     out_csv.write_text(csv_content)
 
@@ -140,7 +139,9 @@ def main(
     logger.info("Copying nextflow configs")
     copy_nextflow_configs(repo, results_dir, config.general_settings.nextflow_configs)
     logger.info("Preparing results lists")
-    setup_results_links(logger, config, results_dir, run_label, assay)
+    setup_results_links(
+        logger, config, results_dir, run_label, assay or ASSAY_PLACEHOLDER
+    )
 
     start_run(get_start_nextflow_command(False), skip_confirmation)
 
