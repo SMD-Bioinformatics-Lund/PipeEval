@@ -100,6 +100,39 @@ def test_parse_scored_vcf_counts():
     assert len(vcf2.variants) == 2194
 
 
+def test_fractional_rank_score_stays_below_threshold(tmp_path):
+    vcf1, vcf2 = tmp_path / "v1.vcf", tmp_path / "v2.vcf"
+    header = (
+        "##fileformat=VCFv4.2\n"
+        '##INFO=<ID=RankScore,Number=1,Type=String,Description="Family and score">\n'
+        "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\n"
+    )
+    vcf1.write_text(header + "1\t100\t.\tA\tC\t.\tPASS\tRankScore=family:16.0\n")
+    vcf2.write_text(header + "1\t100\t.\tA\tC\t.\tPASS\tRankScore=family:16.01\n")
+    outdir = tmp_path / "results"
+
+    main(
+        vcf1,
+        vcf2,
+        10,
+        100,
+        17,
+        "r1",
+        "r2",
+        outdir,
+        [],
+        False,
+        {"score"},
+        set(),
+        VCFType.snv,
+    )
+
+    above = (outdir / "scored_snv_above_thres_17.txt").read_text().splitlines()
+    assert len(above) == 1
+    changed = (outdir / "scored_snv_all_diffing.txt").read_text().splitlines()
+    assert changed[1].split("\t")[4:6] == ["16", "16.01"]
+
+
 # FIXME: Quick and dirty initial test
 def test_vcf_filter_sample_and_custom_info(tmp_path: Path, caplog: LogCaptureFixture):
     """Create minimal VCFs to exercise filter, sample (FORMAT), and custom INFO comparisons."""

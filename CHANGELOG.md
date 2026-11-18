@@ -1,3 +1,7 @@
+# Unreleased
+
+* Preserve fractional rank scores in comparisons and threshold reports.
+
 # 2.2.4
 
 * Add sequencing run column to run csvs

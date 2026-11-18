@@ -1,9 +1,11 @@
 import re
+from decimal import Decimal
 from pathlib import Path
 from typing import Dict, List, Optional
 
 from shared.file import get_filehandle
 from shared.string import get_match_or_crash
+from shared.util import parse_decimal
 
 TRUNC_LENGTH = 30
 
@@ -17,7 +19,7 @@ class ScoredVariant:
         pos: int,
         ref: str,
         alt: str,
-        rank_score: Optional[int],
+        rank_score: Optional[Decimal],
         sub_scores: Dict[str, int],
         is_sv: bool,
         sv_length: Optional[int],
@@ -68,7 +70,7 @@ class ScoredVariant:
         else:
             return f"{self.chr}_{self.pos}_{self.sv_length}_{self.ref}_{self.alt}"
 
-    def get_rank_score(self) -> int:
+    def get_rank_score(self) -> Decimal:
         if self.rank_score is None:
             raise ValueError(
                 f"Rank score not present, check before using 'get_rank_score'. Variant: {str(self)}"
@@ -76,7 +78,11 @@ class ScoredVariant:
         return self.rank_score
 
     def get_rank_score_str(self) -> str:
-        return str(self.rank_score) if self.rank_score is not None else ""
+        if self.rank_score is None:
+            return ""
+        if self.rank_score == self.rank_score.to_integral_value():
+            return str(int(self.rank_score))
+        return str(self.rank_score)
 
     def get_basic_info(self) -> str:
         return f"{self.chr}:{self.pos} {self.get_trunc_ref()}/{self.get_trunc_alt()}"
@@ -90,7 +96,7 @@ class ScoredVariant:
         if self.sv_length is not None:
             row.append(str(self.sv_length))
         if self.rank_score is not None:
-            row.append(str(self.rank_score))
+            row.append(self.get_rank_score_str())
         if len(additional_annotations):
             for annot_key in additional_annotations:
                 annot_val = self.info_dict.get(annot_key)
@@ -194,11 +200,14 @@ def parse_scored_vcf(vcf: Path, is_sv: bool) -> ScoredVCF:
             ]
             info_dict = dict(info_fields)
 
-            rank_score = (
-                int(info_dict["RankScore"].split(":")[1].replace(".0", ""))
-                if info_dict.get("RankScore") is not None
-                else None
-            )
+            rank_score = None
+            if "RankScore" in info_dict:
+                rank_score_text = info_dict["RankScore"].split(":", 1)[-1]
+                rank_score = parse_decimal(rank_score_text)
+                if rank_score is None:
+                    raise ValueError(
+                        f"Invalid RankScore at {vcf}:{line_nbr}: {rank_score_text!r}"
+                    )
             rank_sub_scores = (
                 [int(sub_sc) for sub_sc in info_dict["RankResult"].split("|")]
                 if info_dict.get("RankResult") is not None
