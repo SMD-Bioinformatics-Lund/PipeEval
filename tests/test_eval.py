@@ -134,3 +134,24 @@ def test_eval_main(
 
     sv_score = (outdir / "scored_sv_all_diffing.txt").read_text().splitlines()
     assert any("<DEL>" in line for line in sv_score)
+
+
+def test_qc_preserves_values_matching_run_ids(tmp_path):
+    results1, results2 = tmp_path / "first", tmp_path / "second"
+    create_results_dir(results1, "20")
+    create_results_dir(results2, "30")
+    (results1 / "qc/20.QC").write_text("Mean coverage: 20.1\n")
+    (results2 / "qc/30.QC").write_text("Mean coverage: 30.1\n")
+    outdir = tmp_path / "out"
+
+    main(
+        RunObject("20", "30", results1, results2),
+        RunSettings("dna-const"),
+        None,
+        {"qc"},
+        outdir,
+    )
+
+    diff = (outdir / "qc.diff").read_text()
+    assert "-Mean coverage: 20.1" in diff
+    assert "+Mean coverage: 30.1" in diff

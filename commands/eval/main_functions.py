@@ -12,7 +12,6 @@ from commands.eval.classes.run_object import RunObject
 from commands.eval.constants import FILE_NAMES
 from commands.eval.utils import get_ignored, get_pair_match
 from shared.compare import do_comparison
-from shared.constants import RUN_ID_PLACEHOLDER
 from shared.file import check_valid_file, get_filehandle
 from shared.vcf.annotation import compare_variant_annotation
 from shared.vcf.main_functions import (
@@ -279,20 +278,14 @@ def compare_all_vcfs(
 
 def diff_compare_files(
     logger: Logger,
-    run_id1: str,
-    run_id2: str,
     file1: Path,
     file2: Path,
     out_path: Optional[Path],
 ):
 
     with get_filehandle(file1) as r1_fh, get_filehandle(file2) as r2_fh:
-        r1_lines = [
-            line.replace(run_id1, RUN_ID_PLACEHOLDER) for line in r1_fh.readlines()
-        ]
-        r2_lines = [
-            line.replace(run_id2, RUN_ID_PLACEHOLDER) for line in r2_fh.readlines()
-        ]
+        r1_lines = r1_fh.readlines()
+        r2_lines = r2_fh.readlines()
 
     out_fh = open(out_path, "w") if out_path else None
     diff = list(difflib.unified_diff(r1_lines, r2_lines))
@@ -336,6 +329,4 @@ def do_simple_diff(
         logger.warning(f"At least one file missing ({matched_pair})")
     else:
         out_path = outdir / FILE_NAMES[analysis] if outdir else None
-        diff_compare_files(
-            logger, ro.r1_id, ro.r2_id, matched_pair[0], matched_pair[1], out_path
-        )
+        diff_compare_files(logger, matched_pair[0], matched_pair[1], out_path)
