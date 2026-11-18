@@ -1,3 +1,7 @@
+# Unreleased
+
+* Refresh score difference reports when runs agree and fail evaluation when a selected VCF input is missing.
+
 # 2.2.4
 
 * Add sequencing run column to run csvs

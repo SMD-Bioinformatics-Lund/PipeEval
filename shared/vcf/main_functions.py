@@ -257,6 +257,21 @@ def compare_variant_score(
         )
     else:
         logger.info("# No differently scored variants found")
+        if out_path_all is not None or out_path_above_thres is not None:
+            header = get_table_header(
+                run_ids,
+                shared_variants,
+                variants_r1,
+                variants_r2,
+                is_sv,
+                show_line_numbers,
+                annotation_info_keys,
+                exclude_subscores=False,
+            )
+            header_line = "\t".join(header) + "\n"
+            for report in (out_path_all, out_path_above_thres):
+                if report is not None:
+                    report.write_text(header_line)
 
 
 def print_diff_score_info(

@@ -218,17 +218,16 @@ def main_vcf_comparisons(
                 rs.verbose,
                 vcf_type,
             )
-            if vcfs:
-                do_vcf_comparisons(
-                    logger,
-                    vcf_comparisons,
-                    run_ids,
-                    outdir,
-                    rs,
-                    vcf_type.value,
-                    vcfs,
-                    custom_info_keys,
-                )
+            do_vcf_comparisons(
+                logger,
+                vcf_comparisons,
+                run_ids,
+                outdir,
+                rs,
+                vcf_type.value,
+                vcfs,
+                custom_info_keys,
+            )
         else:
             logger.warning(f"No {vcf_type.value.upper()} patterns matched, skipping")
 

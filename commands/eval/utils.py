@@ -183,7 +183,7 @@ def get_vcf_pair(
     r2_paths: List[PathObj],
     verbose: bool,
     vcf_type: VCFType,
-) -> Optional[VCFPair]:
+) -> VCFPair:
     vcf_pair_paths = get_pair_match(
         logger,
         vcf_type.value,
@@ -195,8 +195,9 @@ def get_vcf_pair(
     )
 
     if vcf_pair_paths is None:
-        logger.warning(f"Skipping {vcf_type.value} comparisons due to missing files")
-        return None
+        raise ValueError(
+            f"Cannot compare {vcf_type.value} VCFs because an input is missing"
+        )
 
     vcf_pair = parse_vcf_pair(logger, ro.run_ids, vcf_pair_paths, vcf_type)
 
