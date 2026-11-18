@@ -1,3 +1,7 @@
+# Unreleased
+
+* Honor the configured SNV and SV file pattern order and log the VCF pair selected for evaluation.
+
 # 2.2.4
 
 * Add sequencing run column to run csvs
