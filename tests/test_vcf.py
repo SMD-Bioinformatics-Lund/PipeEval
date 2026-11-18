@@ -100,6 +100,63 @@ def test_parse_scored_vcf_counts():
     assert len(vcf2.variants) == 2194
 
 
+@pytest.mark.parametrize("end", ["END=100;", "END=.;", ""])
+def test_sv_presence_distinguishes_insertion_lengths(tmp_path, caplog, end):
+    vcf1, vcf2 = tmp_path / "v1.vcf", tmp_path / "v2.vcf"
+    header = (
+        "##fileformat=VCFv4.2\n"
+        '##ALT=<ID=INS,Description="Insertion">\n'
+        '##INFO=<ID=END,Number=1,Type=Integer,Description="End">\n'
+        '##INFO=<ID=SVLEN,Number=.,Type=Integer,Description="Length difference">\n'
+        "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\n"
+    )
+    short = f"1\t100\ti80\tA\t<INS>\t.\tPASS\t{end}SVLEN=80\n"
+    long = f"1\t100\ti140\tA\t<INS>\t.\tPASS\t{end}SVLEN=140\n"
+    vcf1.write_text(header + short + long)
+    vcf2.write_text(header + long)
+    outdir = tmp_path / "results"
+
+    main(
+        vcf1,
+        vcf2,
+        10,
+        100,
+        17,
+        "r1",
+        "r2",
+        outdir,
+        [],
+        False,
+        {"presence"},
+        set(),
+        VCFType.sv,
+    )
+
+    assert "r1 number variants: 2" in caplog.text
+    assert "Only in r1: 1" in caplog.text
+    assert (outdir / "scored_sv_presence.txt").read_text().splitlines()[1].split()[
+        -1
+    ] == "80"
+
+    vcf1.write_text(header + short + short.replace("i80", "i80_duplicate"))
+    with pytest.raises(ValueError, match="Ambiguous structural variants"):
+        main(
+            vcf1,
+            vcf2,
+            10,
+            100,
+            17,
+            "r1",
+            "r2",
+            None,
+            [],
+            False,
+            {"presence"},
+            set(),
+            VCFType.sv,
+        )
+
+
 # FIXME: Quick and dirty initial test
 def test_vcf_filter_sample_and_custom_info(tmp_path: Path, caplog: LogCaptureFixture):
     """Create minimal VCFs to exercise filter, sample (FORMAT), and custom INFO comparisons."""

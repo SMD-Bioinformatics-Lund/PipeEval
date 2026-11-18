@@ -25,7 +25,7 @@ def get_comparison_row(
     ]
 
     if show_sv_len:
-        fields.append(str(var1.sv_length))
+        fields.append(var1.get_sv_length_str())
 
     if show_line_numbers:
         line_numbers = f"{var1.line_number}/{var2.line_number}"

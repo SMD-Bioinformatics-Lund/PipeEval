@@ -66,7 +66,13 @@ class ScoredVariant:
         if not self.is_sv:
             return f"{self.chr}_{self.pos}_{self.ref}_{self.alt}"
         else:
-            return f"{self.chr}_{self.pos}_{self.sv_length}_{self.ref}_{self.alt}"
+            return f"{self.chr}_{self.pos}_{self.sv_length}_{self.ref}_{self.alt}_{self.get_sv_length_str()}"
+
+    def get_sv_length_str(self) -> str:
+        svlen = self.info_dict.get("SVLEN")
+        if self.is_sv and svlen is not None and svlen != ".":
+            return svlen
+        return str(self.sv_length) if self.sv_length is not None else ""
 
     def get_rank_score(self) -> int:
         if self.rank_score is None:
@@ -87,8 +93,9 @@ class ScoredVariant:
         row = [self.chr, str(self.pos), self.get_trunc_ref(), self.get_trunc_alt()]
         if show_line_numbers:
             row.append(str(self.line_number))
-        if self.sv_length is not None:
-            row.append(str(self.sv_length))
+        sv_length = self.get_sv_length_str()
+        if sv_length:
+            row.append(sv_length)
         if self.rank_score is not None:
             row.append(str(self.rank_score))
         if len(additional_annotations):
@@ -100,14 +107,7 @@ class ScoredVariant:
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, ScoredVariant):
             return False
-        is_same = (
-            self.chr == other.chr
-            and self.pos == other.pos
-            and self.ref == other.ref
-            and self.alt == other.alt
-            and self.sv_length == other.sv_length
-        )
-        return is_same
+        return self.get_simple_key() == other.get_simple_key()
 
 
 class DiffScoredVariant:
@@ -204,11 +204,8 @@ def parse_scored_vcf(vcf: Path, is_sv: bool) -> ScoredVCF:
                 if info_dict.get("RankResult") is not None
                 else None
             )
-            if info_dict.get("END") is not None:
-                sv_end = int(info_dict["END"])
-                sv_length = sv_end - pos + 1
-            else:
-                sv_length = None
+            end = info_dict.get("END")
+            sv_length = int(end) - pos + 1 if end is not None and end != "." else None
 
             sub_scores_dict: Dict[str, int] = {}
             if rank_sub_scores is not None:
@@ -241,6 +238,11 @@ def parse_scored_vcf(vcf: Path, is_sv: bool) -> ScoredVCF:
                 sample_dict,
             )
             key = variant.get_simple_key()
+            if is_sv and key in variants:
+                earlier = variants[key].line_number
+                raise ValueError(
+                    f"Ambiguous structural variants at {vcf} lines {earlier} and {line_nbr}"
+                )
             variants[key] = variant
 
     scored_vcf = ScoredVCF(vcf, is_sv, info_rows, variants)
