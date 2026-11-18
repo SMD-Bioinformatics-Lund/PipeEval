@@ -2,6 +2,7 @@ import subprocess
 from logging import Logger
 from pathlib import Path
 from typing import List, Tuple
+from uuid import uuid4
 
 
 class CompletedProcess:
@@ -69,13 +70,29 @@ def pull_branch(
 def get_git_commit_hash_and_log(
     logger: Logger, repo: Path, verbose: bool
 ) -> Tuple[str, str]:
-    command = ["git", "log", "--oneline"]
+    command = ["git", "log", "-1", "--format=%H%n%h %s"]
     if verbose:
         logger.info(f"Executing: {command} in {repo}")
     results = run_command(command, repo)
-    last_log = results.stdout.splitlines()[0]
-    commit_hash = last_log.split(" ")[0]
+    commit_hash, last_log = results.stdout.splitlines()
     return (commit_hash, last_log)
+
+
+def create_revision_worktree(
+    logger: Logger, repo: Path, worktree_dir: Path, commit_hash: str, verbose: bool
+) -> Path:
+    worktree_dir.mkdir(parents=True, exist_ok=True)
+    worktree = worktree_dir / uuid4().hex
+    command = ["git", "worktree", "add", "--detach", str(worktree), commit_hash]
+    if verbose:
+        logger.info(f"Executing: {command} in {repo}")
+    run_command(command, repo)
+    if (worktree / ".gitmodules").is_file():
+        run_command(
+            ["git", "submodule", "update", "--init", "--recursive", "--checkout"],
+            worktree,
+        )
+    return worktree
 
 
 def check_valid_repo(repo: Path) -> Tuple[int, str]:

@@ -1,3 +1,7 @@
+# Unreleased
+
+* Launch and resume pipelines from a detached worktree in .pipeeval-worktrees pinned to the commit recorded in the run log.
+
 # 2.2.4
 
 * Add sequencing run column to run csvs

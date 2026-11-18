@@ -1,5 +1,7 @@
 import csv
 import logging
+import shlex
+import subprocess
 from pathlib import Path
 
 import pytest
@@ -69,20 +71,28 @@ def csv_base() -> Path:
     return csv_base
 
 
+@pytest.fixture
+def mock_pipeline_checkout(monkeypatch: MonkeyPatch):
+    monkeypatch.setattr(run_main, "do_repo_checkout", lambda *args: None)
+    monkeypatch.setattr(
+        run_main, "get_git_commit_hash_and_log", lambda *args: ("abcd", "abcd")
+    )
+    monkeypatch.setattr(
+        run_main, "create_revision_worktree", lambda logger, repo, *args: repo
+    )
+
+
 def test_single_dna_const_run(
     monkeypatch: MonkeyPatch,
     base_dir: Path,
     get_run_config_paths: RunConfigs,
     config_sample_paths: ConfigSamplePathGroup,
     csv_base: Path,
+    mock_pipeline_checkout,
 ):
     paths = config_sample_paths
 
-    monkeypatch.setattr(run_main, "do_repo_checkout", lambda *a, **k: None)
     monkeypatch.setattr(run_main, "start_run", lambda *a, **k: None)
-    monkeypatch.setattr(
-        run_main, "get_git_commit_hash_and_log", lambda *a, **k: ("abcd", "abcd")
-    )
 
     run_config = RunConfig(
         LOG,
@@ -149,14 +159,11 @@ def test_single_rna_const_run(
     get_run_config_paths: RunConfigs,
     config_sample_paths: ConfigSamplePathGroup,
     csv_base: Path,
+    mock_pipeline_checkout,
 ):
     paths = config_sample_paths
 
-    monkeypatch.setattr(run_main, "do_repo_checkout", lambda *a, **k: None)
     monkeypatch.setattr(run_main, "start_run", lambda *a, **k: None)
-    monkeypatch.setattr(
-        run_main, "get_git_commit_hash_and_log", lambda *a, **k: ("abcd", "abcd")
-    )
 
     run_config = RunConfig(
         LOG,
@@ -222,14 +229,11 @@ def test_paired_tumor_run(
     get_run_config_paths: RunConfigs,
     config_sample_paths: ConfigSamplePathGroup,
     csv_base: Path,
+    mock_pipeline_checkout,
 ):
 
     paths = config_sample_paths
-    monkeypatch.setattr(run_main, "do_repo_checkout", lambda *a, **k: None)
     monkeypatch.setattr(run_main, "start_run", lambda *a, **k: None)
-    monkeypatch.setattr(
-        run_main, "get_git_commit_hash_and_log", lambda *a, **k: ("abcd", "abcd")
-    )
 
     run_config = RunConfig(
         LOG,
@@ -301,15 +305,12 @@ def test_trio_run(
     get_run_config_paths: RunConfigs,
     config_sample_paths: ConfigSamplePathGroup,
     csv_base: Path,
+    mock_pipeline_checkout,
 ):
 
     paths = config_sample_paths
 
-    monkeypatch.setattr(run_main, "do_repo_checkout", lambda *a, **k: None)
     monkeypatch.setattr(run_main, "start_run", lambda *a, **k: None)
-    monkeypatch.setattr(
-        run_main, "get_git_commit_hash_and_log", lambda *a, **k: ("abcd", "abcd")
-    )
 
     run_config = RunConfig(
         LOG,
@@ -388,3 +389,102 @@ def test_trio_run(
         assert father_row["mother"] == ""
         assert str(father_row["read1"]) == str(paths.father.fq_fw)
         assert str(father_row["read2"]) == str(paths.father.fq_rv)
+
+
+def test_run_and_resume_use_the_recorded_revision(
+    monkeypatch: MonkeyPatch,
+    base_dir: Path,
+    get_run_config_paths: RunConfigs,
+    csv_base: Path,
+):
+    config_paths = get_run_config_paths
+    config = RunConfig(
+        LOG,
+        "dna_single_const",
+        config_paths.run_profile,
+        config_paths.pipeline_settings,
+        config_paths.samples,
+    )
+    repo = Path(config.general_settings.repo)
+
+    def git(*args):
+        return subprocess.run(
+            ["git", *args], cwd=repo, check=True, stdout=subprocess.PIPE, text=True
+        ).stdout.strip()
+
+    git("init", "-q")
+    git("remote", "add", "origin", ".")
+    script = repo / "main.nf"
+    nextflow_config = repo / "nextflow.config"
+    script.write_text("first script\n")
+    nextflow_config.write_text("first config\n")
+    git("add", "main.nf", "nextflow.config")
+    git(
+        "-c",
+        "user.name=PipeEval test",
+        "-c",
+        "user.email=test@example.invalid",
+        "commit",
+        "-qm",
+        "First revision",
+    )
+    first = git("rev-parse", "HEAD")
+    script.write_text("second script\n")
+    nextflow_config.write_text("second config\n")
+    git("add", "main.nf", "nextflow.config")
+    git(
+        "-c",
+        "user.name=PipeEval test",
+        "-c",
+        "user.email=test@example.invalid",
+        "commit",
+        "-qm",
+        "Second revision",
+    )
+    second = git("rev-parse", "HEAD")
+    git("checkout", "-q", "--detach", first)
+    script.write_text("dirty script\n")
+    nextflow_config.write_text("dirty config\n")
+
+    commands = []
+    monkeypatch.setattr(
+        run_main, "start_run", lambda args, confirmation: commands.append(args)
+    )
+    run_main.main(
+        config,
+        None,
+        first,
+        base_dir,
+        repo,
+        "fq",
+        False,
+        "dna_single_const",
+        True,
+        False,
+        False,
+        False,
+        None,
+        None,
+        csv_base,
+        "origin",
+    )
+
+    result = base_dir / f"dna_single_const-{first}-fq"
+    (launch,) = commands
+
+    def assert_revision(command):
+        pipeline = shlex.split(command[command.index("--pipeline") + 1])
+        flags = shlex.split(command[command.index("--custom_flags") + 1])
+        assert Path(pipeline[0]).read_text() == "first script\n"
+        assert Path(flags[1]).read_text() == "first config\n"
+        assert (result / "nextflow.config").read_text() == "first config\n"
+        assert f"commit hash: {first}" in (result / "run.log").read_text()
+
+    assert_revision(launch)
+    assert script.read_text() == "dirty script\n"
+    script.write_text("first script\n")
+    nextflow_config.write_text("first config\n")
+    git("checkout", "-q", "--detach", second)
+    resume = shlex.split((result / "resume.sh").read_text())
+    assert resume == launch + ["--resume"]
+    assert_revision(resume)
