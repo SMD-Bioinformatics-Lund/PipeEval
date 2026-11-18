@@ -1,3 +1,7 @@
+# Unreleased
+
+* Report one-sided custom INFO fields even when they are absent from every record in one VCF.
+
 # 2.2.4
 
 * Add sequencing run column to run csvs
