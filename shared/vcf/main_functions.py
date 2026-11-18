@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import Dict, List, Optional, Set, Tuple
 
 from commands.eval.classes.helpers import VCFPair
-from shared.compare import ColumnComparison, Comparison
+from shared.compare import ColumnComparison, Comparison, do_comparison
 from shared.util import prettify_rows
 from shared.vcf.field_comparison import (
     show_categorical_comparisons,
@@ -39,45 +39,46 @@ def check_vcf_sample_differences(
     vcfs: VCFPair,
     shared_variant_keys: Set[str],
 ):
-    all_sample_keys: Set[str] = set()
-    for key in shared_variant_keys:
-        v1 = vcfs.vcf1.variants[key]
-        v2 = vcfs.vcf2.variants[key]
-        all_sample_keys.update(v1.sample_dict.keys())
-        all_sample_keys.update(v2.sample_dict.keys())
-
-    if not all_sample_keys:
-        logger.warning("No sample FORMAT fields found, skipping comparison")
+    sample_matches = do_comparison(set(vcfs.vcf1.sample_ids), set(vcfs.vcf2.sample_ids))
+    for run_id, unmatched in zip(run_ids, (sample_matches.r1, sample_matches.r2)):
+        if unmatched:
+            logger.warning(f"Samples only in {run_id}: {', '.join(sorted(unmatched))}")
+    if not sample_matches.shared:
+        logger.warning("No shared samples, skipping FORMAT comparison")
         return
 
-    for sample_key in sorted(all_sample_keys):
+    for sample_id in sorted(sample_matches.shared):
+        paired_fields = [
+            (
+                vcfs.vcf1.variants[key].samples[sample_id],
+                vcfs.vcf2.variants[key].samples[sample_id],
+            )
+            for key in shared_variant_keys
+        ]
+        format_keys = {
+            field for pair in paired_fields for fields in pair for field in fields
+        }
+        if not format_keys:
+            logger.warning(f"No FORMAT values to compare for sample {sample_id}")
+        for format_key in sorted(format_keys):
+            comp = ColumnComparison(
+                [(v1.get(format_key), v2.get(format_key)) for v1, v2 in paired_fields]
+            )
+            is_numerical = comp.all_numeric and len(comp.numeric_pairs) > 0
+            column_type = "numerical" if is_numerical else "categorical"
 
-        shared_key_values: List[Tuple[Optional[str], Optional[str]]] = []
+            logger.info("")
+            logger.info(
+                f"Sample field: {format_key} ({column_type}), sample {sample_id}"
+            )
+            logger.info(
+                f"{comp.both_present} present in both, {comp.nbr_same} identical ({comp.v1_present} v1 only, {comp.v2_present} v2 only)"
+            )
 
-        for key in shared_variant_keys:
-            v1 = vcfs.vcf1.variants[key]
-            v2 = vcfs.vcf2.variants[key]
-
-            v1_val = v1.sample_dict.get(sample_key)
-            v2_val = v2.sample_dict.get(sample_key)
-
-            shared_key_values.append((v1_val, v2_val))
-
-        comp = ColumnComparison(shared_key_values)
-
-        is_numerical = comp.all_numeric and len(comp.numeric_pairs) > 0
-        column_type = "numerical" if is_numerical else "categorical"
-
-        logger.info("")
-        logger.info(f"Sample field: {sample_key} ({column_type})")
-        logger.info(
-            f"{comp.both_present} present in both, {comp.nbr_same} identical ({comp.v1_present} v1 only, {comp.v2_present} v2 only)"
-        )
-
-        if is_numerical:
-            show_numerical_comparisons(logger, run_ids, comp.numeric_pairs)
-        else:
-            show_categorical_comparisons(logger, run_ids, comp.categorical_pairs)
+            if is_numerical:
+                show_numerical_comparisons(logger, run_ids, comp.numeric_pairs)
+            elif comp.both_present:
+                show_categorical_comparisons(logger, run_ids, comp.categorical_pairs)
 
 
 def check_custom_info_field_differences(

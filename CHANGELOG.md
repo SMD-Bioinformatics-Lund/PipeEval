@@ -1,3 +1,7 @@
+# Unreleased
+
+* Compare FORMAT values by sample name, report unmatched samples and include sample comparisons in the default constitutional DNA evaluation.
+
 # 2.2.4
 
 * Add sequencing run column to run csvs
