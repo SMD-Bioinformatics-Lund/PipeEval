@@ -100,6 +100,43 @@ def test_parse_scored_vcf_counts():
     assert len(vcf2.variants) == 2194
 
 
+def test_score_display_uses_above_threshold_rows(tmp_path, caplog):
+    vcf1, vcf2 = tmp_path / "v1.vcf", tmp_path / "v2.vcf"
+    header = (
+        "##fileformat=VCFv4.2\n"
+        '##INFO=<ID=RankScore,Number=1,Type=String,Description="Family and score">\n'
+        "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\n"
+    )
+    vcf1.write_text(
+        header + "1\t100\t.\tA\tC\t.\tPASS\tRankScore=family:16\n"
+        "1\t200\t.\tG\tT\t.\tPASS\tRankScore=family:10\n"
+    )
+    vcf2.write_text(
+        header + "1\t100\t.\tA\tC\t.\tPASS\tRankScore=family:15\n"
+        "1\t200\t.\tG\tT\t.\tPASS\tRankScore=family:25\n"
+    )
+
+    main(
+        vcf1,
+        vcf2,
+        1,
+        100,
+        17,
+        "r1",
+        "r2",
+        None,
+        [],
+        False,
+        {"score"},
+        set(),
+        VCFType.snv,
+    )
+
+    assert "Number differently scored above 17: 1" in caplog.text
+    assert "G/T" in caplog.text
+    assert "A/C" not in caplog.text
+
+
 # FIXME: Quick and dirty initial test
 def test_vcf_filter_sample_and_custom_info(tmp_path: Path, caplog: LogCaptureFixture):
     """Create minimal VCFs to exercise filter, sample (FORMAT), and custom INFO comparisons."""

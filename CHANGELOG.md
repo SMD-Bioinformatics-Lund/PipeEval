@@ -1,3 +1,7 @@
+# Unreleased
+
+* Show the above-threshold score changes in the console table, including variants promoted in the candidate run.
+
 # 2.2.4
 
 * Add sequencing run column to run csvs
