@@ -127,7 +127,7 @@ def do_vcf_comparisons(
         all_diffing_path = (
             outdir / f"scored_{vcf_type_label}_all_diffing.txt" if outdir else None
         )
-        is_sv = False
+        is_sv = vcfs.vcf1.is_sv
 
         compare_variant_score(
             logger,

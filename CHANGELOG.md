@@ -1,3 +1,7 @@
+# Unreleased
+
+* Use SVLEN to distinguish structural variants at the same coordinates and reject ambiguous duplicate keys.
+
 # 2.2.4
 
 * Add sequencing run column to run csvs
