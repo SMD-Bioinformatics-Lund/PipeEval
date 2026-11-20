@@ -6,7 +6,9 @@ import subprocess
 import sys
 from configparser import ConfigParser
 from datetime import datetime
+from os.path import abspath
 from pathlib import Path
+from shlex import quote
 from typing import List, Optional
 
 from commands.run.file_helpers import (
@@ -22,6 +24,7 @@ from commands.run.gittools import (
     check_valid_repo,
     checkout_remote_branch,
     checkout_repo,
+    create_revision_worktree,
     fetch_repo,
     get_git_commit_hash_and_log,
     pull_branch,
@@ -68,7 +71,7 @@ def main(
     base_dir = (
         base_dir if base_dir is not None else Path(config.general_settings.out_base)
     )
-    repo = repo if repo is not None else Path(config.general_settings.repo)
+    repo = (repo if repo is not None else Path(config.general_settings.repo)).resolve()
     datestamp = datestamp or config.general_settings.datestamp
 
     check_valid_repo(repo)
@@ -87,6 +90,21 @@ def main(
     confirm_run_if_results_exists(results_dir, skip_confirmation)
 
     results_dir.mkdir(exist_ok=True, parents=True)
+    pipeline_repo = create_revision_worktree(
+        logger, repo, (base_dir / ".pipeeval-worktrees").resolve(), commit_hash, verbose
+    )
+
+    def pipeline_path(path: Path) -> Path:
+        source = Path(abspath(repo / path))
+        try:
+            return pipeline_repo / source.relative_to(repo)
+        except ValueError:
+            return source
+
+    runscript = pipeline_path(Path(config.general_settings.runscript))
+    nextflow_configs = [
+        pipeline_path(conf) for conf in config.general_settings.nextflow_configs
+    ]
 
     run_log_path = results_dir / "run.log"
     write_run_log(
@@ -113,36 +131,29 @@ def main(
 
     out_csv.write_text(csv_content)
 
-    def get_start_nextflow_command(quote_pipeline_arguments: bool) -> List[str]:
-        command = build_start_nextflow_analysis_cmd(
-            config.general_settings.start_nextflow_analysis,
-            out_csv,
-            results_dir,
-            config.general_settings.executor,
-            config.general_settings.cluster,
-            config.general_settings.queue,
-            config.general_settings.singularity_version,
-            config.general_settings.nextflow_version,
-            config.general_settings.container,
-            str(repo / config.general_settings.runscript),
-            config.run_profile.pipeline_profile,
-            stub_run,
-            no_start,
-            quote_pipeline_arguments,
-            [repo / conf for conf in config.general_settings.nextflow_configs],
-        )
-        return command
-
-    write_resume_script(
+    command = build_start_nextflow_analysis_cmd(
+        config.general_settings.start_nextflow_analysis,
+        out_csv,
         results_dir,
-        get_start_nextflow_command(True),
+        config.general_settings.executor,
+        config.general_settings.cluster,
+        config.general_settings.queue,
+        config.general_settings.singularity_version,
+        config.general_settings.nextflow_version,
+        config.general_settings.container,
+        str(runscript),
+        config.run_profile.pipeline_profile,
+        stub_run,
+        no_start,
+        nextflow_configs,
     )
+    write_resume_script(results_dir, command)
     logger.info("Copying nextflow configs")
-    copy_nextflow_configs(repo, results_dir, config.general_settings.nextflow_configs)
+    copy_nextflow_configs(results_dir, nextflow_configs)
     logger.info("Preparing results lists")
     setup_results_links(logger, config, results_dir, run_label, assay)
 
-    start_run(get_start_nextflow_command(False), skip_confirmation)
+    start_run(command, skip_confirmation)
 
 
 def get_default_run_profiles() -> List[str]:
@@ -272,7 +283,6 @@ def build_start_nextflow_analysis_cmd(
     profile: Optional[str],
     stub_run: bool,
     no_start: bool,
-    quote_pipeline_arguments: bool,
     nextflow_configs: List[Path],
 ) -> List[str]:
     out_dir = results_dir
@@ -298,22 +308,10 @@ def build_start_nextflow_analysis_cmd(
         "--container",
         container,
     ]
-    if quote_pipeline_arguments:
-        start_nextflow_command.append(
-            f'--pipeline "{runscript} -profile {profile}"',
-        )
-    else:
-        start_nextflow_command.append(
-            "--pipeline",
-        )
-        if profile:
-            start_nextflow_command.append(
-                f"{runscript} -profile {profile}",
-            )
-        else:
-            start_nextflow_command.append(
-                f"{runscript}",
-            )
+    pipeline = quote(runscript)
+    if profile:
+        pipeline += f" -profile {quote(profile)}"
+    start_nextflow_command.extend(["--pipeline", pipeline])
 
     # start_nextflow_command.append("--custom_flags")
     # Provide configs directly
@@ -322,18 +320,12 @@ def build_start_nextflow_analysis_cmd(
     # use multiple config files
     custom_flag_parts = []
     for conf in nextflow_configs:
-        custom_flag_parts.extend(["-c", str(conf)])
+        custom_flag_parts.extend(["-c", quote(str(conf))])
     if stub_run:
         custom_flag_parts.append("-stub-run")
 
     if len(custom_flag_parts) > 0:
-        start_nextflow_command.append("--custom_flags")
-
-        custom_flags = " ".join(custom_flag_parts)
-        if quote_pipeline_arguments:
-            custom_flags = f'"{custom_flags}"'
-
-        start_nextflow_command.append(custom_flags)
+        start_nextflow_command.extend(["--custom_flags", " ".join(custom_flag_parts)])
 
     if no_start:
         start_nextflow_command.append("--nostart")

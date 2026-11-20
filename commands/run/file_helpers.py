@@ -2,6 +2,7 @@ import sys
 from datetime import datetime
 from logging import Logger
 from pathlib import Path
+from shlex import quote
 from typing import Dict, List
 
 from commands.run.help_classes.config_classes import (
@@ -14,15 +15,14 @@ from commands.run.help_classes.config_classes import (
 def write_resume_script(results_dir: Path, run_command: List[str]):
     resume_command = run_command + ["--resume"]
     resume_script = results_dir / "resume.sh"
-    resume_script.write_text(" ".join(resume_command))
+    resume_script.write_text(" ".join(quote(arg) for arg in resume_command) + "\n")
 
 
-def copy_nextflow_configs(repo: Path, results_dir: Path, configs: List[Path]):
+def copy_nextflow_configs(results_dir: Path, configs: List[Path]):
 
     for config in configs:
-        config_path = repo / config
         dest_path = results_dir / config.name
-        dest_path.write_text(config_path.read_text())
+        dest_path.write_text(config.read_text())
 
 
 def setup_results_links(
