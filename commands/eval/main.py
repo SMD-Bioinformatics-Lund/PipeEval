@@ -95,9 +95,11 @@ def main(
     if not used_comparisons or "file" in used_comparisons:
         do_file_diff(logger, outdir, pipe_conf, ro, r1_paths, r2_paths)
 
-    snv_patterns = (
-        set(pipe_conf["snv_vcf"].split(",")) if pipe_conf.get("snv_vcf") else set()
-    )
+    snv_patterns = [
+        pattern.strip()
+        for pattern in pipe_conf.get("snv_vcf", "").split(",")
+        if pattern.strip()
+    ]
     main_vcf_comparisons(
         run_ids,
         used_comparisons,
@@ -112,9 +114,11 @@ def main(
         SNV_COMPARISONS,
     )
 
-    sv_patterns = (
-        set(pipe_conf["sv_vcf"].split(",")) if pipe_conf.get("sv_vcf") else set()
-    )
+    sv_patterns = [
+        pattern.strip()
+        for pattern in pipe_conf.get("sv_vcf", "").split(",")
+        if pattern.strip()
+    ]
     main_vcf_comparisons(
         run_ids,
         used_comparisons,
@@ -192,7 +196,7 @@ def main_vcf_comparisons(
     r1_paths: List[PathObj],
     r2_paths: List[PathObj],
     rs: RunSettings,
-    vcf_path_patterns: Set[str],
+    vcf_path_patterns: List[str],
     outdir: Optional[Path],
     vcf_type: VCFType,
     custom_info_keys: Set[str],
@@ -211,7 +215,7 @@ def main_vcf_comparisons(
 
             vcfs = get_vcf_pair(
                 logger,
-                list(vcf_path_patterns),
+                vcf_path_patterns,
                 ro,
                 r1_paths,
                 r2_paths,
