@@ -69,19 +69,12 @@ def csv_base() -> Path:
     return csv_base
 
 
-@pytest.mark.parametrize(
-    ("sex", "assay", "analysis"),
-    [("M", None, None), ("F", "custom, assay", "custom_analysis")],
-)
 def test_single_dna_const_run(
     monkeypatch: MonkeyPatch,
     base_dir: Path,
     get_run_config_paths: RunConfigs,
     config_sample_paths: ConfigSamplePathGroup,
     csv_base: Path,
-    sex,
-    assay,
-    analysis,
 ):
     paths = config_sample_paths
 
@@ -93,7 +86,7 @@ def test_single_dna_const_run(
 
     samples = get_run_config_paths.samples
     samples.write_text(
-        samples.read_text().replace("[s_proband]\nsex = M", f"[s_proband]\nsex = {sex}")
+        samples.read_text().replace("[s_proband]\nsex = M", "[s_proband]\nsex = F")
     )
     run_config = RunConfig(
         LOG,
@@ -116,8 +109,8 @@ def test_single_dna_const_run(
         no_start=True,
         datestamp=False,
         verbose=False,
-        assay=assay,
-        analysis=analysis,
+        assay=None,
+        analysis=None,
         csv_base=csv_base,
         remote_name="origin",
     )
@@ -144,9 +137,8 @@ def test_single_dna_const_run(
         row = rows[0]
         assert row["id"] == "s_proband"
         assert row["type"] == "proband"
-        assert row["sex"] == sex
-        assert row["assay"] == (assay or "dev")
-        assert row["analysis"] == (analysis or "dna_single_const")
+        assert row["sex"] == "F"
+        assert row["assay"] == "dev"
         assert row["diagnosis"] == "itchy_nose"
         assert row["group"] == run_label
         assert row["father"] == ""
@@ -170,6 +162,10 @@ def test_single_rna_const_run(
         run_main, "get_git_commit_hash_and_log", lambda *a, **k: ("abcd", "abcd")
     )
 
+    samples = get_run_config_paths.samples
+    samples.write_text(
+        samples.read_text().replace("[s_rna]\nsex = M", "[s_rna]\nsex = F")
+    )
     run_config = RunConfig(
         LOG,
         "rna_single_const",
@@ -224,7 +220,7 @@ def test_single_rna_const_run(
         assert str(row["fastq_1"]) == str(paths.rna.fq_fw)
         assert str(row["fastq_2"]) == str(paths.rna.fq_rv)
         assert row["strandedness"] == "reverse"
-        assert row["sex"] == "M"
+        assert row["sex"] == "F"
         assert row["phenotype"] == "2"
 
 

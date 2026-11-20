@@ -1,10 +1,8 @@
-import csv
 import sys
 from datetime import datetime
-from io import StringIO
 from logging import Logger
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List
 
 from commands.run.help_classes.config_classes import (
     RunConfig,
@@ -112,8 +110,6 @@ def get_csv(
     run_label: str,
     starting_run_from: str,
     csv_base: Path,
-    assay: Optional[str] = None,
-    analysis: Optional[str] = None,
 ) -> str:
 
     csv_template_name = config.run_profile.csv_template
@@ -132,7 +128,6 @@ def get_csv(
         run_label,
         config.run_profile,
     )
-    replace_map.setdefault("<analysis>", config.run_profile.run_profile)
 
     for i, row in enumerate(csv_body_rows):
 
@@ -141,29 +136,7 @@ def get_csv(
 
         updated_rows.append(row)
 
-    overrides = {
-        column: value
-        for column, value in (("assay", assay), ("analysis", analysis))
-        if value is not None
-    }
-    if not overrides:
-        return "\n".join(updated_rows)
-
-    reader = csv.DictReader(updated_rows)
-    columns = reader.fieldnames or []
-    missing = overrides.keys() - set(columns)
-    if missing:
-        raise ValueError(
-            f"Cannot override {', '.join(sorted(missing))} in {csv_template_name}"
-        )
-
-    output = StringIO()
-    writer = csv.DictWriter(output, columns, lineterminator="\n")
-    writer.writeheader()
-    for parsed_row in reader:
-        parsed_row.update(overrides)
-        writer.writerow(parsed_row)
-    return output.getvalue()[:-1]
+    return "\n".join(updated_rows)
 
 
 def write_run_log(

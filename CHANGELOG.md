@@ -1,6 +1,6 @@
 # Unreleased
 
-* Use configured sample sex in single-sample sheets and apply explicit assay and analysis overrides to run.csv.
+* Use the configured sample sex in single-sample DNA and RNA sheets.
 * Report one-sided custom INFO fields even when they are absent from every record in one VCF.
 * Honor the configured SNV and SV file pattern order and log the VCF pair selected for evaluation.
 * Show the above-threshold score changes in the console table, including variants promoted in the candidate run.
