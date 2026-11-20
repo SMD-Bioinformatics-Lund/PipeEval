@@ -1,6 +1,8 @@
 # Unreleased
 
 * Report one-sided custom INFO fields even when they are absent from every record in one VCF.
+* Honor the configured SNV and SV file pattern order and log the VCF pair selected for evaluation.
+* Show the above-threshold score changes in the console table, including variants promoted in the candidate run.
 
 # 2.2.4
 
