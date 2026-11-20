@@ -139,6 +139,36 @@ def test_eval_main(
     assert any("<DEL>" in line for line in sv_score)
 
 
+def test_reused_score_reports_are_replaced_after_clean_comparison(mock_results):
+    results1, results2, outdir = mock_results
+    run_object = RunObject("r1", "r2", results1, results2)
+    settings = RunSettings("dna-const")
+    filenames = ["scored_snv_all_diffing.txt", "scored_snv_above_thres_17.txt"]
+
+    main(run_object, settings, None, {"score_snv"}, outdir)
+    assert all(len((outdir / name).read_text().splitlines()) > 1 for name in filenames)
+
+    with gzip.open(results1 / "vcf/r1.snv.rescored.sorted.vcf.gz", "rt") as source:
+        lines = source.read().splitlines()
+    write_vcf(results2 / "vcf/r2.snv.rescored.sorted.vcf.gz", lines)
+
+    main(run_object, settings, None, {"score_snv"}, outdir)
+    for name in filenames:
+        lines = (outdir / name).read_text().splitlines()
+        assert len(lines) == 1
+        assert lines[0].startswith("chr\tpos\tvar\t")
+
+
+def test_eval_fails_if_requested_vcf_is_missing(mock_results):
+    results1, results2, outdir = mock_results
+    path = results2 / "vcf/r2.snv.rescored.sorted.vcf.gz"
+    path.rename(results2 / "unused.vcf.gz")
+    run_object = RunObject("r1", "r2", results1, results2)
+
+    with pytest.raises(ValueError, match="Cannot compare snv VCFs"):
+        main(run_object, RunSettings("dna-const"), None, {"score_snv"}, outdir)
+
+
 def test_eval_uses_first_configured_vcf_pattern(mock_results: tuple[Path, Path, Path]):
     results1, results2, _ = mock_results
     first = results1 / "vcf/r1.snv.rescored.sorted.vcf.gz"
