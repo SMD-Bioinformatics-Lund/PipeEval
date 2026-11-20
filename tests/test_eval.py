@@ -1,5 +1,8 @@
 import gzip
 import logging
+import os
+import subprocess
+import sys
 from pathlib import Path
 from typing import List
 
@@ -134,3 +137,74 @@ def test_eval_main(
 
     sv_score = (outdir / "scored_sv_all_diffing.txt").read_text().splitlines()
     assert any("<DEL>" in line for line in sv_score)
+
+
+def test_reused_score_reports_are_replaced_after_clean_comparison(mock_results):
+    results1, results2, outdir = mock_results
+    run_object = RunObject("r1", "r2", results1, results2)
+    settings = RunSettings("dna-const")
+    filenames = ["scored_snv_all_diffing.txt", "scored_snv_above_thres_17.txt"]
+
+    main(run_object, settings, None, {"score_snv"}, outdir)
+    assert all(len((outdir / name).read_text().splitlines()) > 1 for name in filenames)
+
+    with gzip.open(results1 / "vcf/r1.snv.rescored.sorted.vcf.gz", "rt") as source:
+        lines = source.read().splitlines()
+    write_vcf(results2 / "vcf/r2.snv.rescored.sorted.vcf.gz", lines)
+
+    main(run_object, settings, None, {"score_snv"}, outdir)
+    for name in filenames:
+        lines = (outdir / name).read_text().splitlines()
+        assert len(lines) == 1
+        assert lines[0].startswith("chr\tpos\tvar\t")
+
+
+def test_eval_fails_if_requested_vcf_is_missing(mock_results):
+    results1, results2, outdir = mock_results
+    path = results2 / "vcf/r2.snv.rescored.sorted.vcf.gz"
+    path.rename(results2 / "unused.vcf.gz")
+    run_object = RunObject("r1", "r2", results1, results2)
+
+    with pytest.raises(ValueError, match="Cannot compare snv VCFs"):
+        main(run_object, RunSettings("dna-const"), None, {"score_snv"}, outdir)
+
+
+def test_eval_uses_first_configured_vcf_pattern(mock_results: tuple[Path, Path, Path]):
+    results1, results2, _ = mock_results
+    first = results1 / "vcf/r1.snv.rescored.sorted.vcf.gz"
+    second = results2 / "vcf/r2.snv.rescored.sorted.vcf.gz"
+    with gzip.open(second, "at") as out:
+        out.write("\n1\t300\t.\tC\tG\t.\tPASS\tRankScore=r2:25\n")
+
+    for results, run_id in ((results1, "r1"), (results2, "r2")):
+        write_vcf(
+            results / f"vcf/{run_id}.scored.vcf.gz",
+            ["##fileformat=VCFv4.2", "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO"],
+        )
+
+    for seed in ("1", "3"):
+        result = subprocess.run(
+            [
+                sys.executable,
+                "main.py",
+                "eval",
+                "--pipeline",
+                "dna-const",
+                "-1",
+                str(results1),
+                "-2",
+                str(results2),
+                "-i1",
+                "r1",
+                "-i2",
+                "r2",
+                "--comparisons",
+                "presence_snv",
+            ],
+            env={**os.environ, "PYTHONHASHSEED": seed},
+            stderr=subprocess.PIPE,
+            text=True,
+            check=True,
+        )
+        assert f"Comparing snv VCFs: {first} and {second}" in result.stderr
+        assert "Only in r2: 1" in result.stderr

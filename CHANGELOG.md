@@ -1,3 +1,11 @@
+# Unreleased
+
+* Refresh score difference reports (i.e. overwrite previously generated reports with a header-only report) when runs agree and fail evaluation when a selected VCF input is missing.
+* Use the configured sample sex in single-sample DNA and RNA sheets.
+* Report one-sided custom INFO fields even when they are absent from every record in one VCF.
+* Honor the configured SNV and SV file pattern order and log the VCF pair selected for evaluation.
+* Show the above-threshold score changes in the console table, including variants promoted in the candidate run.
+
 # 2.2.4
 
 * Add sequencing run column to run csvs

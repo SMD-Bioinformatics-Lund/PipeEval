@@ -65,7 +65,6 @@ def get_table_header(
     annotation_info_keys: List[str],
     exclude_subscores: bool,
 ):
-    first_shared_key = list(shared_variant_keys)[0]
     header_fields = ["chr", "pos", "var"]
     if is_sv:
         header_fields.append("sv_len")
@@ -76,7 +75,8 @@ def get_table_header(
         [f"score_{run_ids[0]}", f"score_{run_ids[1]}", "score_diff_summary"]
     )
 
-    if not exclude_subscores:
+    if not exclude_subscores and shared_variant_keys:
+        first_shared_key = next(iter(shared_variant_keys))
         for sub_score in variants_r1[first_shared_key].sub_scores:
             header_fields.append(f"r1_{sub_score}")
         for sub_score in variants_r2[first_shared_key].sub_scores:
