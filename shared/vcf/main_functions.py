@@ -330,20 +330,19 @@ def print_diff_score_info(
 
     if len(diff_variants_above_thres) > max_count:
         logger.info(f"# Only printing the {max_count} first")
-    first_rows_and_cols = [limited_header] + [
-        row[0 : len(limited_header)] for row in full_body[0:max_count]
-    ]
-
-    pretty_rows = prettify_rows(first_rows_and_cols)
-    for row in pretty_rows:
-        logger.info(row)
-
     above_thres_comparison_rows = get_table(
         diff_variants_above_thres,
         is_sv,
         show_line_numbers,
         annotation_info_keys,
     )
+    first_rows_and_cols = [limited_header] + [
+        row[0 : len(limited_header)] for row in above_thres_comparison_rows[0:max_count]
+    ]
+
+    pretty_rows = prettify_rows(first_rows_and_cols)
+    for row in pretty_rows:
+        logger.info(row)
 
     if out_path_above_thres is not None:
         full_table = [full_header] + above_thres_comparison_rows
