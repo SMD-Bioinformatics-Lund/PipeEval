@@ -265,6 +265,7 @@ def compare_variant_score(
         )
     else:
         logger.info("# No differently scored variants found")
+        # Still write out the header if no actual diffs were found
         if out_path_all is not None or out_path_above_thres is not None:
             header = get_table_header(
                 run_ids,
