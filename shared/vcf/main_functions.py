@@ -98,6 +98,8 @@ def check_custom_info_field_differences(
             v1_info = v1.info_dict.get(info_key)
             v2_info = v2.info_dict.get(info_key)
 
+            # "." is defined as missing in the VCF format,
+            # so assign None here for them
             shared_key_values.append(
                 (
                     None if v1_info == "." else v1_info,
@@ -116,6 +118,8 @@ def check_custom_info_field_differences(
         if comp.both_present == 0:
             if comp.v1_present == 0 and comp.v2_present == 0:
                 logger.info("No entries found for this key")
+            else:
+                logger.info("No shared variants have a value in both runs")
         elif comp.all_numeric and len(comp.numeric_pairs) > 0:
             show_numerical_comparisons(logger, run_ids, comp.numeric_pairs)
         else:

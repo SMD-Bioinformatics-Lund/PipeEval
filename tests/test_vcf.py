@@ -245,4 +245,5 @@ def test_custom_info_reports_complete_loss(tmp_path, caplog, missing_info):
     )
 
     assert "(1 v1 only, 0 v2 only)" in caplog.text
+    assert "No shared variants have a value in both runs" in caplog.text
     assert "No differences found" not in caplog.text
