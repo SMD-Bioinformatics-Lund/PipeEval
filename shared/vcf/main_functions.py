@@ -98,24 +98,32 @@ def check_custom_info_field_differences(
             v1_info = v1.info_dict.get(info_key)
             v2_info = v2.info_dict.get(info_key)
 
-            shared_key_values.append((v1_info, v2_info))
+            # "." is defined as missing in the VCF format,
+            # so assign None here for them
+            shared_key_values.append(
+                (
+                    None if v1_info == "." else v1_info,
+                    None if v2_info == "." else v2_info,
+                )
+            )
 
         comp = ColumnComparison(shared_key_values)
 
         logger.info("")
         logger.info(info_key)
-        if comp.both_present > 0:
-            logger.info(
-                f"{comp.both_present} present in both, {comp.nbr_same} identical ({comp.v1_present} v1 only, {comp.v2_present} v2 only)"
-            )
+        logger.info(
+            f"{comp.both_present} present in both, {comp.nbr_same} identical ({comp.v1_present} v1 only, {comp.v2_present} v2 only)"
+        )
 
-        if comp.all_numeric and len(comp.numeric_pairs) > 0:
+        if comp.both_present == 0:
+            if comp.v1_present == 0 and comp.v2_present == 0:
+                logger.info("No entries found for this key")
+            else:
+                logger.info("No shared variants have a value in both runs")
+        elif comp.all_numeric and len(comp.numeric_pairs) > 0:
             show_numerical_comparisons(logger, run_ids, comp.numeric_pairs)
         else:
-            if len(shared_key_values) > 0:
-                show_categorical_comparisons(logger, run_ids, comp.categorical_pairs)
-            else:
-                logger.info("No entries found for this key")
+            show_categorical_comparisons(logger, run_ids, comp.categorical_pairs)
 
 
 def compare_variant_presence(
@@ -345,20 +353,19 @@ def print_diff_score_info(
 
     if len(diff_variants_above_thres) > max_count:
         logger.info(f"# Only printing the {max_count} first")
-    first_rows_and_cols = [limited_header] + [
-        row[0 : len(limited_header)] for row in full_body[0:max_count]
-    ]
-
-    pretty_rows = prettify_rows(first_rows_and_cols)
-    for row in pretty_rows:
-        logger.info(row)
-
     above_thres_comparison_rows = get_table(
         diff_variants_above_thres,
         is_sv,
         show_line_numbers,
         annotation_info_keys,
     )
+    first_rows_and_cols = [limited_header] + [
+        row[0 : len(limited_header)] for row in above_thres_comparison_rows[0:max_count]
+    ]
+
+    pretty_rows = prettify_rows(first_rows_and_cols)
+    for row in pretty_rows:
+        logger.info(row)
 
     if out_path_above_thres is not None:
         full_table = [full_header] + above_thres_comparison_rows

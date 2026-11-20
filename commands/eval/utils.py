@@ -199,6 +199,9 @@ def get_vcf_pair(
             f"Cannot compare {vcf_type.value} VCFs because an input is missing"
         )
 
+    logger.info(
+        f"Comparing {vcf_type.value} VCFs: {vcf_pair_paths[0]} and {vcf_pair_paths[1]}"
+    )
     vcf_pair = parse_vcf_pair(logger, ro.run_ids, vcf_pair_paths, vcf_type)
 
     return vcf_pair

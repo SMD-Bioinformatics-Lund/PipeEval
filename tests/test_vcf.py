@@ -100,6 +100,43 @@ def test_parse_scored_vcf_counts():
     assert len(vcf2.variants) == 2194
 
 
+def test_score_display_uses_above_threshold_rows(tmp_path, caplog):
+    vcf1, vcf2 = tmp_path / "v1.vcf", tmp_path / "v2.vcf"
+    header = (
+        "##fileformat=VCFv4.2\n"
+        '##INFO=<ID=RankScore,Number=1,Type=String,Description="Family and score">\n'
+        "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\n"
+    )
+    vcf1.write_text(
+        header + "1\t100\t.\tA\tC\t.\tPASS\tRankScore=family:16\n"
+        "1\t200\t.\tG\tT\t.\tPASS\tRankScore=family:10\n"
+    )
+    vcf2.write_text(
+        header + "1\t100\t.\tA\tC\t.\tPASS\tRankScore=family:15\n"
+        "1\t200\t.\tG\tT\t.\tPASS\tRankScore=family:25\n"
+    )
+
+    main(
+        vcf1,
+        vcf2,
+        1,
+        100,
+        17,
+        "r1",
+        "r2",
+        None,
+        [],
+        False,
+        {"score"},
+        set(),
+        VCFType.snv,
+    )
+
+    assert "Number differently scored above 17: 1" in caplog.text
+    assert "G/T" in caplog.text
+    assert "A/C" not in caplog.text
+
+
 # FIXME: Quick and dirty initial test
 def test_vcf_filter_sample_and_custom_info(tmp_path: Path, caplog: LogCaptureFixture):
     """Create minimal VCFs to exercise filter, sample (FORMAT), and custom INFO comparisons."""
@@ -178,3 +215,35 @@ def test_vcf_filter_sample_and_custom_info(tmp_path: Path, caplog: LogCaptureFix
     assert "### Checking custom info keys ###" in text
     assert "MYNUM" in text and "(numerical)" in text
     assert "MYSTAT" in text and "present in both" in text
+
+
+@pytest.mark.parametrize("missing_info", [".", "CLNSIG=."])
+def test_custom_info_reports_complete_loss(tmp_path, caplog, missing_info):
+    vcf1, vcf2 = tmp_path / "v1.vcf", tmp_path / "v2.vcf"
+    header = (
+        "##fileformat=VCFv4.2\n"
+        '##INFO=<ID=CLNSIG,Number=.,Type=String,Description="Clinical significance">\n'
+        "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\n"
+    )
+    vcf1.write_text(header + "1\t100\t.\tA\tC\t.\tPASS\tCLNSIG=Pathogenic\n")
+    vcf2.write_text(header + f"1\t100\t.\tA\tC\t.\tPASS\t{missing_info}\n")
+
+    main(
+        vcf1,
+        vcf2,
+        10,
+        100,
+        17,
+        "r1",
+        "r2",
+        None,
+        [],
+        False,
+        {"custom_info"},
+        {"CLNSIG"},
+        VCFType.snv,
+    )
+
+    assert "(1 v1 only, 0 v2 only)" in caplog.text
+    assert "No shared variants have a value in both runs" in caplog.text
+    assert "No differences found" not in caplog.text
