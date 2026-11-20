@@ -178,3 +178,46 @@ def test_vcf_filter_sample_and_custom_info(tmp_path: Path, caplog: LogCaptureFix
     assert "### Checking custom info keys ###" in text
     assert "MYNUM" in text and "(numerical)" in text
     assert "MYSTAT" in text and "present in both" in text
+
+
+@pytest.mark.parametrize(
+    ("samples", "genotypes", "expected"),
+    [
+        ("mother\tfather\tchild", "0/1\t0/0\t0/1", "sample mother"),
+        ("child\tfather", "0/1\t0/0", "Samples only in r1: mother"),
+    ],
+)
+def test_sample_comparison_matches_all_samples_by_name(
+    tmp_path, caplog, samples, genotypes, expected
+):
+    vcf1, vcf2 = tmp_path / "v1.vcf", tmp_path / "v2.vcf"
+    header = (
+        "##fileformat=VCFv4.2\n"
+        '##FORMAT=<ID=GT,Number=1,Type=String,Description="Genotype">\n'
+        "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT"
+    )
+    row = "1\t100\t.\tA\tC\t.\tPASS\t.\tGT"
+    vcf1.write_text(header + "\tchild\tfather\tmother\n" + row + "\t0/1\t0/0\t0/0\n")
+    vcf2.write_text(f"{header}\t{samples}\n{row}\t{genotypes}\n")
+
+    main(
+        vcf1,
+        vcf2,
+        10,
+        100,
+        17,
+        "r1",
+        "r2",
+        None,
+        [],
+        False,
+        {"sample"},
+        set(),
+        VCFType.snv,
+    )
+
+    assert expected in caplog.text
+    if "sample mother" == expected:
+        assert "1 present in both, 0 identical" in caplog.text
+        assert "0/0" in caplog.text and "0/1" in caplog.text
+    assert caplog.text.count("1 present in both, 1 identical") == 2

@@ -24,7 +24,7 @@ class ScoredVariant:
         info_dict: Dict[str, str],
         filters: str,
         line_number: int,
-        sample_dict: Dict[str, str],
+        samples: Dict[str, Dict[str, str]],
     ):
         self.chr = chr
         self.pos = pos
@@ -37,7 +37,7 @@ class ScoredVariant:
         self.info_dict = info_dict
         self.filters = filters
         self.line_number = line_number
-        self.sample_dict = sample_dict
+        self.samples = samples
 
     def get_trunc_ref(self) -> str:
         trunc_ref = (
@@ -136,11 +136,13 @@ class ScoredVCF:
         is_sv: bool,
         info: Dict[str, str],
         variants: Dict[str, ScoredVariant],
+        sample_ids: List[str],
     ):
         self.path = path
         self.is_sv = is_sv
         self.info = info
         self.variants = variants
+        self.sample_ids = sample_ids
 
 
 def parse_scored_vcf(vcf: Path, is_sv: bool) -> ScoredVCF:
@@ -152,12 +154,18 @@ def parse_scored_vcf(vcf: Path, is_sv: bool) -> ScoredVCF:
 
     info_rows: Dict[str, str] = {}
     variants: Dict[str, ScoredVariant] = {}
+    sample_ids: List[str] = []
     with get_filehandle(vcf) as in_fh:
         line_nbr = 0
         for line in in_fh:
             line = line.rstrip()
             line_nbr += 1
             if line.startswith("#"):
+
+                if line.startswith("#CHROM\t"):
+                    sample_ids = line.split("\t")[9:]
+                    if len(sample_ids) != len(set(sample_ids)):
+                        raise ValueError(f"Duplicate sample names in {vcf}")
 
                 if line.startswith("##INFO="):
                     info_id = get_match_or_crash(
@@ -184,8 +192,14 @@ def parse_scored_vcf(vcf: Path, is_sv: bool) -> ScoredVCF:
             alt = fields[4]
             filters = fields[6]
             info = fields[7]
-            format = fields[8] if len(fields) > 8 else None
-            sample_field = fields[9] if len(fields) > 9 else None
+            format_keys = (
+                fields[8].split(":") if len(fields) > 8 and fields[8] != "." else []
+            )
+            sample_fields = fields[9:]
+            if len(sample_fields) != len(sample_ids):
+                raise ValueError(
+                    f"Expected {len(sample_ids)} sample columns in {vcf}:{line_nbr}, found {len(sample_fields)}"
+                )
 
             # Some INFO fields are not in the expected format key=value
             info_fields = [
@@ -219,12 +233,14 @@ def parse_scored_vcf(vcf: Path, is_sv: bool) -> ScoredVCF:
                 ), f"Length of sub score names and values should match, found {rank_sub_score_names} and {rank_sub_scores} in line: {line}"
                 sub_scores_dict = dict(zip(rank_sub_score_names, rank_sub_scores))
 
-            sample_dict: Dict[str, str] = {}
-            if format and sample_field:
-                fmt_keys = format.split(":")
-                fmt_values = sample_field.split(":")
-                for i, key in enumerate(fmt_keys):
-                    sample_dict[key] = fmt_values[i] if i < len(fmt_values) else ""
+            samples = {
+                sample_id: {
+                    key: value
+                    for key, value in zip(format_keys, sample_field.split(":"))
+                    if value != "."
+                }
+                for sample_id, sample_field in zip(sample_ids, sample_fields)
+            }
 
             variant = ScoredVariant(
                 chr,
@@ -238,12 +254,12 @@ def parse_scored_vcf(vcf: Path, is_sv: bool) -> ScoredVCF:
                 info_dict,
                 filters,
                 line_nbr,
-                sample_dict,
+                samples,
             )
             key = variant.get_simple_key()
             variants[key] = variant
 
-    scored_vcf = ScoredVCF(vcf, is_sv, info_rows, variants)
+    scored_vcf = ScoredVCF(vcf, is_sv, info_rows, variants, sample_ids)
 
     return scored_vcf
 
