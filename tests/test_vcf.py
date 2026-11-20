@@ -178,3 +178,35 @@ def test_vcf_filter_sample_and_custom_info(tmp_path: Path, caplog: LogCaptureFix
     assert "### Checking custom info keys ###" in text
     assert "MYNUM" in text and "(numerical)" in text
     assert "MYSTAT" in text and "present in both" in text
+
+
+def test_annotation_preserves_values_matching_run_ids(tmp_path, caplog):
+    vcf1, vcf2 = tmp_path / "v1.vcf", tmp_path / "v2.vcf"
+    header = (
+        "##fileformat=VCFv4.2\n"
+        '##INFO=<ID=DP,Number=1,Type=Integer,Description="Depth">\n'
+        '##INFO=<ID=RankScore,Number=1,Type=String,Description="Family and score">\n'
+        "#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\n"
+    )
+    vcf1.write_text(header + "1\t100\t.\tA\tC\t.\tPASS\tDP=20;RankScore=20:22\n")
+    vcf2.write_text(header + "1\t100\t.\tA\tC\t.\tPASS\tDP=30;RankScore=30:22\n")
+
+    main(
+        vcf1,
+        vcf2,
+        10,
+        100,
+        17,
+        "20",
+        "30",
+        None,
+        [],
+        False,
+        {"annotation"},
+        set(),
+        VCFType.snv,
+    )
+
+    assert "20 / 30" in caplog.text
+    assert "1 shared keys with differing annotation values" in caplog.text
+    assert "RankScore" not in caplog.text

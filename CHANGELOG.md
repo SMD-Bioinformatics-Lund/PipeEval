@@ -1,3 +1,7 @@
+# Unreleased
+
+* Compare QC, Scout YAML and version files as written, and restrict VCF run ID normalization to family prefixes.
+
 # 2.2.4
 
 * Add sequencing run column to run csvs

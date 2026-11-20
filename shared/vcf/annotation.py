@@ -8,6 +8,23 @@ from shared.util import prettify_rows, truncate_string
 from shared.vcf.vcf import ScoredVariant
 
 
+FAMILY_INFO_KEYS = {"Compounds", "GeneticModels", "ModelScore", "RankScore"}
+
+
+def normalize_info_value(info_key: str, value: str, run_id: str) -> str:
+    if info_key not in FAMILY_INFO_KEYS or not run_id:
+        return value
+    prefix = f"{run_id}:"
+    return ",".join(
+        (
+            f"{RUN_ID_PLACEHOLDER}:{entry[len(prefix):]}"
+            if entry.startswith(prefix)
+            else entry
+        )
+        for entry in value.split(",")
+    )
+
+
 class AnnotComp:
     def __init__(
         self,
@@ -107,11 +124,11 @@ def calculate_annotation_diffs(
             r2_only_annots[info_key] += 1
 
         for shared_annot_key in comparison_results.shared:
-            info_val_r1 = var_r1.info_dict[shared_annot_key].replace(
-                run_ids[0], RUN_ID_PLACEHOLDER
+            info_val_r1 = normalize_info_value(
+                shared_annot_key, var_r1.info_dict[shared_annot_key], run_ids[0]
             )
-            info_val_r2 = var_r2.info_dict[shared_annot_key].replace(
-                run_ids[1], RUN_ID_PLACEHOLDER
+            info_val_r2 = normalize_info_value(
+                shared_annot_key, var_r2.info_dict[shared_annot_key], run_ids[1]
             )
 
             if info_val_r1 != info_val_r2:
