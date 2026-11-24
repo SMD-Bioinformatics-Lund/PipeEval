@@ -1,3 +1,7 @@
+# 2.2.5
+
+* Add `--queue` flag to `run` to override configured slurm queue.
+
 # 2.2.4
 
 * Add sequencing run column to run csvs

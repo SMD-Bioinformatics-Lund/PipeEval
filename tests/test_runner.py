@@ -1,6 +1,8 @@
+import argparse
 import csv
 import logging
 from pathlib import Path
+from typing import List
 
 import pytest
 from pytest import MonkeyPatch
@@ -69,47 +71,51 @@ def csv_base() -> Path:
     return csv_base
 
 
+@pytest.mark.parametrize(
+    ("queue_args", "expected_queue"), [([], "test"), (["--queue", "high"], "high")]
+)
 def test_single_dna_const_run(
     monkeypatch: MonkeyPatch,
     base_dir: Path,
     get_run_config_paths: RunConfigs,
     config_sample_paths: ConfigSamplePathGroup,
-    csv_base: Path,
+    queue_args: List[str],
+    expected_queue: str,
 ):
     paths = config_sample_paths
+    launch_commands: List[List[str]] = []
 
     monkeypatch.setattr(run_main, "do_repo_checkout", lambda *a, **k: None)
-    monkeypatch.setattr(run_main, "start_run", lambda *a, **k: None)
+    monkeypatch.setattr(
+        run_main, "start_run", lambda command, _: launch_commands.append(command)
+    )
     monkeypatch.setattr(
         run_main, "get_git_commit_hash_and_log", lambda *a, **k: ("abcd", "abcd")
     )
 
-    run_config = RunConfig(
-        LOG,
-        "dna_single_const",
-        get_run_config_paths.run_profile,
-        get_run_config_paths.pipeline_settings,
-        get_run_config_paths.samples,
+    parser = argparse.ArgumentParser()
+    run_main.add_arguments(parser)
+    args = parser.parse_args(
+        [
+            "--run_profile",
+            "dna_single_const",
+            "--run_profile_config",
+            str(get_run_config_paths.run_profile),
+            "--pipeline_settings_config",
+            str(get_run_config_paths.pipeline_settings),
+            "--samples_config",
+            str(get_run_config_paths.samples),
+            "--label",
+            "label",
+            "--checkout",
+            "testcheckout",
+            "--stub",
+            "--skip_confirmation",
+            "--nostart",
+        ]
+        + queue_args
     )
-
-    run_main.main(
-        run_config,
-        label="label",
-        checkout="testcheckout",
-        base_dir=None,
-        repo=None,
-        start_data="fq",
-        stub_run=True,
-        run_profile=run_config.run_profile.run_profile,
-        skip_confirmation=True,
-        no_start=True,
-        datestamp=False,
-        verbose=False,
-        assay=None,
-        analysis=None,
-        csv_base=csv_base,
-        remote_name="origin",
-    )
+    run_main.main_wrapper(args)
 
     run_label = "dna_single_const-label-testcheckout-stub-fq"
 
@@ -117,6 +123,10 @@ def test_single_dna_const_run(
 
     assert (result_dir / "run.log").exists()
     assert (result_dir / "nextflow.config").exists()
+    (launch_command,) = launch_commands
+    assert launch_command[launch_command.index("--queue") + 1] == expected_queue
+    resume_script = (result_dir / "resume.sh").read_text()
+    assert f" --queue {expected_queue} " in resume_script
 
     run_csv = result_dir / "run.csv"
     assert (run_csv).exists()
