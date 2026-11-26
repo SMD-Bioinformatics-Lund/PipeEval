@@ -1,3 +1,7 @@
+# Unreleased
+
+* Add `myeloid-const-hg002` and `constitutional-hg002` run profiles for ol'wgs with BAM and paired FASTQ inputs.
+
 # 2.2.4
 
 * Add sequencing run column to run csvs
