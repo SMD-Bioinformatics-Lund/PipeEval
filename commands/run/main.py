@@ -62,6 +62,7 @@ def main(
     analysis: Optional[str],
     csv_base: Path,
     remote_name: str,
+    queue: Optional[str] = None,
 ):
     logger.info(f"Preparing run, type: {run_profile}, data: {start_data}")
 
@@ -70,6 +71,7 @@ def main(
     )
     repo = repo if repo is not None else Path(config.general_settings.repo)
     datestamp = datestamp or config.general_settings.datestamp
+    effective_queue = queue if queue is not None else config.general_settings.queue
 
     check_valid_repo(repo)
 
@@ -120,7 +122,7 @@ def main(
             results_dir,
             config.general_settings.executor,
             config.general_settings.cluster,
-            config.general_settings.queue,
+            effective_queue,
             config.general_settings.singularity_version,
             config.general_settings.nextflow_version,
             config.general_settings.container,
@@ -410,6 +412,7 @@ def main_wrapper(args: argparse.Namespace):
             args.analysis,
             csv_base,
             args.remote,
+            queue=args.queue,
         )
         logger.info("Now proceeding with checking out the --checkout")
     main(
@@ -429,6 +432,7 @@ def main_wrapper(args: argparse.Namespace):
         args.analysis,
         csv_base,
         args.remote,
+        queue=args.queue,
     )
 
 
@@ -478,6 +482,9 @@ def add_arguments(parser: argparse.ArgumentParser):
     )
     parser.add_argument(
         "--stub", action="store_true", help="Pass the -stub-run flag to the pipeline"
+    )
+    parser.add_argument(
+        "--queue", help="Override the configured queue for this invocation"
     )
     parser.add_argument(
         "--run_profile_config",

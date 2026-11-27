@@ -1,3 +1,7 @@
+# 2.3.1
+
+* Add `--queue` flag to `run` to override configured slurm queue.
+
 # 2.3.0
 
 * Add `myeloid-const-hg002` and `constitutional-hg002` run profiles for ol'wgs with BAM and paired FASTQ inputs.
